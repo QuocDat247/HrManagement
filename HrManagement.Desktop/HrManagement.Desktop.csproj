@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\HrManagement.Application\HrManagement.Application.csproj" />
     <ProjectReference Include="..\HrManagement.Infrastructure\HrManagement.Infrastructure.csproj" />
   </ItemGroup>
