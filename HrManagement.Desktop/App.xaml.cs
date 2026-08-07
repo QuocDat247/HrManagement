@@ -1,8 +1,8 @@
 ﻿using HrManagement.Application.Authentication;
 using HrManagement.Desktop.ViewModels;
+using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
 using Microsoft.Extensions.DependencyInjection;
-using HrManagement.Desktop.Views;
 using System.Windows;
 
 namespace HrManagement.Desktop;
@@ -15,6 +15,8 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
         ServiceCollection services = new();
 
         ConfigureServices(services);
@@ -24,17 +26,36 @@ public partial class App : System.Windows.Application
         LoginWindow loginWindow =
             _serviceProvider.GetRequiredService<LoginWindow>();
 
-        loginWindow.Show();
+        bool? loginResult = loginWindow.ShowDialog();
+
+        if (loginResult != true)
+        {
+            Shutdown();
+            return;
+        }
+
+        MainWindow mainWindow =
+            _serviceProvider.GetRequiredService<MainWindow>();
+
+        this.MainWindow = mainWindow;
+
+        ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+        mainWindow.Show();
     }
 
-    private static void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(
+    IServiceCollection services)
     {
         services.AddSingleton<
-        IAuthenticationService,
-        FakeAuthenticationService>();
+            IAuthenticationService,
+            FakeAuthenticationService>();
 
         services.AddTransient<LoginViewModel>();
+        services.AddTransient<MainViewModel>();
+
         services.AddTransient<LoginWindow>();
+        services.AddTransient<MainWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

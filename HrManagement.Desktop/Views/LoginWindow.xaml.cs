@@ -13,6 +13,9 @@ public partial class LoginWindow : Window
 
         _viewModel = viewModel;
         DataContext = _viewModel;
+
+        _viewModel.LoginSucceeded += OnLoginSucceeded;
+        Closed += OnWindowClosed;
     }
 
     private void LoginButton_Click(
@@ -23,5 +26,20 @@ public partial class LoginWindow : Window
         {
             _viewModel.LoginCommand.Execute(PasswordBox.Password);
         }
+    }
+
+    private void OnLoginSucceeded(
+        object? sender,
+        EventArgs e)
+    {
+        DialogResult = true;
+    }
+
+    private void OnWindowClosed(
+        object? sender,
+        EventArgs e)
+    {
+        _viewModel.LoginSucceeded -= OnLoginSucceeded;
+        Closed -= OnWindowClosed;
     }
 }
