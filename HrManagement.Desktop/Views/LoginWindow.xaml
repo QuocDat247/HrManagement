@@ -1,0 +1,48 @@
+﻿<Window x:Class="HrManagement.Desktop.Views.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Đăng nhập - Quản trị nhân sự"
+        Width="420"
+        Height="460"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Grid Margin="40">
+        <StackPanel VerticalAlignment="Center">
+
+            <TextBlock Text="QUẢN TRỊ NHÂN SỰ"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,28"/>
+
+            <TextBlock Text="Tên đăng nhập"
+                   Margin="0,0,0,6"/>
+
+            <TextBox Height="36"
+                 Padding="10,5"
+                 Margin="0,0,0,18"
+                 Text="{Binding Username,
+                                UpdateSourceTrigger=PropertyChanged}"/>
+
+            <TextBlock Text="Mật khẩu"
+                   Margin="0,0,0,6"/>
+
+            <PasswordBox x:Name="PasswordBox"
+                     Height="36"
+                     Padding="10,5"
+                     Margin="0,0,0,12"/>
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                   Foreground="Red"
+                   TextWrapping="Wrap"
+                   MinHeight="20"
+                   Margin="0,0,0,8"/>
+
+            <Button Height="40"
+                Content="Đăng nhập"
+                Click="LoginButton_Click"/>
+
+        </StackPanel>
+    </Grid>
+</Window>
