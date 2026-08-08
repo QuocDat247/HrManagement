@@ -44,57 +44,25 @@
 
                 <StackPanel Margin="10">
 
-                    <Button Content="Tổng quan"
-                            Command="{Binding NavigateToDashboardCommand}"
-                            Height="42"
-                            Margin="0,3"/>
+                    <ItemsControl ItemsSource="{Binding NavigationItems}"
+              Margin="10,10">
 
-                    <Button Content="Nhân viên"
-                            Command="{Binding NavigateToEmployeesCommand}"
-                            Height="42"
-                            Margin="0,3"/>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
 
-                    <TextBlock Text="Phòng ban"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
+                                <Button Content="{Binding Title}"
+                    Height="42"
+                    Margin="0,3"
+                    HorizontalContentAlignment="Left"
+                    Padding="12,0"
+                    Command="{Binding DataContext.NavigateCommand,
+                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                    CommandParameter="{Binding}" />
 
-                    <TextBlock Text="Hợp đồng"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
 
-                    <TextBlock Text="Chấm công"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
-
-                    <TextBlock Text="Nghỉ phép"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
-
-                    <TextBlock Text="Tiền lương"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
-
-                    <TextBlock Text="Báo cáo"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
-
-                    <TextBlock Text="Hệ thống"
-                               Foreground="#AEB4BC"
-                               FontSize="16"
-                               Padding="12"
-                               Margin="0,3"/>
+                    </ItemsControl>
 
                 </StackPanel>
 
@@ -124,7 +92,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Quản trị nhân sự"
+                    <TextBlock Text="{Binding SelectedNavigationItem.Title}"
                                FontSize="22"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"/>

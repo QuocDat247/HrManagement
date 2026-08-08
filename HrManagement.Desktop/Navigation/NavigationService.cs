@@ -20,8 +20,15 @@ public sealed class NavigationService : INavigationService
     public void NavigateTo<TViewModel>()
         where TViewModel : class
     {
-        TViewModel viewModel =
-            _serviceProvider.GetRequiredService<TViewModel>();
+        NavigateTo(typeof(TViewModel));
+    }
+
+    public void NavigateTo(Type viewModelType)
+    {
+        ArgumentNullException.ThrowIfNull(viewModelType);
+
+        object viewModel =
+            _serviceProvider.GetRequiredService(viewModelType);
 
         _currentViewModel = viewModel;
 
