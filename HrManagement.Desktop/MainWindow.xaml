@@ -1,12 +1,26 @@
 ﻿<Window x:Class="HrManagement.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:HrManagement.Desktop.ViewModels"
+        xmlns:views="clr-namespace:HrManagement.Desktop.Views"
         Title="Quản trị nhân sự"
         Width="1200"
         Height="760"
         MinWidth="1000"
         MinHeight="650"
         WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView/>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:EmployeesViewModel}">
+            <views:EmployeesView/>
+        </DataTemplate>
+
+    </Window.Resources>
 
     <Grid>
 
@@ -28,61 +42,59 @@
                            FontWeight="SemiBold"
                            Margin="20,24"/>
 
-                <StackPanel Margin="10,10">
+                <StackPanel Margin="10">
 
                     <Button Content="Tổng quan"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Tổng quan"
-                            Margin="0,3"
-                            Height="42"/>
+                            Command="{Binding NavigateToDashboardCommand}"
+                            Height="42"
+                            Margin="0,3"/>
 
                     <Button Content="Nhân viên"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Nhân viên"
-                            Margin="0,3"
-                            Height="42"/>
+                            Command="{Binding NavigateToEmployeesCommand}"
+                            Height="42"
+                            Margin="0,3"/>
 
-                    <Button Content="Phòng ban"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Phòng ban"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Phòng ban"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Hợp đồng"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Hợp đồng"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Hợp đồng"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Chấm công"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Chấm công"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Chấm công"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Nghỉ phép"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Nghỉ phép"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Nghỉ phép"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Tiền lương"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Tiền lương"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Tiền lương"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Báo cáo"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Báo cáo"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Báo cáo"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
-                    <Button Content="Hệ thống"
-                            Command="{Binding NavigateCommand}"
-                            CommandParameter="Hệ thống"
-                            Margin="0,3"
-                            Height="42"/>
+                    <TextBlock Text="Hệ thống"
+                               Foreground="#AEB4BC"
+                               FontSize="16"
+                               Padding="12"
+                               Margin="0,3"/>
 
                 </StackPanel>
 
@@ -90,7 +102,7 @@
 
         </Border>
 
-        <!-- Main content -->
+        <!-- Main area -->
         <Grid Grid.Column="1"
               Background="#F5F6F8">
 
@@ -112,8 +124,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="{Binding CurrentPageTitle}"
-                               FontSize="24"
+                    <TextBlock Text="Quản trị nhân sự"
+                               FontSize="22"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"/>
 
@@ -125,36 +137,10 @@
 
             </Border>
 
-            <!-- Content -->
-            <Grid Grid.Row="1"
-                  Margin="24">
-
-                <Border Background="White"
-                        Padding="30"
-                        CornerRadius="8">
-
-                    <StackPanel
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-
-                        <TextBlock
-                            Text="{Binding CurrentPageTitle}"
-                            FontSize="32"
-                            FontWeight="SemiBold"
-                            HorizontalAlignment="Center"/>
-
-                        <TextBlock
-                            Text="Nội dung module sẽ được xây dựng ở bước tiếp theo."
-                            Margin="0,12,0,0"
-                            FontSize="15"
-                            Foreground="Gray"
-                            HorizontalAlignment="Center"/>
-
-                    </StackPanel>
-
-                </Border>
-
-            </Grid>
+            <!-- Navigation content -->
+            <ContentControl Grid.Row="1"
+                            Content="{Binding CurrentViewModel}"
+                            Margin="24"/>
 
         </Grid>
 

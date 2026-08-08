@@ -3,6 +3,7 @@ using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
 using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Desktop.Navigation;
 using System.Windows;
 
 namespace HrManagement.Desktop;
@@ -51,11 +52,17 @@ public partial class App : System.Windows.Application
             IAuthenticationService,
             FakeAuthenticationService>();
 
+        services.AddSingleton<
+            INavigationService,
+            NavigationService>();
+
         services.AddTransient<LoginViewModel>();
         services.AddTransient<MainViewModel>();
 
         services.AddTransient<LoginWindow>();
         services.AddTransient<MainWindow>();
+        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<EmployeesViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)

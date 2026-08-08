@@ -1,32 +1,50 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HrManagement.Desktop.Navigation;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed class MainViewModel : ObservableObject
 {
-    private string _currentPageTitle = "Tổng quan";
+    private readonly INavigationService _navigationService;
 
-    public MainViewModel()
+    public MainViewModel(INavigationService navigationService)
     {
-        NavigateCommand = new RelayCommand<string>(Navigate);
+        _navigationService = navigationService;
+
+        _navigationService.CurrentViewModelChanged +=
+            OnCurrentViewModelChanged;
+
+        NavigateToDashboardCommand =
+            new RelayCommand(NavigateToDashboard);
+
+        NavigateToEmployeesCommand =
+            new RelayCommand(NavigateToEmployees);
+
+        _navigationService.NavigateTo<DashboardViewModel>();
     }
 
-    public string CurrentPageTitle
+    public object? CurrentViewModel =>
+        _navigationService.CurrentViewModel;
+
+    public IRelayCommand NavigateToDashboardCommand { get; }
+
+    public IRelayCommand NavigateToEmployeesCommand { get; }
+
+    private void NavigateToDashboard()
     {
-        get => _currentPageTitle;
-        private set => SetProperty(ref _currentPageTitle, value);
+        _navigationService.NavigateTo<DashboardViewModel>();
     }
 
-    public IRelayCommand<string> NavigateCommand { get; }
-
-    private void Navigate(string? page)
+    private void NavigateToEmployees()
     {
-        if (string.IsNullOrWhiteSpace(page))
-        {
-            return;
-        }
+        _navigationService.NavigateTo<EmployeesViewModel>();
+    }
 
-        CurrentPageTitle = page;
+    private void OnCurrentViewModelChanged(
+        object? sender,
+        EventArgs e)
+    {
+        OnPropertyChanged(nameof(CurrentViewModel));
     }
 }
