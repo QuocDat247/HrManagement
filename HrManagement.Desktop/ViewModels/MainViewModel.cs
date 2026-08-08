@@ -1,19 +1,34 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Navigation;
+using HrManagement.Desktop.Theming;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly INavigationService _navigationService;
+    private readonly IThemeService _themeService;
 
     [ObservableProperty]
     private NavigationItem? _selectedNavigationItem;
+    private void ToggleTheme()
+    {
+        AppTheme nextTheme =
+            _themeService.CurrentTheme == AppTheme.Blue
+                ? AppTheme.Green
+                : AppTheme.Blue;
 
-    public MainViewModel(INavigationService navigationService)
+        _themeService.ApplyTheme(nextTheme);
+    }
+
+    // Constructor>
+    public MainViewModel(
+        INavigationService navigationService,
+        IThemeService themeService)
     {
         _navigationService = navigationService;
+        _themeService = themeService;
 
         _navigationService.CurrentViewModelChanged +=
             OnCurrentViewModelChanged;
@@ -41,7 +56,14 @@ public sealed partial class MainViewModel : ObservableObject
 
         _navigationService.NavigateTo(
             SelectedNavigationItem.ViewModelType);
+
+        ToggleThemeCommand =
+        new RelayCommand(ToggleTheme);
     }
+    // <
+
+    // Command>
+    public IRelayCommand ToggleThemeCommand { get; }
 
     public IReadOnlyList<NavigationItem> NavigationItems { get; }
 
@@ -49,6 +71,7 @@ public sealed partial class MainViewModel : ObservableObject
         _navigationService.CurrentViewModel;
 
     public IRelayCommand<NavigationItem> NavigateCommand { get; }
+    // <
 
     private void Navigate(NavigationItem? item)
     {

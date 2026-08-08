@@ -7,13 +7,11 @@
                     VerticalAlignment="Center">
 
             <TextBlock Text="{Binding Title}"
-                       FontSize="32"
-                       FontWeight="SemiBold"
+                       Style="{DynamicResource SectionTitleTextStyle}"
                        HorizontalAlignment="Center"/>
 
             <TextBlock Text="Module Nhân viên sẽ được xây dựng sau."
-                       FontSize="16"
-                       Foreground="Gray"
+                       Style="{DynamicResource SecondaryTextStyle}"
                        Margin="0,12,0,0"
                        HorizontalAlignment="Center"/>
 

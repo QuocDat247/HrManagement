@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:HrManagement.Desktop.ViewModels"
         xmlns:views="clr-namespace:HrManagement.Desktop.Views"
+        xmlns:converters="clr-namespace:HrManagement.Desktop.Converters"
         Title="Quản trị nhân sự"
         Width="1200"
         Height="760"
@@ -12,6 +13,9 @@
 
     <Window.Resources>
 
+        <converters:EqualityConverter
+            x:Key="EqualityConverter" />
+        
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView/>
         </DataTemplate>
@@ -31,13 +35,13 @@
 
         <!-- Sidebar -->
         <Border Grid.Column="0"
-                Background="#20252B">
+                Background="{DynamicResource SidebarBackgroundBrush}">
 
             <DockPanel>
 
                 <TextBlock DockPanel.Dock="Top"
                            Text="HR MANAGEMENT"
-                           Foreground="White"
+                           Foreground="{DynamicResource SidebarTextBrush}"
                            FontSize="20"
                            FontWeight="SemiBold"
                            Margin="20,24"/>
@@ -45,19 +49,29 @@
                 <StackPanel Margin="10">
 
                     <ItemsControl ItemsSource="{Binding NavigationItems}"
-              Margin="10,10">
+                        Margin="10,10">
 
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
 
                                 <Button Content="{Binding Title}"
-                    Height="42"
-                    Margin="0,3"
-                    HorizontalContentAlignment="Left"
-                    Padding="12,0"
-                    Command="{Binding DataContext.NavigateCommand,
-                                      RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                    CommandParameter="{Binding}" />
+                                        Style="{DynamicResource SidebarNavigationButtonStyle}"
+                                        Command="{Binding DataContext.NavigateCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+
+                                    <Button.Tag>
+                                        <MultiBinding Converter="{StaticResource EqualityConverter}">
+
+                                            <Binding />
+
+                                            <Binding Path="DataContext.SelectedNavigationItem"
+                                                     RelativeSource="{RelativeSource AncestorType=ItemsControl}" />
+
+                                        </MultiBinding>
+                                    </Button.Tag>
+
+                                </Button>
 
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -72,7 +86,7 @@
 
         <!-- Main area -->
         <Grid Grid.Column="1"
-              Background="#F5F6F8">
+              Background="{DynamicResource PageBackgroundBrush}">
 
             <Grid.RowDefinitions>
                 <RowDefinition Height="70"/>
@@ -81,9 +95,7 @@
 
             <!-- Header -->
             <Border Grid.Row="0"
-                    Background="White"
-                    BorderBrush="#E5E7EB"
-                    BorderThickness="0,0,0,1">
+                    Style="{DynamicResource HeaderBorderStyle}">
 
                 <Grid Margin="24,0">
 
@@ -91,15 +103,21 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-
+    
                     <TextBlock Text="{Binding SelectedNavigationItem.Title}"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"/>
+                               Style="{DynamicResource PageTitleTextStyle}" />
 
                     <TextBlock Grid.Column="1"
                                Text="admin"
-                               VerticalAlignment="Center"/>
+                               Style="{DynamicResource SecondaryTextStyle}"
+                               VerticalAlignment="Center" />
+
+                    <Button Content="Đổi theme"
+        Command="{Binding ToggleThemeCommand}"
+        Background="{DynamicResource PrimaryBrush}"
+        Foreground="White"
+        Margin="0,0,16,0"
+        Padding="12,6"/>
 
                 </Grid>
 
