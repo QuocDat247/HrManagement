@@ -7,9 +7,12 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="20" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="16" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+        <!-- Header -->
         <StackPanel Grid.Row="0">
             <TextBlock Text="Nhân viên"
                        Style="{StaticResource PageTitleTextStyle}" />
@@ -19,7 +22,53 @@
                        Style="{StaticResource SecondaryTextStyle}" />
         </StackPanel>
 
-        <Border Grid.Row="2"
+        <!-- Search / Filter -->
+        <Grid Grid.Row="2">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="90" />
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0"
+             Height="36"
+             Padding="10,6"
+             VerticalContentAlignment="Center"
+             Text="{Binding SearchText,
+                            UpdateSourceTrigger=PropertyChanged}">
+
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter"
+                        Command="{Binding SearchCommand}" />
+                </TextBox.InputBindings>
+
+            </TextBox>
+
+            <ComboBox Grid.Column="2"
+              Height="36"
+              ItemsSource="{Binding StatusOptions}"
+              DisplayMemberPath="DisplayName"
+              SelectedItem="{Binding SelectedStatusOption}" />
+
+            <Button Grid.Column="4"
+            Height="36"
+            Content="Tìm kiếm"
+            Command="{Binding SearchCommand}" />
+
+            <Button Grid.Column="6"
+            Height="36"
+            Content="Xóa lọc"
+            Command="{Binding ClearFiltersCommand}" />
+
+        </Grid>
+
+        <!-- Employee table -->
+        <Border Grid.Row="4"
                 Style="{StaticResource CardBorderStyle}">
 
             <DataGrid ItemsSource="{Binding Employees}"

@@ -5,6 +5,8 @@ namespace HrManagement.Desktop.Navigation;
 public sealed class NavigationService : INavigationService
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly Dictionary<Type, object> _viewModelCache = new();
+
     private object? _currentViewModel;
 
     public object? CurrentViewModel => _currentViewModel;
@@ -31,9 +33,20 @@ public sealed class NavigationService : INavigationService
             return;
         }
 
-        _currentViewModel =
-            _serviceProvider.GetRequiredService(viewModelType);
+        if (!_viewModelCache.TryGetValue(
+                viewModelType,
+                out object? viewModel))
+        {
+            viewModel =
+                _serviceProvider.GetRequiredService(viewModelType);
 
-        CurrentViewModelChanged?.Invoke(this, EventArgs.Empty);
+            _viewModelCache.Add(viewModelType, viewModel);
+        }
+
+        _currentViewModel = viewModel;
+
+        CurrentViewModelChanged?.Invoke(
+            this,
+            EventArgs.Empty);
     }
 }

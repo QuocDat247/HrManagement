@@ -50,6 +50,41 @@ public sealed class EmployeesViewModelTests
             viewModel.ErrorMessage);
     }
 
+    [Fact]
+    public async Task ClearFiltersCommand_ClearsFiltersAndReloadsEmployees()
+    {
+        IReadOnlyList<Employee> employees =
+        [
+            new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên nhân sự",
+            EmployeeStatus.Active)
+        ];
+
+        var service = new StubEmployeeService(employees);
+        var viewModel = new EmployeesViewModel(service);
+
+        viewModel.SearchText = "An";
+        viewModel.SelectedStatusOption =
+            viewModel.StatusOptions
+                .First(option =>
+                    option.Status == EmployeeStatus.Active);
+
+        await viewModel.ClearFiltersCommand.ExecuteAsync(null);
+
+        Assert.Null(viewModel.SearchText);
+        Assert.Null(viewModel.SelectedStatusOption?.Status);
+        Assert.Equal("Tất cả", viewModel.SelectedStatusOption?.DisplayName);
+        Assert.Single(viewModel.Employees);
+    }
+
     private sealed class StubEmployeeService : IEmployeeService
     {
         private readonly IReadOnlyList<Employee> _employees;
@@ -60,7 +95,8 @@ public sealed class EmployeesViewModelTests
         }
 
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
-            CancellationToken cancellationToken = default)
+                EmployeeFilter? filter = null,
+    CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_employees);
         }
@@ -69,6 +105,7 @@ public sealed class EmployeesViewModelTests
     private sealed class FailingEmployeeService : IEmployeeService
     {
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
+            EmployeeFilter? filter = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromException<IReadOnlyList<Employee>>(
