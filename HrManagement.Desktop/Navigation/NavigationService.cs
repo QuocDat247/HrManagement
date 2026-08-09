@@ -1,21 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HrManagement.Desktop.Navigation;
 
 public sealed class NavigationService : INavigationService
 {
     private readonly IServiceProvider _serviceProvider;
-
     private object? _currentViewModel;
+
+    public object? CurrentViewModel => _currentViewModel;
+
+    public event EventHandler? CurrentViewModelChanged;
 
     public NavigationService(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
-
-    public object? CurrentViewModel => _currentViewModel;
-
-    public event EventHandler? CurrentViewModelChanged;
 
     public void NavigateTo<TViewModel>()
         where TViewModel : class
@@ -27,13 +26,14 @@ public sealed class NavigationService : INavigationService
     {
         ArgumentNullException.ThrowIfNull(viewModelType);
 
-        object viewModel =
+        if (_currentViewModel?.GetType() == viewModelType)
+        {
+            return;
+        }
+
+        _currentViewModel =
             _serviceProvider.GetRequiredService(viewModelType);
 
-        _currentViewModel = viewModel;
-
-        CurrentViewModelChanged?.Invoke(
-            this,
-            EventArgs.Empty);
+        CurrentViewModelChanged?.Invoke(this, EventArgs.Empty);
     }
 }
