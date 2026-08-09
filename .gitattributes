@@ -1,0 +1,39 @@
+# Auto-detect text files and normalize them in Git
+* text=auto
+
+# Source code / markup
+*.cs      text eol=crlf
+*.xaml    text eol=crlf
+*.xml     text eol=crlf
+*.json    text eol=crlf
+*.config  text eol=crlf
+
+# Project / solution files
+*.csproj  text eol=crlf
+*.props   text eol=crlf
+*.targets text eol=crlf
+*.sln     text eol=crlf
+
+# Documentation
+*.md      text eol=crlf
+*.txt     text eol=crlf
+
+# Scripts
+*.ps1     text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Shell scripts should stay LF
+*.sh      text eol=lf
+
+# Binary files
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.pdf     binary
+*.zip     binary
+*.7z      binary
+*.dll     binary
+*.exe     binary
