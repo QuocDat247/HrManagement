@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HrManagement.Application\HrManagement.Application.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
   </ItemGroup>
 
 </Project>

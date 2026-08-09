@@ -1,10 +1,13 @@
-﻿using HrManagement.Application.Authentication;
+using HrManagement.Application.Authentication;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Theming;
+using HrManagement.Application.Dashboard;
+using HrManagement.Infrastructure.Dashboard;
+using HrManagement.Infrastructure.DependencyInjection;
 using System.Windows;
 
 namespace HrManagement.Desktop;
@@ -65,6 +68,7 @@ public partial class App : System.Windows.Application
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<EmployeesViewModel>();
         services.AddSingleton<IThemeService, ThemeService>();
+        services.AddInfrastructure();
     }
 
     protected override void OnExit(ExitEventArgs e)
