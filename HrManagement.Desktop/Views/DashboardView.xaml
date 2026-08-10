@@ -2,8 +2,10 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
+    <ScrollViewer x:Name="DashboardScrollViewer"
+                  VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
         <Grid Margin="32">
 
             <Grid.RowDefinitions>
@@ -95,34 +97,42 @@
                     </StackPanel>
                 </Border>
 
+                
+
             </Grid>
 
+            
+            
+
+        </Grid>
+
             <Border Margin="0,30,0,0"
-Padding="30"
-Background="{DynamicResource CardBackgroundBrush}"
-BorderBrush="{DynamicResource BorderBrush}"
-BorderThickness="1"
-CornerRadius="8">
+                    Padding="30"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
 
                 <StackPanel>
 
                     <TextBlock Text="Nhân viên vào làm gần đây"
-           FontSize="18"
-           FontWeight="SemiBold"
-           Foreground="{DynamicResource PrimaryTextBrush}"
-           Margin="0,0,0,16" />
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Margin="0,0,0,16" />
 
                     <Grid>
 
                         <DataGrid ItemsSource="{Binding RecentEmployees}"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              CanUserAddRows="False"
-              CanUserDeleteRows="False"
-              HeadersVisibility="Column"
-              GridLinesVisibility="Horizontal"
-              BorderThickness="0"
-              Background="Transparent">
+                                  PreviewMouseWheel="DataGrid_PreviewMouseWheel"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  BorderThickness="0"
+                                  Background="Transparent">
 
                             <DataGrid.Style>
                                 <Style TargetType="DataGrid">
@@ -195,8 +205,105 @@ CornerRadius="8">
 
             </Border>
 
-        </Grid>
-        
+            <Border Margin="0,24,0,24"
+                    Padding="20"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+
+                <StackPanel>
+
+                    <TextBlock Text="Phân bổ nhân sự theo phòng ban"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Margin="0,0,0,16" />
+
+                    <Grid>
+
+                        <DataGrid ItemsSource="{Binding Departments}"
+                                  PreviewMouseWheel="DataGrid_PreviewMouseWheel"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  BorderThickness="0"
+                                  Background="Transparent">
+
+                            <DataGrid.Style>
+                                <Style TargetType="DataGrid">
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Departments.Count}"
+                                                     Value="0">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.Style>
+
+                            <DataGrid.Columns>
+
+                                <DataGridTextColumn Header="Phòng ban"
+                                                    Width="*"
+                                                    Binding="{Binding Department}" />
+
+                                <DataGridTextColumn Header="Tổng nhân viên"
+                                                    Width="140"
+                                                    Binding="{Binding TotalEmployees}" />
+
+                                <DataGridTextColumn Header="Đang làm việc"
+                                                    Width="140"
+                                                    Binding="{Binding ActiveEmployees}" />
+
+                                <DataGridTextColumn Header="Đang nghỉ"
+                                                    Width="120"
+                                                    Binding="{Binding EmployeesOnLeave}" />
+
+                                <DataGridTextColumn Header="Ngừng hoạt động"
+                                                    Width="150"
+                                                    Binding="{Binding InactiveEmployees}" />
+
+                            </DataGrid.Columns>
+
+                        </DataGrid>
+
+                        <TextBlock Text="Chưa có dữ liệu phòng ban."
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Margin="0,24"
+                                   Foreground="{DynamicResource SecondaryTextBrush}">
+
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility"
+                                            Value="Collapsed" />
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Departments.Count}"
+                                         Value="0">
+                                            <Setter Property="Visibility"
+                                        Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+
+                        </TextBlock>
+
+                    </Grid>
+
+                </StackPanel>
+
+            </Border>
+        </StackPanel>
+
     </ScrollViewer>
 
 </UserControl>

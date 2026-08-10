@@ -11,11 +11,12 @@ public sealed class DashboardViewModelTests
     {
         var service = new StubDashboardService(
             new DashboardSummary(
-                TotalEmployees: 128,
-                ActiveEmployees: 119,
-                EmployeesOnLeave: 6,
-                InactiveEmployees: 3,
-                RecentEmployees: Array.Empty<RecentEmployee>()));
+            TotalEmployees: 128,
+            ActiveEmployees: 119,
+            EmployeesOnLeave: 6,
+            InactiveEmployees: 3,
+            RecentEmployees: Array.Empty<RecentEmployee>(),
+            Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
         var viewModel = new DashboardViewModel(service);
 
@@ -103,7 +104,8 @@ public sealed class DashboardViewModelTests
                     ActiveEmployees: 1,
                     EmployeesOnLeave: 1,
                     InactiveEmployees: 0,
-                    RecentEmployees: recentEmployees));
+                    RecentEmployees: recentEmployees,
+                    Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
         var viewModel =
             new DashboardViewModel(service);
@@ -146,5 +148,80 @@ public sealed class DashboardViewModelTests
         {
             return Task.FromResult(_summary);
         }
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenServiceReturnsDepartments_PopulatesDepartments()
+    {
+        var accounting =
+            new DepartmentEmployeeSummary(
+                Department: "Kế toán",
+                TotalEmployees: 3,
+                ActiveEmployees: 2,
+                EmployeesOnLeave: 0,
+                InactiveEmployees: 1);
+
+        var humanResources =
+            new DepartmentEmployeeSummary(
+                Department: "Nhân sự",
+                TotalEmployees: 2,
+                ActiveEmployees: 1,
+                EmployeesOnLeave: 1,
+                InactiveEmployees: 0);
+
+        IReadOnlyList<DepartmentEmployeeSummary> departments =
+            [accounting, humanResources];
+
+        var service =
+            new RecentEmployeesDashboardService(
+                new DashboardSummary(
+                    TotalEmployees: 5,
+                    ActiveEmployees: 3,
+                    EmployeesOnLeave: 1,
+                    InactiveEmployees: 1,
+                    RecentEmployees: Array.Empty<RecentEmployee>(),
+                    Departments: departments));
+
+        var viewModel =
+            new DashboardViewModel(service);
+
+        await viewModel.LoadAsync();
+
+        Assert.Equal(2, viewModel.Departments.Count);
+
+        Assert.Collection(
+            viewModel.Departments,
+            department =>
+            {
+                Assert.Equal(
+                    "Kế toán",
+                    department.Department);
+
+                Assert.Equal(
+                    3,
+                    department.TotalEmployees);
+
+                Assert.Equal(
+                    2,
+                    department.ActiveEmployees);
+
+                Assert.Equal(
+                    1,
+                    department.InactiveEmployees);
+            },
+            department =>
+            {
+                Assert.Equal(
+                    "Nhân sự",
+                    department.Department);
+
+                Assert.Equal(
+                    2,
+                    department.TotalEmployees);
+
+                Assert.Equal(
+                    1,
+                    department.EmployeesOnLeave);
+            });
     }
 }

@@ -70,11 +70,53 @@ public sealed class EfDashboardService : IDashboardService
                     employee.Status))
                 .ToListAsync(cancellationToken);
 
+        var departmentCounts =
+    await dbContext.Employees
+        .AsNoTracking()
+        .GroupBy(employee => employee.Department)
+        .Select(group => new
+        {
+            Department = group.Key,
+            TotalEmployees = group.Count(),
+
+            ActiveEmployees =
+                group.Count(
+                    employee =>
+                        employee.Status ==
+                        EmployeeStatus.Active),
+
+            EmployeesOnLeave =
+                group.Count(
+                    employee =>
+                        employee.Status ==
+                        EmployeeStatus.OnLeave),
+
+            InactiveEmployees =
+                group.Count(
+                    employee =>
+                        employee.Status ==
+                        EmployeeStatus.Inactive)
+        })
+        .OrderBy(item => item.Department)
+        .ToListAsync(cancellationToken);
+
+        List<DepartmentEmployeeSummary> departments =
+            departmentCounts
+                .Select(item =>
+                    new DepartmentEmployeeSummary(
+                        item.Department,
+                        item.TotalEmployees,
+                        item.ActiveEmployees,
+                        item.EmployeesOnLeave,
+                        item.InactiveEmployees))
+                .ToList();
+
         return new DashboardSummary(
             TotalEmployees: totalEmployees,
             ActiveEmployees: activeEmployees,
             EmployeesOnLeave: employeesOnLeave,
             InactiveEmployees: inactiveEmployees,
-            RecentEmployees: recentEmployees);
+            RecentEmployees: recentEmployees,
+            Departments: departments);
     }
 }

@@ -1,3 +1,4 @@
+using HrManagement.Application.Dashboard;
 using HrManagement.Domain.Employees;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Persistence;
@@ -91,12 +92,14 @@ public sealed class EfDashboardServiceTests
         Assert.Equal(0, summary.EmployeesOnLeave);
         Assert.Equal(0, summary.InactiveEmployees);
         Assert.Empty(summary.RecentEmployees);
+        Assert.Empty(summary.Departments);
     }
 
     private static Employee CreateEmployee(
-        string employeeCode,
-        EmployeeStatus status,
-        DateOnly? hireDate = null)
+    string employeeCode,
+    EmployeeStatus status,
+    DateOnly? hireDate = null,
+    string department = "Phòng ban kiểm thử")
     {
         return new Employee(
             Guid.NewGuid(),
@@ -106,7 +109,7 @@ public sealed class EfDashboardServiceTests
             null,
             null,
             hireDate ?? new DateOnly(2024, 1, 1),
-            "Phòng ban kiểm thử",
+            department,
             "Nhân viên",
             status);
     }
@@ -227,5 +230,86 @@ public sealed class EfDashboardServiceTests
         Assert.Equal(
             EmployeeStatus.Inactive,
             summary.RecentEmployees[0].Status);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_ReturnsEmployeeCountsByDepartment()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database.EnsureCreatedAsync();
+
+            dbContext.Employees.AddRange(
+                CreateEmployee(
+                    "EMP001",
+                    EmployeeStatus.Active,
+                    department: "Kế toán"),
+
+                CreateEmployee(
+                    "EMP002",
+                    EmployeeStatus.Active,
+                    department: "Kế toán"),
+
+                CreateEmployee(
+                    "EMP003",
+                    EmployeeStatus.Inactive,
+                    department: "Kế toán"),
+
+                CreateEmployee(
+                    "EMP004",
+                    EmployeeStatus.Active,
+                    department: "Nhân sự"),
+
+                CreateEmployee(
+                    "EMP005",
+                    EmployeeStatus.OnLeave,
+                    department: "Nhân sự"));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var factory =
+            new TestDbContextFactory(options);
+
+        var service =
+            new EfDashboardService(factory);
+
+        DashboardSummary summary =
+            await service.GetSummaryAsync();
+
+        Assert.Equal(2, summary.Departments.Count);
+
+        DepartmentEmployeeSummary accounting =
+            Assert.Single(
+                summary.Departments,
+                department =>
+                    department.Department == "Kế toán");
+
+        Assert.Equal(3, accounting.TotalEmployees);
+        Assert.Equal(2, accounting.ActiveEmployees);
+        Assert.Equal(0, accounting.EmployeesOnLeave);
+        Assert.Equal(1, accounting.InactiveEmployees);
+
+        DepartmentEmployeeSummary humanResources =
+            Assert.Single(
+                summary.Departments,
+                department =>
+                    department.Department == "Nhân sự");
+
+        Assert.Equal(2, humanResources.TotalEmployees);
+        Assert.Equal(1, humanResources.ActiveEmployees);
+        Assert.Equal(1, humanResources.EmployeesOnLeave);
+        Assert.Equal(0, humanResources.InactiveEmployees);
     }
 }
