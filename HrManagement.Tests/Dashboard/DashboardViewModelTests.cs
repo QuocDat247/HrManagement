@@ -13,7 +13,7 @@ public sealed class DashboardViewModelTests
                 TotalEmployees: 128,
                 ActiveEmployees: 119,
                 EmployeesOnLeave: 6,
-                ContractsExpiringSoon: 4));
+                InactiveEmployees: 3));
 
         var viewModel = new DashboardViewModel(service);
 
@@ -22,7 +22,7 @@ public sealed class DashboardViewModelTests
         Assert.Equal(128, viewModel.TotalEmployees);
         Assert.Equal(119, viewModel.ActiveEmployees);
         Assert.Equal(6, viewModel.EmployeesOnLeave);
-        Assert.Equal(4, viewModel.ContractsExpiringSoon);
+        Assert.Equal(3, viewModel.InactiveEmployees);
 
         Assert.False(viewModel.IsLoading);
         Assert.Null(viewModel.ErrorMessage);

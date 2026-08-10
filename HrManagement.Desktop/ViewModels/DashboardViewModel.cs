@@ -18,7 +18,7 @@ public sealed partial class DashboardViewModel : ObservableObject
     private int employeesOnLeave;
 
     [ObservableProperty]
-    private int contractsExpiringSoon;
+    private int inactiveEmployees;
 
     [ObservableProperty]
     private bool isLoading;
@@ -50,7 +50,7 @@ public sealed partial class DashboardViewModel : ObservableObject
             TotalEmployees = summary.TotalEmployees;
             ActiveEmployees = summary.ActiveEmployees;
             EmployeesOnLeave = summary.EmployeesOnLeave;
-            ContractsExpiringSoon = summary.ContractsExpiringSoon;
+            InactiveEmployees = summary.InactiveEmployees;
         }
         catch (Exception)
         {

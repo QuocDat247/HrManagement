@@ -83,10 +83,10 @@
                 <Border Grid.Column="6"
                         Style="{StaticResource CardBorderStyle}">
                     <StackPanel>
-                        <TextBlock Text="Hợp đồng sắp hết hạn"
+                        <TextBlock Text="Ngừng hoạt động"
                                    Style="{StaticResource SecondaryTextStyle}" />
 
-                        <TextBlock Text="{Binding ContractsExpiringSoon}"
+                        <TextBlock Text="{Binding InactiveEmployees}"
                                    Margin="0,12,0,0"
                                    FontSize="28"
                                    FontWeight="SemiBold"

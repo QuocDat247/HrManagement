@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
                 options.UseSqlite(
                     "Data Source=hrmanagement.db"));
 
-        services.AddSingleton<IDashboardService, FakeDashboardService>();
+        services.AddSingleton<IDashboardService, EfDashboardService>();
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
         services.AddScoped<IEmployeeService, EmployeeService>();

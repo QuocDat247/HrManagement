@@ -4,4 +4,4 @@ public sealed record DashboardSummary(
     int TotalEmployees,
     int ActiveEmployees,
     int EmployeesOnLeave,
-    int ContractsExpiringSoon);
+    int InactiveEmployees);
