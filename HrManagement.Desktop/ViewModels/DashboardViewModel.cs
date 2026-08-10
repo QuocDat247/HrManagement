@@ -26,6 +26,10 @@ public sealed partial class DashboardViewModel : ObservableObject
     [ObservableProperty]
     private string? errorMessage;
 
+    [ObservableProperty]
+    private IReadOnlyList<RecentEmployee> recentEmployees =
+    Array.Empty<RecentEmployee>();
+
     public string Title => "Tổng quan";
 
     public IAsyncRelayCommand LoadCommand { get; }
@@ -51,6 +55,7 @@ public sealed partial class DashboardViewModel : ObservableObject
             ActiveEmployees = summary.ActiveEmployees;
             EmployeesOnLeave = summary.EmployeesOnLeave;
             InactiveEmployees = summary.InactiveEmployees;
+            RecentEmployees = summary.RecentEmployees;
         }
         catch (Exception)
         {

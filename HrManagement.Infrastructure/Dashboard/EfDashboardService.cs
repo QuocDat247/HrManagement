@@ -54,10 +54,27 @@ public sealed class EfDashboardService : IDashboardService
         int totalEmployees =
             statusCounts.Sum(item => item.Count);
 
+        List<RecentEmployee> recentEmployees =
+            await dbContext.Employees
+                .AsNoTracking()
+                .OrderByDescending(employee => employee.HireDate)
+                .ThenBy(employee => employee.EmployeeCode)
+                .Take(5)
+                .Select(employee => new RecentEmployee(
+                    employee.Id,
+                    employee.EmployeeCode,
+                    employee.FullName,
+                    employee.Department,
+                    employee.Position,
+                    employee.HireDate,
+                    employee.Status))
+                .ToListAsync(cancellationToken);
+
         return new DashboardSummary(
             TotalEmployees: totalEmployees,
             ActiveEmployees: activeEmployees,
             EmployeesOnLeave: employeesOnLeave,
-            InactiveEmployees: inactiveEmployees);
+            InactiveEmployees: inactiveEmployees,
+            RecentEmployees: recentEmployees);
     }
 }

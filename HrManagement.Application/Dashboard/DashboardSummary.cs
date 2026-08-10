@@ -4,4 +4,5 @@ public sealed record DashboardSummary(
     int TotalEmployees,
     int ActiveEmployees,
     int EmployeesOnLeave,
-    int InactiveEmployees);
+    int InactiveEmployees,
+    IReadOnlyList<RecentEmployee> RecentEmployees);
