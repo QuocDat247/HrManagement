@@ -22,6 +22,12 @@
 
     <PackageVersion Include="xunit.runner.visualstudio"
                     Version="2.5.3" />
+
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite"
+                    Version="8.0.29" />
+
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design"
+                    Version="8.0.29" />
   </ItemGroup>
 
 </Project>
