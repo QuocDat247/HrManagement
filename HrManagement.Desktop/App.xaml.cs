@@ -2,6 +2,7 @@ using System.Windows;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
 using HrManagement.Desktop.Navigation;
+using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
@@ -89,6 +90,11 @@ public partial class App : System.Windows.Application
         services.AddTransient<EmployeesViewModel>();
         services.AddSingleton<IThemeService, ThemeService>();
         services.AddInfrastructure();
+        services.AddTransient<AddEmployeeViewModel>();
+        services.AddTransient<AddEmployeeWindow>();
+        services.AddSingleton<IEmployeeDialogService, EmployeeDialogService>();
+        services.AddTransient<EditEmployeeViewModel>();
+        services.AddTransient<EditEmployeeWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

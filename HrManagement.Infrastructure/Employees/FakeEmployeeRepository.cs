@@ -5,7 +5,7 @@ namespace HrManagement.Infrastructure.Employees;
 
 public sealed class FakeEmployeeRepository : IEmployeeRepository
 {
-    private static readonly IReadOnlyList<Employee> Employees =
+    private static readonly List<Employee> Employees =
         new List<Employee>
         {
             new(
@@ -69,11 +69,71 @@ public sealed class FakeEmployeeRepository : IEmployeeRepository
                 EmployeeStatus.Inactive)
         };
 
+
+    public Task<Employee?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Employee? employee =
+            Employees.FirstOrDefault(employee => employee.Id == id);
+
+        return Task.FromResult(employee);
+    }
+
+    public Task<Employee?> GetByEmployeeCodeAsync(
+        string employeeCode,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Employee? employee =
+            Employees.FirstOrDefault(
+                employee =>
+                    string.Equals(
+                        employee.EmployeeCode,
+                        employeeCode.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+
+        return Task.FromResult(employee);
+    }
+
+    public Task AddAsync(
+        Employee employee,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Employees.Add(employee);
+
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<Employee>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        return Task.FromResult(Employees);
+        return Task.FromResult<IReadOnlyList<Employee>>(Employees);
+    }
+
+    public Task UpdateAsync(
+    Employee employee,
+    CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        int index =
+            Employees.FindIndex(
+                existingEmployee =>
+                    existingEmployee.Id == employee.Id);
+
+        if (index >= 0)
+        {
+            Employees[index] = employee;
+        }
+
+        return Task.CompletedTask;
     }
 }

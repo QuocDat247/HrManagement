@@ -13,14 +13,45 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel Grid.Row="0">
-            <TextBlock Text="Nhân viên"
-                       Style="{StaticResource PageTitleTextStyle}" />
+        <Grid Grid.Row="0">
 
-            <TextBlock Text="Danh sách nhân viên trong hệ thống"
-                       Margin="0,6,0,0"
-                       Style="{StaticResource SecondaryTextStyle}" />
-        </StackPanel>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Nhân viên"
+                   Style="{StaticResource PageTitleTextStyle}" />
+
+                <TextBlock Text="Danh sách nhân viên trong hệ thống"
+                   Margin="0,6,0,0"
+                   Style="{StaticResource SecondaryTextStyle}" />
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Width="140"
+                    Height="36"
+                    Content="Ngừng hoạt động"
+                    Command="{Binding DeactivateEmployeeCommand}" />
+
+            <Button Grid.Column="3"
+                    Width="120"
+                    Height="36"
+                    Content="Sửa nhân viên"
+                    Command="{Binding EditEmployeeCommand}" />
+
+            <Button Grid.Column="5"
+                    Width="130"
+                    Height="36"
+                    Content="Thêm nhân viên"
+                    Command="{Binding AddEmployeeCommand}" />
+
+        </Grid>
 
         <!-- Search / Filter -->
         <Grid Grid.Row="2">
@@ -72,10 +103,13 @@
                 Style="{StaticResource CardBorderStyle}">
 
             <DataGrid ItemsSource="{Binding Employees}"
+                      SelectedItem="{Binding SelectedEmployee}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserAddRows="False"
                       CanUserDeleteRows="False"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
                       HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal"
                       BorderThickness="0">

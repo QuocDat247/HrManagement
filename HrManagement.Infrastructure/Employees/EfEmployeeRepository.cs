@@ -28,4 +28,67 @@ public sealed class EfEmployeeRepository : IEmployeeRepository
             .OrderBy(employee => employee.EmployeeCode)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<Employee?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        return await dbContext.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                employee => employee.Id == id,
+                cancellationToken);
+    }
+
+    public async Task<Employee?> GetByEmployeeCodeAsync(
+        string employeeCode,
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        string normalizedCode = employeeCode.Trim();
+
+        return await dbContext.Employees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                employee =>
+                    employee.EmployeeCode == normalizedCode,
+                cancellationToken);
+    }
+
+    public async Task AddAsync(
+        Employee employee,
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        await dbContext.Employees.AddAsync(
+            employee,
+            cancellationToken);
+
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+    }
+
+    public async Task UpdateAsync(
+        Employee employee,
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        dbContext.Employees.Update(employee);
+
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+    }
 }

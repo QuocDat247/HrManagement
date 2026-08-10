@@ -1,4 +1,5 @@
 using HrManagement.Application.Employees;
+using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
 
@@ -25,7 +26,9 @@ public sealed class EmployeesViewModelTests
         ];
 
         var service = new StubEmployeeService(employees);
-        var viewModel = new EmployeesViewModel(service);
+        var viewModel = new EmployeesViewModel(
+            service,
+            new StubEmployeeDialogService());
 
         await viewModel.LoadAsync();
 
@@ -39,7 +42,9 @@ public sealed class EmployeesViewModelTests
     public async Task LoadAsync_WhenServiceFails_ClearsEmployeesAndSetsError()
     {
         var service = new FailingEmployeeService();
-        var viewModel = new EmployeesViewModel(service);
+        var viewModel = new EmployeesViewModel(
+            service,
+            new StubEmployeeDialogService());
 
         await viewModel.LoadAsync();
 
@@ -69,7 +74,9 @@ public sealed class EmployeesViewModelTests
         ];
 
         var service = new StubEmployeeService(employees);
-        var viewModel = new EmployeesViewModel(service);
+        var viewModel = new EmployeesViewModel(
+            service,
+            new StubEmployeeDialogService());
 
         viewModel.SearchText = "An";
         viewModel.SelectedStatusOption =
@@ -89,27 +96,524 @@ public sealed class EmployeesViewModelTests
     {
         private readonly IReadOnlyList<Employee> _employees;
 
+        public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
+            Guid employeeId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new DeactivateEmployeeResult(
+                    IsSuccessful: true));
+        }
+
+        public Task<UpdateEmployeeResult> UpdateEmployeeAsync(
+            UpdateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new UpdateEmployeeResult(
+                    IsSuccessful: true));
+        }
+
         public StubEmployeeService(IReadOnlyList<Employee> employees)
         {
             _employees = employees;
         }
 
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
-                EmployeeFilter? filter = null,
-    CancellationToken cancellationToken = default)
+            EmployeeFilter? filter = null,
+            CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_employees);
+        }
+
+        public Task<CreateEmployeeResult> CreateEmployeeAsync(
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CreateEmployeeResult(
+                    IsSuccessful: true,
+                    EmployeeId: Guid.NewGuid()));
         }
     }
 
     private sealed class FailingEmployeeService : IEmployeeService
     {
+        public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
+            Guid employeeId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new DeactivateEmployeeResult(
+                    IsSuccessful: false,
+                    ErrorMessage: "Test failure"));
+        }
+
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
             EmployeeFilter? filter = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromException<IReadOnlyList<Employee>>(
                 new InvalidOperationException("Test failure"));
+        }
+
+        public Task<UpdateEmployeeResult> UpdateEmployeeAsync(
+        UpdateEmployeeRequest request,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new UpdateEmployeeResult(
+                    IsSuccessful: false,
+                    ErrorMessage: "Test failure"));
+        }
+
+        public Task<CreateEmployeeResult> CreateEmployeeAsync(
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CreateEmployeeResult(
+                    IsSuccessful: false,
+                    ErrorMessage: "Test failure"));
+        }
+    }
+
+    private sealed class StubEmployeeDialogService : IEmployeeDialogService
+    {
+        public bool ConfirmDeactivateEmployee(Employee employee)
+        {
+            return false;
+        }
+
+        public bool ShowAddEmployeeDialog()
+        {
+            return false;
+        }
+
+        public bool ShowEditEmployeeDialog(Employee employee)
+        {
+            return false;
+        }
+    }
+
+    [Fact]
+    public async Task AddEmployeeCommand_WhenDialogSaves_ReloadsEmployees()
+    {
+        IReadOnlyList<Employee> initialEmployees =
+        [
+            new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active)
+        ];
+
+        IReadOnlyList<Employee> reloadedEmployees =
+        [
+            .. initialEmployees,
+
+        new Employee(
+            Guid.NewGuid(),
+            "EMP002",
+            "Trần Thị Bình",
+            null,
+            null,
+            null,
+            new DateOnly(2023, 1, 10),
+            "Kế toán",
+            "Kế toán viên",
+            EmployeeStatus.Active)
+        ];
+
+        var service =
+            new ReloadingEmployeeService(
+                initialEmployees,
+                reloadedEmployees);
+
+        var dialogService =
+            new SuccessfulEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        Assert.Single(viewModel.Employees);
+
+        await viewModel.AddEmployeeCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, viewModel.Employees.Count);
+        Assert.Equal(2, service.LoadCallCount);
+    }
+
+    private sealed class ReloadingEmployeeService
+    : IEmployeeService
+    {
+        private readonly IReadOnlyList<Employee> _firstResult;
+        private readonly IReadOnlyList<Employee> _secondResult;
+
+        public int LoadCallCount { get; private set; }
+
+        public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
+            Guid employeeId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new DeactivateEmployeeResult(
+                    IsSuccessful: true));
+        }
+        public Task<UpdateEmployeeResult> UpdateEmployeeAsync(
+        UpdateEmployeeRequest request,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new UpdateEmployeeResult(
+                    IsSuccessful: true));
+        }
+
+        public ReloadingEmployeeService(
+            IReadOnlyList<Employee> firstResult,
+            IReadOnlyList<Employee> secondResult)
+        {
+            _firstResult = firstResult;
+            _secondResult = secondResult;
+        }
+
+        public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
+            EmployeeFilter? filter = null,
+            CancellationToken cancellationToken = default)
+        {
+            LoadCallCount++;
+
+            IReadOnlyList<Employee> result =
+                LoadCallCount == 1
+                    ? _firstResult
+                    : _secondResult;
+
+            return Task.FromResult(result);
+        }
+
+        public Task<CreateEmployeeResult> CreateEmployeeAsync(
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CreateEmployeeResult(
+                    IsSuccessful: true,
+                    EmployeeId: Guid.NewGuid()));
+        }
+    }
+
+    private sealed class SuccessfulEmployeeDialogService
+        : IEmployeeDialogService
+    {
+        public bool ConfirmDeactivateEmployee(Employee employee)
+        {
+            return false;
+        }
+
+        public bool ShowAddEmployeeDialog()
+        {
+            return true;
+        }
+
+        public bool ShowEditEmployeeDialog(Employee employee)
+        {
+            return false;
+        }
+    }
+
+    [Fact]
+    public async Task EditEmployeeCommand_WhenDialogSaves_ReloadsEmployees()
+    {
+        Guid employeeId = Guid.NewGuid();
+
+        var originalEmployee = new Employee(
+            employeeId,
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var updatedEmployee = new Employee(
+            employeeId,
+            "EMP001",
+            "Nguyễn Văn An Updated",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên cao cấp",
+            EmployeeStatus.Active);
+
+        var service = new ReloadingEmployeeService(
+            [originalEmployee],
+            [updatedEmployee]);
+
+        var dialogService =
+            new SuccessfulEditEmployeeDialogService();
+
+        var viewModel = new EmployeesViewModel(
+            service,
+            dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedEmployee =
+            viewModel.Employees[0];
+
+        await viewModel.EditEmployeeCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, service.LoadCallCount);
+
+        Employee employee =
+            Assert.Single(viewModel.Employees);
+
+        Assert.Equal(
+            "Nguyễn Văn An Updated",
+            employee.FullName);
+
+        Assert.Equal(
+            "Chuyên viên cao cấp",
+            employee.Position);
+
+        Assert.Null(viewModel.SelectedEmployee);
+
+        Assert.Same(
+            originalEmployee,
+            dialogService.EmployeePassedToDialog);
+    }
+
+    private sealed class SuccessfulEditEmployeeDialogService
+    : IEmployeeDialogService
+    {
+        public bool ConfirmDeactivateEmployee(Employee employee)
+        {
+            return false;
+        }
+
+        public Employee? EmployeePassedToDialog { get; private set; }
+
+        public bool ShowAddEmployeeDialog()
+        {
+            return false;
+        }
+
+        public bool ShowEditEmployeeDialog(Employee employee)
+        {
+            EmployeePassedToDialog = employee;
+
+            return true;
+        }
+    }
+
+    [Fact]
+    public async Task DeactivateEmployeeCommand_WhenConfirmed_DeactivatesAndReloads()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var inactiveEmployee = new Employee(
+            employee.Id,
+            employee.EmployeeCode,
+            employee.FullName,
+            employee.Email,
+            employee.PhoneNumber,
+            employee.DateOfBirth,
+            employee.HireDate,
+            employee.Department,
+            employee.Position,
+            EmployeeStatus.Inactive);
+
+        var service = new DeactivateEmployeeServiceStub(
+            [employee],
+            [inactiveEmployee]);
+
+        var dialogService =
+            new ConfirmingEmployeeDialogService(confirm: true);
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedEmployee =
+            viewModel.Employees[0];
+
+        await viewModel.DeactivateEmployeeCommand.ExecuteAsync(null);
+
+        Assert.Equal(employee.Id, service.DeactivatedEmployeeId);
+        Assert.Equal(2, service.LoadCallCount);
+
+        Employee result =
+            Assert.Single(viewModel.Employees);
+
+        Assert.Equal(EmployeeStatus.Inactive, result.Status);
+        Assert.Null(viewModel.SelectedEmployee);
+
+        Assert.Same(
+            employee,
+            dialogService.EmployeePassedToConfirmation);
+    }
+
+    [Fact]
+    public async Task DeactivateEmployeeCommand_WhenNotConfirmed_DoesNothing()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var service = new DeactivateEmployeeServiceStub(
+            [employee],
+            [employee]);
+
+        var dialogService =
+            new ConfirmingEmployeeDialogService(confirm: false);
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedEmployee =
+            viewModel.Employees[0];
+
+        await viewModel.DeactivateEmployeeCommand.ExecuteAsync(null);
+
+        Assert.Null(service.DeactivatedEmployeeId);
+        Assert.Equal(1, service.LoadCallCount);
+
+        Assert.NotNull(viewModel.SelectedEmployee);
+        Assert.Equal(
+            EmployeeStatus.Active,
+            viewModel.SelectedEmployee.Status);
+    }
+
+    private sealed class ConfirmingEmployeeDialogService
+    : IEmployeeDialogService
+    {
+        private readonly bool _confirm;
+
+        public Employee? EmployeePassedToConfirmation { get; private set; }
+
+        public ConfirmingEmployeeDialogService(bool confirm)
+        {
+            _confirm = confirm;
+        }
+
+        public bool ShowAddEmployeeDialog()
+        {
+            return false;
+        }
+
+        public bool ShowEditEmployeeDialog(Employee employee)
+        {
+            return false;
+        }
+
+        public bool ConfirmDeactivateEmployee(Employee employee)
+        {
+            EmployeePassedToConfirmation = employee;
+
+            return _confirm;
+        }
+    }
+
+    private sealed class DeactivateEmployeeServiceStub
+    : IEmployeeService
+    {
+        private readonly IReadOnlyList<Employee> _firstResult;
+        private readonly IReadOnlyList<Employee> _secondResult;
+
+        public int LoadCallCount { get; private set; }
+
+        public Guid? DeactivatedEmployeeId { get; private set; }
+
+        public DeactivateEmployeeServiceStub(
+            IReadOnlyList<Employee> firstResult,
+            IReadOnlyList<Employee> secondResult)
+        {
+            _firstResult = firstResult;
+            _secondResult = secondResult;
+        }
+
+        public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
+            EmployeeFilter? filter = null,
+            CancellationToken cancellationToken = default)
+        {
+            LoadCallCount++;
+
+            IReadOnlyList<Employee> result =
+                LoadCallCount == 1
+                    ? _firstResult
+                    : _secondResult;
+
+            return Task.FromResult(result);
+        }
+
+        public Task<CreateEmployeeResult> CreateEmployeeAsync(
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CreateEmployeeResult(
+                    IsSuccessful: true,
+                    EmployeeId: Guid.NewGuid()));
+        }
+
+        public Task<UpdateEmployeeResult> UpdateEmployeeAsync(
+            UpdateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new UpdateEmployeeResult(
+                    IsSuccessful: true));
+        }
+
+        public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
+            Guid employeeId,
+            CancellationToken cancellationToken = default)
+        {
+            DeactivatedEmployeeId = employeeId;
+
+            return Task.FromResult(
+                new DeactivateEmployeeResult(
+                    IsSuccessful: true));
         }
     }
 }
