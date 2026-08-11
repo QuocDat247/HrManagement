@@ -543,8 +543,13 @@ public sealed class EmployeeServiceTests
 
         var service = new EmployeeService(repository);
 
+        DateOnly terminationDate =
+        new DateOnly(2026, 8, 1);
+
         DeactivateEmployeeResult result =
-            await service.DeactivateEmployeeAsync(employee.Id);
+        await service.DeactivateEmployeeAsync(
+        employee.Id,
+        terminationDate);
 
         Assert.True(result.IsSuccessful);
         Assert.Null(result.ErrorMessage);
@@ -578,8 +583,13 @@ public sealed class EmployeeServiceTests
 
         var service = new EmployeeService(repository);
 
+        DateOnly terminationDate =
+        new DateOnly(2026, 8, 1);
+
         DeactivateEmployeeResult result =
-            await service.DeactivateEmployeeAsync(employee.Id);
+        await service.DeactivateEmployeeAsync(
+        employee.Id,
+        terminationDate);
 
         Assert.True(result.IsSuccessful);
 
@@ -590,6 +600,9 @@ public sealed class EmployeeServiceTests
         Assert.Equal(
             EmployeeStatus.Inactive,
             updated.Status);
+        Assert.Equal(
+            terminationDate,
+            updated.TerminationDate);
     }
 
     [Fact]
@@ -707,5 +720,201 @@ public sealed class EmployeeServiceTests
 
         Assert.True(
             employee.RequiresProfileCompletion);
+    }
+
+    [Fact]
+    public async Task DeactivateEmployeeAsync_WhenTerminationDateIsMissing_ReturnsFailure()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP100",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2024, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(employee);
+
+        var service =
+            new EmployeeService(repository);
+
+        DeactivateEmployeeResult result =
+            await service.DeactivateEmployeeAsync(employee.Id);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(
+            "Vui lòng chọn ngày nghỉ việc.",
+            result.ErrorMessage);
+
+        Employee? unchanged =
+            await repository.GetByIdAsync(employee.Id);
+
+        Assert.NotNull(unchanged);
+        Assert.Equal(EmployeeStatus.Active, unchanged.Status);
+        Assert.Null(unchanged.TerminationDate);
+    }
+
+    [Fact]
+    public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsFailure()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP101",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2024, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(employee);
+
+        var service =
+            new EmployeeService(repository);
+
+        DateOnly tomorrow =
+            DateOnly.FromDateTime(DateTime.Today)
+                .AddDays(1);
+
+        DeactivateEmployeeResult result =
+            await service.DeactivateEmployeeAsync(
+                employee.Id,
+                tomorrow);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(
+            "Ngày nghỉ việc không thể ở tương lai.",
+            result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeAsync_WhenChangingActiveToInactive_ReturnsFailure()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP102",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2024, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(employee);
+
+        var service =
+            new EmployeeService(repository);
+
+        var request = new UpdateEmployeeRequest(
+            employee.Id,
+            employee.EmployeeCode,
+            employee.FullName,
+            employee.Email,
+            employee.PhoneNumber,
+            employee.DateOfBirth,
+            employee.HireDate,
+            employee.Department,
+            employee.Position,
+            EmployeeStatus.Inactive);
+
+        UpdateEmployeeResult result =
+            await service.UpdateEmployeeAsync(request);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(
+            "Vui lòng sử dụng chức năng Ngừng hoạt động để ghi nhận ngày nghỉ việc.",
+            result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeAsync_WhenInactive_PreservesTerminationDate()
+    {
+        DateOnly terminationDate =
+            new DateOnly(2026, 7, 31);
+
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP103",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2024, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Inactive,
+            terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(employee);
+
+        var service =
+            new EmployeeService(repository);
+
+        var request = new UpdateEmployeeRequest(
+            employee.Id,
+            employee.EmployeeCode,
+            "Nhân viên đã cập nhật",
+            employee.Email,
+            employee.PhoneNumber,
+            employee.DateOfBirth,
+            employee.HireDate,
+            employee.Department,
+            employee.Position,
+            EmployeeStatus.Inactive);
+
+        UpdateEmployeeResult result =
+            await service.UpdateEmployeeAsync(request);
+
+        Assert.True(result.IsSuccessful);
+
+        Employee? updated =
+            await repository.GetByIdAsync(employee.Id);
+
+        Assert.NotNull(updated);
+
+        Assert.Equal(
+            terminationDate,
+            updated.TerminationDate);
+    }
+
+    [Fact]
+    public async Task CreateEmployeeAsync_WhenStatusIsInactive_ReturnsFailure()
+    {
+        var repository =
+            new InMemoryEmployeeRepository();
+
+        var service =
+            new EmployeeService(repository);
+
+        var request = new CreateEmployeeRequest(
+            "EMP104",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2026, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Inactive);
+
+        CreateEmployeeResult result =
+            await service.CreateEmployeeAsync(request);
+
+        Assert.False(result.IsSuccessful);
+        Assert.Equal(
+            "Không thể tạo mới nhân viên ở trạng thái ngừng hoạt động.",
+            result.ErrorMessage);
     }
 }

@@ -1,0 +1,80 @@
+<Window x:Class="HrManagement.Desktop.Views.DeactivateEmployeeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ngừng hoạt động nhân viên"
+        Width="460"
+        Height="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Ngừng hoạt động nhân viên"
+                   FontSize="20"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+        <StackPanel Grid.Row="1"
+                    Margin="0,24,0,0">
+
+            <TextBlock Text="{Binding EmployeeCode}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+            <TextBlock Text="{Binding FullName}"
+                       Margin="0,4,0,20"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+            <TextBlock Text="Ngày vào làm"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+            <TextBlock Text="{Binding HireDate,
+                                      StringFormat={}{0:dd/MM/yyyy}}"
+                       Margin="0,6,0,16"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+            <TextBlock Text="Ngày nghỉ việc"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+            <DatePicker Margin="0,6,0,12"
+            SelectedDate="{Binding TerminationDate,
+                                  Mode=TwoWay}"
+            DisplayDateStart="{Binding HireDate,
+                                      Mode=OneWay}"
+            DisplayDateEnd="{Binding Today,
+                                    Mode=OneWay}" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Foreground="{DynamicResource WarningBrush}"
+                       TextWrapping="Wrap" />
+
+        </StackPanel>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <Button Content="Hủy"
+                    Width="90"
+                    Height="36"
+                    Margin="0,0,8,0"
+                    IsCancel="True" />
+
+            <Button Content="Xác nhận"
+                    Width="100"
+                    Height="36"
+                    IsDefault="True"
+                    Command="{Binding ConfirmCommand}" />
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>

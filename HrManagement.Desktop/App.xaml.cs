@@ -98,6 +98,8 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
         IEmployeeNavigationService,
         EmployeeNavigationService>();
+        services.AddTransient<DeactivateEmployeeViewModel>();
+        services.AddTransient<DeactivateEmployeeWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

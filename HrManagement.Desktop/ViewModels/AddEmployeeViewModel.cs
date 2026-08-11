@@ -43,7 +43,10 @@ public sealed partial class AddEmployeeViewModel : ObservableObject
     private bool isBusy;
 
     public IReadOnlyList<EmployeeStatus> StatusOptions { get; } =
-        Enum.GetValues<EmployeeStatus>();
+    [
+        EmployeeStatus.Active,
+        EmployeeStatus.OnLeave
+    ];
 
     public IAsyncRelayCommand SaveCommand { get; }
 

@@ -99,6 +99,7 @@ public sealed class EmployeesViewModelTests
 
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
@@ -142,6 +143,7 @@ public sealed class EmployeesViewModelTests
     {
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
@@ -181,20 +183,13 @@ public sealed class EmployeesViewModelTests
 
     private sealed class StubEmployeeDialogService : IEmployeeDialogService
     {
-        public bool ConfirmDeactivateEmployee(Employee employee)
+        public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
-            return false;
+            return null;
         }
 
-        public bool ShowAddEmployeeDialog()
-        {
-            return false;
-        }
-
-        public bool ShowEditEmployeeDialog(Employee employee)
-        {
-            return false;
-        }
+        public bool ShowAddEmployeeDialog() => false;
+        public bool ShowEditEmployeeDialog(Employee employee) => false;
     }
 
     [Fact]
@@ -265,6 +260,7 @@ public sealed class EmployeesViewModelTests
 
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
@@ -313,23 +309,15 @@ public sealed class EmployeesViewModelTests
         }
     }
 
-    private sealed class SuccessfulEmployeeDialogService
-        : IEmployeeDialogService
+    private sealed class SuccessfulEmployeeDialogService : IEmployeeDialogService
     {
-        public bool ConfirmDeactivateEmployee(Employee employee)
+        public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
-            return false;
+            return null;
         }
 
-        public bool ShowAddEmployeeDialog()
-        {
-            return true;
-        }
-
-        public bool ShowEditEmployeeDialog(Employee employee)
-        {
-            return false;
-        }
+        public bool ShowAddEmployeeDialog() => true;
+        public bool ShowEditEmployeeDialog(Employee employee) => false;
     }
 
     [Fact]
@@ -399,25 +387,20 @@ public sealed class EmployeesViewModelTests
             dialogService.EmployeePassedToDialog);
     }
 
-    private sealed class SuccessfulEditEmployeeDialogService
-    : IEmployeeDialogService
+    private sealed class SuccessfulEditEmployeeDialogService : IEmployeeDialogService
     {
-        public bool ConfirmDeactivateEmployee(Employee employee)
+        public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
-            return false;
+            return null;
         }
 
         public Employee? EmployeePassedToDialog { get; private set; }
 
-        public bool ShowAddEmployeeDialog()
-        {
-            return false;
-        }
+        public bool ShowAddEmployeeDialog() => false;
 
         public bool ShowEditEmployeeDialog(Employee employee)
         {
             EmployeePassedToDialog = employee;
-
             return true;
         }
     }
@@ -453,8 +436,12 @@ public sealed class EmployeesViewModelTests
             [employee],
             [inactiveEmployee]);
 
+        DateOnly terminationDate =
+    new DateOnly(2026, 8, 1);
+
         var dialogService =
-            new ConfirmingEmployeeDialogService(confirm: true);
+            new DeactivateEmployeeDialogServiceStub(
+                terminationDate);
 
         var viewModel =
             new EmployeesViewModel(
@@ -466,20 +453,35 @@ public sealed class EmployeesViewModelTests
         viewModel.SelectedEmployee =
             viewModel.Employees[0];
 
-        await viewModel.DeactivateEmployeeCommand.ExecuteAsync(null);
+        await viewModel
+            .DeactivateEmployeeCommand
+            .ExecuteAsync(null);
 
-        Assert.Equal(employee.Id, service.DeactivatedEmployeeId);
-        Assert.Equal(2, service.LoadCallCount);
+        Assert.Equal(
+            employee.Id,
+            service.DeactivatedEmployeeId);
+
+        Assert.Equal(
+            terminationDate,
+            service.TerminationDate);
+
+        Assert.Equal(
+            2,
+            service.LoadCallCount);
 
         Employee result =
             Assert.Single(viewModel.Employees);
 
-        Assert.Equal(EmployeeStatus.Inactive, result.Status);
-        Assert.Null(viewModel.SelectedEmployee);
+        Assert.Equal(
+            EmployeeStatus.Inactive,
+            result.Status);
+
+        Assert.Null(
+            viewModel.SelectedEmployee);
 
         Assert.Same(
             employee,
-            dialogService.EmployeePassedToConfirmation);
+            dialogService.EmployeePassedToDialog);
     }
 
     [Fact]
@@ -502,7 +504,8 @@ public sealed class EmployeesViewModelTests
             [employee]);
 
         var dialogService =
-            new ConfirmingEmployeeDialogService(confirm: false);
+            new DeactivateEmployeeDialogServiceStub(
+                terminationDate: null);
 
         var viewModel =
             new EmployeesViewModel(
@@ -514,44 +517,43 @@ public sealed class EmployeesViewModelTests
         viewModel.SelectedEmployee =
             viewModel.Employees[0];
 
-        await viewModel.DeactivateEmployeeCommand.ExecuteAsync(null);
+        await viewModel
+            .DeactivateEmployeeCommand
+            .ExecuteAsync(null);
 
-        Assert.Null(service.DeactivatedEmployeeId);
-        Assert.Equal(1, service.LoadCallCount);
+        Assert.Null(
+            service.DeactivatedEmployeeId);
 
-        Assert.NotNull(viewModel.SelectedEmployee);
+        Assert.Equal(
+            1,
+            service.LoadCallCount);
+
+        Assert.NotNull(
+            viewModel.SelectedEmployee);
+
         Assert.Equal(
             EmployeeStatus.Active,
             viewModel.SelectedEmployee.Status);
     }
 
-    private sealed class ConfirmingEmployeeDialogService
-    : IEmployeeDialogService
+    private sealed class DeactivateEmployeeDialogServiceStub : IEmployeeDialogService
     {
-        private readonly bool _confirm;
+        private readonly DateOnly? _terminationDate;
 
-        public Employee? EmployeePassedToConfirmation { get; private set; }
+        public Employee? EmployeePassedToDialog { get; private set; }
 
-        public ConfirmingEmployeeDialogService(bool confirm)
+        public DeactivateEmployeeDialogServiceStub(DateOnly? terminationDate)
         {
-            _confirm = confirm;
+            _terminationDate = terminationDate;
         }
 
-        public bool ShowAddEmployeeDialog()
-        {
-            return false;
-        }
+        public bool ShowAddEmployeeDialog() => false;
+        public bool ShowEditEmployeeDialog(Employee employee) => false;
 
-        public bool ShowEditEmployeeDialog(Employee employee)
+        public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
-            return false;
-        }
-
-        public bool ConfirmDeactivateEmployee(Employee employee)
-        {
-            EmployeePassedToConfirmation = employee;
-
-            return _confirm;
+            EmployeePassedToDialog = employee;
+            return _terminationDate;
         }
     }
 
@@ -564,6 +566,8 @@ public sealed class EmployeesViewModelTests
         public int LoadCallCount { get; private set; }
 
         public Guid? DeactivatedEmployeeId { get; private set; }
+
+        public DateOnly? TerminationDate { get; private set; }
 
         public DeactivateEmployeeServiceStub(
             IReadOnlyList<Employee> firstResult,
@@ -608,9 +612,11 @@ public sealed class EmployeesViewModelTests
 
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             DeactivatedEmployeeId = employeeId;
+            TerminationDate = terminationDate;
 
             return Task.FromResult(
                 new DeactivateEmployeeResult(
@@ -654,6 +660,7 @@ public sealed class EmployeesViewModelTests
 
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(

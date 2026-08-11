@@ -5,6 +5,85 @@ namespace HrManagement.Tests.Employees;
 public sealed class EmployeeTests
 {
     [Fact]
+    public void Constructor_WhenInactiveWithTerminationDate_SetsTerminationDate()
+    {
+        DateOnly terminationDate =
+            new DateOnly(2026, 7, 31);
+
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            "an@example.com",
+            "0901000001",
+            new DateOnly(1995, 5, 20),
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Inactive,
+            terminationDate: terminationDate);
+
+        Assert.Equal(
+            terminationDate,
+            employee.TerminationDate);
+    }
+
+    [Fact]
+    public void Constructor_WhenTerminationDateIsBeforeHireDate_Throws()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new Employee(
+                Guid.NewGuid(),
+                "EMP002",
+                "Trần Thị Bình",
+                "binh@example.com",
+                "0901000002",
+                new DateOnly(1994, 7, 10),
+                new DateOnly(2024, 1, 1),
+                "Kế toán",
+                "Kế toán viên",
+                EmployeeStatus.Inactive,
+                terminationDate:
+                    new DateOnly(2023, 12, 31)));
+    }
+
+    [Fact]
+    public void Constructor_WhenActiveHasTerminationDate_Throws()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new Employee(
+                Guid.NewGuid(),
+                "EMP003",
+                "Lê Minh Châu",
+                "chau@example.com",
+                "0901000003",
+                new DateOnly(1996, 3, 15),
+                new DateOnly(2023, 2, 10),
+                "Công nghệ thông tin",
+                "Lập trình viên",
+                EmployeeStatus.Active,
+                terminationDate:
+                    new DateOnly(2026, 8, 1)));
+    }
+
+    [Fact]
+    public void Constructor_WhenInactiveHasUnknownTerminationDate_AllowsNull()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP004",
+            "Võ Thu Hà",
+            null,
+            null,
+            null,
+            new DateOnly(2019, 6, 20),
+            "Hành chính",
+            "Chuyên viên hành chính",
+            EmployeeStatus.Inactive);
+
+        Assert.Null(employee.TerminationDate);
+    }
+    [Fact]
     public void Constructor_WithValidData_CreatesEmployee()
     {
         Guid id = Guid.NewGuid();

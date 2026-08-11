@@ -48,5 +48,7 @@ public sealed class EmployeeConfiguration
 
         builder.Property(employee => employee.Status)
             .IsRequired();
+
+        builder.Property(employee => employee.TerminationDate);
     }
 }

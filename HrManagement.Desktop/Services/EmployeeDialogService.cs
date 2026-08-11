@@ -44,26 +44,27 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
         return window.ShowDialog() == true;
     }
 
-    public bool ConfirmDeactivateEmployee(Employee employee)
+    public DateOnly? ShowDeactivateEmployeeDialog(
+    Employee employee)
     {
-        string message =
-            $"Bạn có chắc muốn ngừng hoạt động nhân viên " +
-            $"{employee.EmployeeCode} - {employee.FullName}?";
+        var window =
+            _serviceProvider
+                .GetRequiredService<DeactivateEmployeeWindow>();
 
-        if (System.Windows.Application.Current.MainWindow is Window owner)
+        window.LoadEmployee(employee);
+
+        if (System.Windows.Application.Current.MainWindow
+            is not null)
         {
-            return MessageBox.Show(
-                owner,
-                message,
-                "Xác nhận",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question) == MessageBoxResult.Yes;
+            window.Owner =
+                System.Windows.Application.Current.MainWindow;
         }
 
-        return MessageBox.Show(
-            message,
-            "Xác nhận",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question) == MessageBoxResult.Yes;
+        bool? result =
+            window.ShowDialog();
+
+        return result == true
+            ? window.SelectedTerminationDate
+            : null;
     }
 }

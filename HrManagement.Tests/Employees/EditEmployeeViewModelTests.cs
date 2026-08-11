@@ -124,6 +124,7 @@ public sealed class EditEmployeeViewModelTests
     {
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
+            DateOnly? terminationDate = null,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(
@@ -163,5 +164,70 @@ public sealed class EditEmployeeViewModelTests
 
             return Task.FromResult(UpdateResult);
         }
+    }
+
+    [Fact]
+    public void LoadEmployee_WhenActive_AllowsActiveAndOnLeaveStatuses()
+    {
+        var service = new StubEmployeeService();
+        var viewModel = new EditEmployeeViewModel(service);
+
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        viewModel.LoadEmployee(employee);
+
+        Assert.Equal(
+            [EmployeeStatus.Active, EmployeeStatus.OnLeave],
+            viewModel.StatusOptions);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            viewModel.SelectedStatus);
+    }
+
+    [Fact]
+    public void LoadEmployee_WhenInactive_AllowsOnlyInactiveStatus()
+    {
+        var service = new StubEmployeeService();
+        var viewModel = new EditEmployeeViewModel(service);
+
+        DateOnly terminationDate =
+            new DateOnly(2026, 8, 1);
+
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP002",
+            "Võ Thu Hà",
+            null,
+            null,
+            null,
+            new DateOnly(2019, 6, 20),
+            "Hành chính",
+            "Chuyên viên hành chính",
+            EmployeeStatus.Inactive,
+            terminationDate);
+
+        viewModel.LoadEmployee(employee);
+
+        EmployeeStatus status =
+            Assert.Single(viewModel.StatusOptions);
+
+        Assert.Equal(
+            EmployeeStatus.Inactive,
+            status);
+
+        Assert.Equal(
+            EmployeeStatus.Inactive,
+            viewModel.SelectedStatus);
     }
 }

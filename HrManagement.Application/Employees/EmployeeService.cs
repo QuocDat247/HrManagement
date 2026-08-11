@@ -83,6 +83,14 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: "Mã nhân viên đã tồn tại.");
         }
 
+        if (request.Status == EmployeeStatus.Inactive)
+        {
+            return new CreateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage:
+                    "Không thể tạo mới nhân viên ở trạng thái ngừng hoạt động.");
+        }
+
         Employee employee;
 
         try
@@ -144,6 +152,24 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: "Mã nhân viên đã tồn tại.");
         }
 
+        if (existingEmployee.Status != EmployeeStatus.Inactive
+            && request.Status == EmployeeStatus.Inactive)
+        {
+            return new UpdateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage:
+                    "Vui lòng sử dụng chức năng Ngừng hoạt động để ghi nhận ngày nghỉ việc.");
+        }
+
+        if (existingEmployee.Status == EmployeeStatus.Inactive
+            && request.Status != EmployeeStatus.Inactive)
+        {
+            return new UpdateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage:
+                    "Không thể thay đổi trạng thái của nhân viên đã ngừng hoạt động từ màn hình chỉnh sửa.");
+        }
+
         Employee updatedEmployee;
 
         try
@@ -158,7 +184,8 @@ public sealed class EmployeeService : IEmployeeService
                 request.HireDate,
                 request.Department,
                 request.Position,
-                request.Status);
+                request.Status,
+                terminationDate: existingEmployee.TerminationDate);
         }
         catch (ArgumentException ex)
         {
@@ -177,6 +204,7 @@ public sealed class EmployeeService : IEmployeeService
 
     public async Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
     Guid employeeId,
+    DateOnly? terminationDate = null,
     CancellationToken cancellationToken = default)
     {
         Employee? employee =
@@ -191,23 +219,54 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: "Không tìm thấy nhân viên.");
         }
 
+        // Không ghi đè lịch sử của employee đã nghỉ việc.
+        // Legacy employee có TerminationDate = null cũng được giữ nguyên.
         if (employee.Status == EmployeeStatus.Inactive)
         {
             return new DeactivateEmployeeResult(
                 IsSuccessful: true);
         }
 
-        var inactiveEmployee = new Employee(
-            employee.Id,
-            employee.EmployeeCode,
-            employee.FullName,
-            employee.Email,
-            employee.PhoneNumber,
-            employee.DateOfBirth,
-            employee.HireDate,
-            employee.Department,
-            employee.Position,
-            EmployeeStatus.Inactive);
+        if (!terminationDate.HasValue)
+        {
+            return new DeactivateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage: "Vui lòng chọn ngày nghỉ việc.");
+        }
+
+        DateOnly today =
+            DateOnly.FromDateTime(DateTime.Today);
+
+        if (terminationDate.Value > today)
+        {
+            return new DeactivateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage: "Ngày nghỉ việc không thể ở tương lai.");
+        }
+
+        Employee inactiveEmployee;
+
+        try
+        {
+            inactiveEmployee = new Employee(
+                employee.Id,
+                employee.EmployeeCode,
+                employee.FullName,
+                employee.Email,
+                employee.PhoneNumber,
+                employee.DateOfBirth,
+                employee.HireDate,
+                employee.Department,
+                employee.Position,
+                EmployeeStatus.Inactive,
+                terminationDate.Value);
+        }
+        catch (ArgumentException ex)
+        {
+            return new DeactivateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage: ex.Message);
+        }
 
         await _employeeRepository.UpdateAsync(
             inactiveEmployee,

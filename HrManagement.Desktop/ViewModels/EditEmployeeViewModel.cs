@@ -44,8 +44,12 @@ public sealed partial class EditEmployeeViewModel : ObservableObject
     [ObservableProperty]
     private bool isBusy;
 
-    public IReadOnlyList<EmployeeStatus> StatusOptions { get; } =
-        Enum.GetValues<EmployeeStatus>();
+    [ObservableProperty]
+    private IReadOnlyList<EmployeeStatus> statusOptions =
+    [
+        EmployeeStatus.Active,
+        EmployeeStatus.OnLeave
+    ];
 
     public IAsyncRelayCommand SaveCommand { get; }
 
@@ -76,6 +80,16 @@ public sealed partial class EditEmployeeViewModel : ObservableObject
 
         Department = employee.Department;
         Position = employee.Position;
+        StatusOptions =
+        employee.Status == EmployeeStatus.Inactive
+        ? [EmployeeStatus.Inactive]
+        :
+        [
+            EmployeeStatus.Active,
+            EmployeeStatus.OnLeave
+        ];
+
+        SelectedStatus = employee.Status;
         SelectedStatus = employee.Status;
 
         ErrorMessage = null;

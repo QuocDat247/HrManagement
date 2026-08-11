@@ -22,6 +22,8 @@ public sealed class Employee
 
     public EmployeeStatus Status { get; }
 
+    public DateOnly? TerminationDate { get; }
+
     public Employee(
         Guid id,
         string employeeCode,
@@ -32,7 +34,8 @@ public sealed class Employee
         DateOnly hireDate,
         string department,
         string position,
-        EmployeeStatus status)
+        EmployeeStatus status,
+        DateOnly? terminationDate = null)
     {
         if (id == Guid.Empty)
         {
@@ -81,6 +84,22 @@ public sealed class Employee
             throw new ArgumentOutOfRangeException(nameof(status));
         }
 
+        if (terminationDate.HasValue
+            && terminationDate.Value < hireDate)
+        {
+            throw new ArgumentException(
+                "Ngày nghỉ việc không thể trước ngày vào làm.",
+                nameof(terminationDate));
+        }
+
+        if (status != EmployeeStatus.Inactive
+            && terminationDate.HasValue)
+        {
+            throw new ArgumentException(
+                "Chỉ nhân viên ngừng hoạt động mới có ngày nghỉ việc.",
+                nameof(terminationDate));
+        }
+
         Id = id;
         EmployeeCode = employeeCode.Trim();
         FullName = fullName.Trim();
@@ -97,6 +116,7 @@ public sealed class Employee
         Department = department.Trim();
         Position = position.Trim();
         Status = status;
+        TerminationDate = terminationDate;
     }
 
     public bool HasMissingProfileInformation =>

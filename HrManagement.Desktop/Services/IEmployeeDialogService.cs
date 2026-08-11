@@ -6,7 +6,9 @@ public interface IEmployeeDialogService
 {
     bool ShowAddEmployeeDialog();
 
-    bool ShowEditEmployeeDialog(Employee employee);
+    bool ShowEditEmployeeDialog(
+        Employee employee);
 
-    bool ConfirmDeactivateEmployee(Employee employee);
+    DateOnly? ShowDeactivateEmployeeDialog(
+        Employee employee);
 }

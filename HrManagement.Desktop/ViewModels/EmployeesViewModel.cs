@@ -170,10 +170,11 @@ public sealed partial class EmployeesViewModel : ObservableObject
 
         Employee employee = SelectedEmployee;
 
-        bool confirmed =
-            _employeeDialogService.ConfirmDeactivateEmployee(employee);
+        DateOnly? terminationDate =
+        _employeeDialogService
+        .ShowDeactivateEmployeeDialog(employee);
 
-        if (!confirmed)
+        if (!terminationDate.HasValue)
         {
             return;
         }
@@ -183,8 +184,10 @@ public sealed partial class EmployeesViewModel : ObservableObject
             ErrorMessage = null;
 
             DeactivateEmployeeResult result =
-                await _employeeService.DeactivateEmployeeAsync(
-                    employee.Id);
+                await _employeeService
+                    .DeactivateEmployeeAsync(
+                        employee.Id,
+                        terminationDate.Value);
 
             if (!result.IsSuccessful)
             {

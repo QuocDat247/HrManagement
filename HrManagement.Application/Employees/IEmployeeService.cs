@@ -18,5 +18,6 @@ public interface IEmployeeService
 
     Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
         Guid employeeId,
+        DateOnly? terminationDate = null,
         CancellationToken cancellationToken = default);
 }
