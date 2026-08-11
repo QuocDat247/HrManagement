@@ -1,8 +1,18 @@
 <UserControl x:Class="HrManagement.Desktop.Views.EmployeesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:HrManagement.Desktop.Converters">
+
+    <UserControl.Resources>
+        <converters:EmployeeProfileWarningConverter x:Key="EmployeeProfileWarningConverter" />
+    </UserControl.Resources>
 
     <Grid Margin="32">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="36*"/>
+            <ColumnDefinition Width="5*"/>
+            <ColumnDefinition Width="31*"/>
+        </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -12,8 +22,10 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+
+
         <!-- Header -->
-        <Grid Grid.Row="0">
+        <Grid Grid.Row="0" Grid.ColumnSpan="3">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -53,8 +65,10 @@
 
         </Grid>
 
+
+
         <!-- Search / Filter -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,20,0,0">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -98,9 +112,17 @@
 
         </Grid>
 
+        <CheckBox Content="Chỉ hiển thị hồ sơ cần bổ sung"
+                IsChecked="{Binding RequiresProfileCompletionOnly,
+                                    Mode=TwoWay,
+                                    UpdateSourceTrigger=PropertyChanged}"
+                Command="{Binding SearchCommand}"
+                Margin="0,10,89,0"
+                VerticalAlignment="Top" Height="21" Grid.ColumnSpan="2" Grid.RowSpan="3" Grid.Row="1" />
+
         <!-- Employee table -->
-        <Border Grid.Row="4"
-                Style="{StaticResource CardBorderStyle}">
+        <Border Grid.Row="3"
+                Style="{StaticResource CardBorderStyle}" Grid.ColumnSpan="3" Margin="0,16,0,0" Grid.RowSpan="2">
 
             <DataGrid ItemsSource="{Binding Employees}"
                       SelectedItem="{Binding SelectedEmployee}"
@@ -114,27 +136,73 @@
                       GridLinesVisibility="Horizontal"
                       BorderThickness="0">
 
+
                 <DataGrid.Columns>
 
+                    <DataGridTemplateColumn Header="Hồ sơ"
+                        Width="70">
+
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+
+                                <TextBlock Text="⚠"
+                                           FontFamily="Segoe UI Symbol"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource WarningBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center">
+
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility"
+                                                    Value="Collapsed" />
+
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RequiresProfileCompletion}"
+                                                             Value="True">
+                                                    <Setter Property="Visibility"
+                                                            Value="Visible" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+
+                                    <TextBlock.ToolTip>
+                                        <ToolTip>
+                                            <TextBlock Text="{Binding Converter={StaticResource EmployeeProfileWarningConverter}}" />
+                                        </ToolTip>
+                                    </TextBlock.ToolTip>
+
+            </TextBlock>
+
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+
+                    </DataGridTemplateColumn>
+
                     <DataGridTextColumn Header="Mã NV"
-                                        Binding="{Binding EmployeeCode}"
-                                        Width="110" />
+                                        Width="100"
+                                        Binding="{Binding EmployeeCode}" />
 
                     <DataGridTextColumn Header="Họ và tên"
-                                        Binding="{Binding FullName}"
-                                        Width="*" />
+                                        Width="SizeToCells"
+                                        MinWidth="160"
+                                        Binding="{Binding FullName}" />
 
                     <DataGridTextColumn Header="Phòng ban"
-                                        Binding="{Binding Department}"
-                                        Width="180" />
+                                        Width="*"
+                                        MinWidth="140"
+                                        Binding="{Binding Department}" />
 
                     <DataGridTextColumn Header="Chức vụ"
-                                        Binding="{Binding Position}"
-                                        Width="220" />
+                                        Width="*"
+                                        MinWidth="160"
+                                        Binding="{Binding Position}" />
 
                     <DataGridTextColumn Header="Trạng thái"
-                                        Binding="{Binding Status}"
-                                        Width="130" />
+                                        Width="120"
+                                        Binding="{Binding Status}" />
 
                 </DataGrid.Columns>
 

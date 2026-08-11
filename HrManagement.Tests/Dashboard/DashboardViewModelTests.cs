@@ -1,4 +1,5 @@
 using HrManagement.Application.Dashboard;
+using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
 
@@ -19,7 +20,8 @@ public sealed class DashboardViewModelTests
             RecentEmployees: Array.Empty<RecentEmployee>(),
             Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
-        var viewModel = new DashboardViewModel(service);
+        var viewModel = new DashboardViewModel(service,
+                        new StubEmployeeNavigationService());
 
         await viewModel.LoadAsync();
 
@@ -38,7 +40,8 @@ public sealed class DashboardViewModelTests
     {
         var service = new FailingDashboardService();
 
-        var viewModel = new DashboardViewModel(service);
+        var viewModel = new DashboardViewModel(service,
+                        new StubEmployeeNavigationService());
 
         await viewModel.LoadAsync();
 
@@ -110,7 +113,7 @@ public sealed class DashboardViewModelTests
                     Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
         var viewModel =
-            new DashboardViewModel(service);
+            new DashboardViewModel(service, new StubEmployeeNavigationService());
 
         await viewModel.LoadAsync();
 
@@ -186,7 +189,7 @@ public sealed class DashboardViewModelTests
                     Departments: departments));
 
         var viewModel =
-            new DashboardViewModel(service);
+            new DashboardViewModel(service, new StubEmployeeNavigationService());
 
         await viewModel.LoadAsync();
 
@@ -243,12 +246,70 @@ public sealed class DashboardViewModelTests
                     Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
         var viewModel =
-            new DashboardViewModel(service);
+            new DashboardViewModel(service,
+             new StubEmployeeNavigationService());
 
         await viewModel.LoadAsync();
 
         Assert.Equal(
             3,
             viewModel.EmployeesMissingProfileInformation);
+    }
+
+    private sealed class StubEmployeeNavigationService
+    : IEmployeeNavigationService
+    {
+        public int ShowProfileCompletionRequiredCallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task ShowEmployeesRequiringProfileCompletionAsync()
+        {
+            ShowProfileCompletionRequiredCallCount++;
+
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task ShowProfileCompletionRequiredCommand_WhenProfilesAreMissing_NavigatesToEmployees()
+    {
+        var dashboardService =
+            new RecentEmployeesDashboardService(
+                new DashboardSummary(
+                    TotalEmployees: 3,
+                    ActiveEmployees: 3,
+                    EmployeesOnLeave: 0,
+                    InactiveEmployees: 0,
+                    EmployeesMissingProfileInformation: 2,
+                    RecentEmployees: Array.Empty<RecentEmployee>(),
+                    Departments:
+                        Array.Empty<DepartmentEmployeeSummary>()));
+
+        var navigationService =
+            new StubEmployeeNavigationService();
+
+        var viewModel =
+            new DashboardViewModel(
+                dashboardService,
+                navigationService);
+
+        await viewModel.LoadAsync();
+
+        Assert.True(
+            viewModel
+                .ShowProfileCompletionRequiredCommand
+                .CanExecute(null));
+
+        await viewModel
+            .ShowProfileCompletionRequiredCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            navigationService
+                .ShowProfileCompletionRequiredCallCount);
     }
 }

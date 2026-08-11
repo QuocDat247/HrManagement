@@ -644,4 +644,68 @@ public sealed class EmployeeServiceTests
             EmployeeStatus.Inactive,
             unchanged.Status);
     }
+
+    [Fact]
+    public async Task GetEmployeesAsync_WhenProfileCompletionFilterEnabled_ReturnsOnlyEmployeesRequiringCompletion()
+    {
+        var completeEmployee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            "an@example.com",
+            "0901000001",
+            new DateOnly(1995, 5, 20),
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        var incompleteActiveEmployee = new Employee(
+            Guid.NewGuid(),
+            "EMP002",
+            "Trần Thị Bình",
+            null,
+            "0901000002",
+            new DateOnly(1994, 7, 10),
+            new DateOnly(2023, 1, 1),
+            "Kế toán",
+            "Kế toán viên",
+            EmployeeStatus.Active);
+
+        var incompleteInactiveEmployee = new Employee(
+            Guid.NewGuid(),
+            "EMP003",
+            "Võ Thu Hà",
+            null,
+            null,
+            null,
+            new DateOnly(2019, 6, 20),
+            "Hành chính",
+            "Chuyên viên hành chính",
+            EmployeeStatus.Inactive);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                completeEmployee,
+                incompleteActiveEmployee,
+                incompleteInactiveEmployee);
+
+        var service =
+            new EmployeeService(repository);
+
+        IReadOnlyList<Employee> result =
+            await service.GetEmployeesAsync(
+                new EmployeeFilter(
+                    RequiresProfileCompletionOnly: true));
+
+        Employee employee =
+            Assert.Single(result);
+
+        Assert.Equal(
+            incompleteActiveEmployee.Id,
+            employee.Id);
+
+        Assert.True(
+            employee.RequiresProfileCompletion);
+    }
 }

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Dashboard;
+using HrManagement.Desktop.Services;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -37,16 +38,44 @@ public sealed partial class DashboardViewModel : ObservableObject
     private IReadOnlyList<DepartmentEmployeeSummary> departments =
     Array.Empty<DepartmentEmployeeSummary>();
 
+    private readonly IEmployeeNavigationService
+    _employeeNavigationService;
+
+    private bool CanShowProfileCompletionRequired()
+    {
+        return EmployeesMissingProfileInformation > 0;
+    }
+
+    private Task ShowProfileCompletionRequiredAsync()
+    {
+        return _employeeNavigationService
+            .ShowEmployeesRequiringProfileCompletionAsync();
+    }
+
+
     public string Title => "Tổng quan";
 
     public IAsyncRelayCommand LoadCommand { get; }
 
-    public DashboardViewModel(IDashboardService dashboardService)
+    public IAsyncRelayCommand ShowProfileCompletionRequiredCommand { get; }
+
+    public DashboardViewModel(
+    IDashboardService dashboardService,
+    IEmployeeNavigationService employeeNavigationService)
     {
         _dashboardService = dashboardService;
+        _employeeNavigationService = employeeNavigationService;
 
-        LoadCommand = new AsyncRelayCommand(LoadAsync);
+        LoadCommand =
+            new AsyncRelayCommand(LoadAsync);
+
+        ShowProfileCompletionRequiredCommand =
+            new AsyncRelayCommand(
+                ShowProfileCompletionRequiredAsync,
+                CanShowProfileCompletionRequired);
     }
+
+
 
     public async Task LoadAsync()
     {
@@ -64,6 +93,8 @@ public sealed partial class DashboardViewModel : ObservableObject
             InactiveEmployees = summary.InactiveEmployees;
             EmployeesMissingProfileInformation =
             summary.EmployeesMissingProfileInformation;
+            ShowProfileCompletionRequiredCommand
+            .NotifyCanExecuteChanged();
             RecentEmployees = summary.RecentEmployees;
             Departments = summary.Departments;
         }

@@ -81,4 +81,61 @@ public sealed class EmployeeTests
                 "Chuyên viên",
                 EmployeeStatus.Active));
     }
+
+    [Fact]
+    public void RequiresProfileCompletion_WhenActiveAndProfileIsComplete_ReturnsFalse()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP001",
+            "Nguyễn Văn An",
+            "an@example.com",
+            "0901000001",
+            new DateOnly(1995, 5, 20),
+            new DateOnly(2022, 3, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Active);
+
+        Assert.False(employee.HasMissingProfileInformation);
+        Assert.False(employee.RequiresProfileCompletion);
+    }
+
+    [Fact]
+    public void RequiresProfileCompletion_WhenActiveAndProfileIsMissingInformation_ReturnsTrue()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP002",
+            "Trần Thị Bình",
+            null,
+            "0901000002",
+            new DateOnly(1994, 7, 10),
+            new DateOnly(2023, 1, 1),
+            "Kế toán",
+            "Kế toán viên",
+            EmployeeStatus.Active);
+
+        Assert.True(employee.HasMissingProfileInformation);
+        Assert.True(employee.RequiresProfileCompletion);
+    }
+
+    [Fact]
+    public void RequiresProfileCompletion_WhenInactiveAndProfileIsMissingInformation_ReturnsFalse()
+    {
+        var employee = new Employee(
+            Guid.NewGuid(),
+            "EMP003",
+            "Võ Thu Hà",
+            null,
+            null,
+            null,
+            new DateOnly(2019, 6, 20),
+            "Hành chính",
+            "Chuyên viên hành chính",
+            EmployeeStatus.Inactive);
+
+        Assert.True(employee.HasMissingProfileInformation);
+        Assert.False(employee.RequiresProfileCompletion);
+    }
 }

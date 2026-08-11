@@ -4,4 +4,5 @@ namespace HrManagement.Application.Employees;
 
 public sealed record EmployeeFilter(
     string? SearchText = null,
-    EmployeeStatus? Status = null);
+    EmployeeStatus? Status = null,
+    bool RequiresProfileCompletionOnly = false);

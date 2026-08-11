@@ -98,4 +98,13 @@ public sealed class Employee
         Position = position.Trim();
         Status = status;
     }
+
+    public bool HasMissingProfileInformation =>
+    Email is null
+    || PhoneNumber is null
+    || DateOfBirth is null;
+
+    public bool RequiresProfileCompletion =>
+        Status != EmployeeStatus.Inactive
+        && HasMissingProfileInformation;
 }

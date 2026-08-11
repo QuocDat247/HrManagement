@@ -30,6 +30,9 @@ public sealed partial class EmployeesViewModel : ObservableObject
     [ObservableProperty]
     private Employee? selectedEmployee;
 
+    [ObservableProperty]
+    private bool requiresProfileCompletionOnly;
+
     public string Title => "Nhân viên";
 
     public IReadOnlyList<EmployeeStatusFilterOption> StatusOptions { get; } =
@@ -82,7 +85,8 @@ public sealed partial class EmployeesViewModel : ObservableObject
 
             var filter = new EmployeeFilter(
                 SearchText: SearchText,
-                Status: SelectedStatusOption?.Status);
+                Status: SelectedStatusOption?.Status,
+                RequiresProfileCompletionOnly: RequiresProfileCompletionOnly);
 
             Employees =
                 await _employeeService.GetEmployeesAsync(filter);
@@ -197,5 +201,14 @@ public sealed partial class EmployeesViewModel : ObservableObject
             ErrorMessage =
                 "Không thể ngừng hoạt động nhân viên.";
         }
+    }
+
+    public async Task ShowProfileCompletionRequiredAsync()
+    {
+        SearchText = null;
+        SelectedStatusOption = StatusOptions[0];
+        RequiresProfileCompletionOnly = true;
+
+        await LoadAsync();
     }
 }

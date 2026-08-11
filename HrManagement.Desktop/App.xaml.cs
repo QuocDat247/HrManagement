@@ -95,6 +95,9 @@ public partial class App : System.Windows.Application
         services.AddSingleton<IEmployeeDialogService, EmployeeDialogService>();
         services.AddTransient<EditEmployeeViewModel>();
         services.AddTransient<EditEmployeeWindow>();
+        services.AddSingleton<
+        IEmployeeNavigationService,
+        EmployeeNavigationService>();
     }
 
     protected override void OnExit(ExitEventArgs e)

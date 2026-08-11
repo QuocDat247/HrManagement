@@ -12,8 +12,8 @@ public sealed class EmployeeService : IEmployeeService
     }
 
     public async Task<IReadOnlyList<Employee>> GetEmployeesAsync(
-        EmployeeFilter? filter = null,
-        CancellationToken cancellationToken = default)
+    EmployeeFilter? filter = null,
+    CancellationToken cancellationToken = default)
     {
         IReadOnlyList<Employee> employees =
             await _employeeRepository.GetAllAsync(cancellationToken);
@@ -23,37 +23,48 @@ public sealed class EmployeeService : IEmployeeService
             return employees;
         }
 
-        IEnumerable<Employee> query = employees;
+        IEnumerable<Employee> filteredEmployees =
+            employees;
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
-            string searchText = filter.SearchText.Trim();
+            string searchText =
+                filter.SearchText.Trim();
 
-            query = query.Where(employee =>
-                employee.EmployeeCode.Contains(
-                    searchText,
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                employee.FullName.Contains(
-                    searchText,
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                employee.Department.Contains(
-                    searchText,
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                employee.Position.Contains(
-                    searchText,
-                    StringComparison.OrdinalIgnoreCase));
+            filteredEmployees =
+                filteredEmployees.Where(
+                    employee =>
+                        employee.EmployeeCode.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase)
+                        || employee.FullName.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase)
+                        || employee.Department.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase)
+                        || employee.Position.Contains(
+                            searchText,
+                            StringComparison.OrdinalIgnoreCase));
         }
 
         if (filter.Status.HasValue)
         {
-            query = query.Where(
-                employee => employee.Status == filter.Status.Value);
+            filteredEmployees =
+                filteredEmployees.Where(
+                    employee =>
+                        employee.Status == filter.Status.Value);
         }
 
-        return query.ToList();
+        if (filter.RequiresProfileCompletionOnly)
+        {
+            filteredEmployees =
+                filteredEmployees.Where(
+                    employee =>
+                        employee.RequiresProfileCompletion);
+        }
+
+        return filteredEmployees.ToList();
     }
 
     public async Task<CreateEmployeeResult> CreateEmployeeAsync(

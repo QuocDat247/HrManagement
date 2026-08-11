@@ -90,6 +90,7 @@ public sealed class EmployeesViewModelTests
         Assert.Null(viewModel.SelectedStatusOption?.Status);
         Assert.Equal("Tất cả", viewModel.SelectedStatusOption?.DisplayName);
         Assert.Single(viewModel.Employees);
+        Assert.False(viewModel.RequiresProfileCompletionOnly);
     }
 
     private sealed class StubEmployeeService : IEmployeeService
@@ -615,5 +616,120 @@ public sealed class EmployeesViewModelTests
                 new DeactivateEmployeeResult(
                     IsSuccessful: true));
         }
+    }
+
+    private sealed class CapturingEmployeeService
+    : IEmployeeService
+    {
+        public EmployeeFilter? LastFilter { get; private set; }
+
+        public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
+            EmployeeFilter? filter = null,
+            CancellationToken cancellationToken = default)
+        {
+            LastFilter = filter;
+
+            return Task.FromResult<IReadOnlyList<Employee>>(
+                Array.Empty<Employee>());
+        }
+
+        public Task<CreateEmployeeResult> CreateEmployeeAsync(
+            CreateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CreateEmployeeResult(
+                    IsSuccessful: true,
+                    EmployeeId: Guid.NewGuid()));
+        }
+
+        public Task<UpdateEmployeeResult> UpdateEmployeeAsync(
+            UpdateEmployeeRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new UpdateEmployeeResult(
+                    IsSuccessful: true));
+        }
+
+        public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
+            Guid employeeId,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new DeactivateEmployeeResult(
+                    IsSuccessful: true));
+        }
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenProfileCompletionFilterEnabled_PassesFilterToService()
+    {
+        var service =
+            new CapturingEmployeeService();
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        viewModel.RequiresProfileCompletionOnly = true;
+
+        await viewModel.LoadAsync();
+
+        Assert.NotNull(service.LastFilter);
+
+        Assert.True(
+            service.LastFilter.RequiresProfileCompletionOnly);
+    }
+
+    [Fact]
+    public async Task ShowProfileCompletionRequiredAsync_ResetsOtherFiltersAndLoadsProfileFilter()
+    {
+        var service =
+            new CapturingEmployeeService();
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        viewModel.SearchText = "EMP001";
+
+        viewModel.SelectedStatusOption =
+            viewModel.StatusOptions
+                .First(option =>
+                    option.Status == EmployeeStatus.Active);
+
+        viewModel.RequiresProfileCompletionOnly = false;
+
+        await viewModel
+            .ShowProfileCompletionRequiredAsync();
+
+        Assert.Null(viewModel.SearchText);
+
+        Assert.Null(
+            viewModel.SelectedStatusOption?.Status);
+
+        Assert.True(
+            viewModel.RequiresProfileCompletionOnly);
+
+        Assert.NotNull(service.LastFilter);
+
+        Assert.True(
+            service.LastFilter
+                .RequiresProfileCompletionOnly);
+
+        Assert.Null(
+            service.LastFilter.SearchText);
+
+        Assert.Null(
+            service.LastFilter.Status);
     }
 }
