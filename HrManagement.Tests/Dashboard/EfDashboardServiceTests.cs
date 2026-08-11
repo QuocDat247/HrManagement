@@ -91,6 +91,7 @@ public sealed class EfDashboardServiceTests
         Assert.Equal(0, summary.ActiveEmployees);
         Assert.Equal(0, summary.EmployeesOnLeave);
         Assert.Equal(0, summary.InactiveEmployees);
+        Assert.Equal(0, summary.EmployeesMissingProfileInformation);
         Assert.Empty(summary.RecentEmployees);
         Assert.Empty(summary.Departments);
     }
@@ -99,15 +100,18 @@ public sealed class EfDashboardServiceTests
     string employeeCode,
     EmployeeStatus status,
     DateOnly? hireDate = null,
-    string department = "Phòng ban kiểm thử")
+    string department = "Phòng ban kiểm thử",
+    string? email = "employee@example.com",
+    string? phoneNumber = "0901000000",
+    DateOnly? dateOfBirth = null)
     {
         return new Employee(
             Guid.NewGuid(),
             employeeCode,
             $"Nhân viên {employeeCode}",
-            null,
-            null,
-            null,
+            email,
+            phoneNumber,
+            dateOfBirth,
             hireDate ?? new DateOnly(2024, 1, 1),
             department,
             "Nhân viên",
@@ -311,5 +315,76 @@ public sealed class EfDashboardServiceTests
         Assert.Equal(1, humanResources.ActiveEmployees);
         Assert.Equal(1, humanResources.EmployeesOnLeave);
         Assert.Equal(0, humanResources.InactiveEmployees);
+    }
+
+    [Fact]
+    public async Task GetSummaryAsync_CountsOnlyActiveOrOnLeaveEmployeesWithMissingProfileInformation()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database.EnsureCreatedAsync();
+
+            dbContext.Employees.AddRange(
+                CreateEmployee(
+                    "EMP001",
+                    EmployeeStatus.Active,
+                    email: null,
+                    phoneNumber: "0901000001",
+                    dateOfBirth: new DateOnly(1995, 1, 1)),
+
+                CreateEmployee(
+                    "EMP002",
+                    EmployeeStatus.OnLeave,
+                    email: "employee2@example.com",
+                    phoneNumber: null,
+                    dateOfBirth: new DateOnly(1994, 1, 1)),
+
+                CreateEmployee(
+                    "EMP003",
+                    EmployeeStatus.Active,
+                    email: "employee3@example.com",
+                    phoneNumber: "0901000003",
+                    dateOfBirth: null),
+
+                CreateEmployee(
+                    "EMP004",
+                    EmployeeStatus.Active,
+                    email: "employee4@example.com",
+                    phoneNumber: "0901000004",
+                    dateOfBirth: new DateOnly(1993, 1, 1)),
+
+                CreateEmployee(
+                    "EMP005",
+                    EmployeeStatus.Inactive,
+                    email: null,
+                    phoneNumber: null,
+                    dateOfBirth: null));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var factory =
+            new TestDbContextFactory(options);
+
+        var service =
+            new EfDashboardService(factory);
+
+        DashboardSummary summary =
+            await service.GetSummaryAsync();
+
+        Assert.Equal(
+            3,
+            summary.EmployeesMissingProfileInformation);
     }
 }

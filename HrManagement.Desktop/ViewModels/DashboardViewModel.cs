@@ -27,6 +27,9 @@ public sealed partial class DashboardViewModel : ObservableObject
     private string? errorMessage;
 
     [ObservableProperty]
+    private int employeesMissingProfileInformation;
+
+    [ObservableProperty]
     private IReadOnlyList<RecentEmployee> recentEmployees =
     Array.Empty<RecentEmployee>();
 
@@ -59,12 +62,15 @@ public sealed partial class DashboardViewModel : ObservableObject
             ActiveEmployees = summary.ActiveEmployees;
             EmployeesOnLeave = summary.EmployeesOnLeave;
             InactiveEmployees = summary.InactiveEmployees;
+            EmployeesMissingProfileInformation =
+            summary.EmployeesMissingProfileInformation;
             RecentEmployees = summary.RecentEmployees;
             Departments = summary.Departments;
         }
         catch (Exception)
         {
-            ErrorMessage = "Không thể tải dữ liệu Dashboard.";
+            ErrorMessage =
+                "Không thể tải dữ liệu Dashboard.";
         }
         finally
         {

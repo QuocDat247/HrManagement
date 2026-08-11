@@ -15,6 +15,7 @@ public sealed class DashboardViewModelTests
             ActiveEmployees: 119,
             EmployeesOnLeave: 6,
             InactiveEmployees: 3,
+            EmployeesMissingProfileInformation: 0,
             RecentEmployees: Array.Empty<RecentEmployee>(),
             Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
@@ -104,6 +105,7 @@ public sealed class DashboardViewModelTests
                     ActiveEmployees: 1,
                     EmployeesOnLeave: 1,
                     InactiveEmployees: 0,
+                    EmployeesMissingProfileInformation: 0,
                     RecentEmployees: recentEmployees,
                     Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
@@ -179,6 +181,7 @@ public sealed class DashboardViewModelTests
                     ActiveEmployees: 3,
                     EmployeesOnLeave: 1,
                     InactiveEmployees: 1,
+                    EmployeesMissingProfileInformation: 0,
                     RecentEmployees: Array.Empty<RecentEmployee>(),
                     Departments: departments));
 
@@ -223,5 +226,29 @@ public sealed class DashboardViewModelTests
                     1,
                     department.EmployeesOnLeave);
             });
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenServiceReturnsMissingProfileCount_PopulatesMissingProfileCount()
+    {
+        var service =
+            new RecentEmployeesDashboardService(
+                new DashboardSummary(
+                    TotalEmployees: 6,
+                    ActiveEmployees: 4,
+                    EmployeesOnLeave: 1,
+                    InactiveEmployees: 1,
+                    EmployeesMissingProfileInformation: 3,
+                    RecentEmployees: Array.Empty<RecentEmployee>(),
+                    Departments: Array.Empty<DepartmentEmployeeSummary>()));
+
+        var viewModel =
+            new DashboardViewModel(service);
+
+        await viewModel.LoadAsync();
+
+        Assert.Equal(
+            3,
+            viewModel.EmployeesMissingProfileInformation);
     }
 }

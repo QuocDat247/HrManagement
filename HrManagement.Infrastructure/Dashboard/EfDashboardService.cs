@@ -71,34 +71,48 @@ public sealed class EfDashboardService : IDashboardService
                 .ToListAsync(cancellationToken);
 
         var departmentCounts =
-    await dbContext.Employees
-        .AsNoTracking()
-        .GroupBy(employee => employee.Department)
-        .Select(group => new
-        {
-            Department = group.Key,
-            TotalEmployees = group.Count(),
+            await dbContext.Employees
+                .AsNoTracking()
+                .GroupBy(employee => employee.Department)
+                .Select(group => new
+            {
+                Department = group.Key,
+                TotalEmployees = group.Count(),
 
-            ActiveEmployees =
-                group.Count(
-                    employee =>
-                        employee.Status ==
-                        EmployeeStatus.Active),
+                ActiveEmployees =
+                    group.Count(
+                        employee =>
+                            employee.Status ==
+                            EmployeeStatus.Active),
 
-            EmployeesOnLeave =
-                group.Count(
-                    employee =>
-                        employee.Status ==
-                        EmployeeStatus.OnLeave),
+                EmployeesOnLeave =
+                    group.Count(
+                        employee =>
+                            employee.Status ==
+                            EmployeeStatus.OnLeave),
 
-            InactiveEmployees =
-                group.Count(
-                    employee =>
-                        employee.Status ==
-                        EmployeeStatus.Inactive)
-        })
-        .OrderBy(item => item.Department)
-        .ToListAsync(cancellationToken);
+                InactiveEmployees =
+                    group.Count(
+                        employee =>
+                            employee.Status ==
+                            EmployeeStatus.Inactive)
+                })
+                .OrderBy(item => item.Department)
+                .ToListAsync(cancellationToken);
+
+        int employeesMissingProfileInformation =
+            await dbContext.Employees
+                .AsNoTracking()
+                .CountAsync(
+                employee =>
+                    employee.Status != EmployeeStatus.Inactive
+                    &&
+                    (
+                    employee.Email == null
+                    || employee.PhoneNumber == null
+                    || employee.DateOfBirth == null
+                    ),
+                    cancellationToken);
 
         List<DepartmentEmployeeSummary> departments =
             departmentCounts
@@ -116,6 +130,8 @@ public sealed class EfDashboardService : IDashboardService
             ActiveEmployees: activeEmployees,
             EmployeesOnLeave: employeesOnLeave,
             InactiveEmployees: inactiveEmployees,
+            EmployeesMissingProfileInformation:
+                employeesMissingProfileInformation,
             RecentEmployees: recentEmployees,
             Departments: departments);
     }

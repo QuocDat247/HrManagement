@@ -5,5 +5,6 @@ public sealed record DashboardSummary(
     int ActiveEmployees,
     int EmployeesOnLeave,
     int InactiveEmployees,
+    int EmployeesMissingProfileInformation,
     IReadOnlyList<RecentEmployee> RecentEmployees,
     IReadOnlyList<DepartmentEmployeeSummary> Departments);

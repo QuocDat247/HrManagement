@@ -105,6 +105,89 @@
             
 
         </Grid>
+            <Border Margin="0,24,0,0"
+        Padding="20"
+        Background="{DynamicResource CardBackgroundBrush}"
+        BorderBrush="{DynamicResource AccentBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+
+                        <TextBlock Text="Chất lượng hồ sơ nhân viên"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,8,0,0"
+                       Text="Email, số điện thoại và ngày sinh giúp hồ sơ nhân viên đầy đủ hơn."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Margin="0,8,0,0"
+                       Text="Tất cả hồ sơ đang hoạt động hiện đã có đủ thông tin cơ bản."
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EmployeesMissingProfileInformation}"
+                                         Value="0">
+                                            <Setter Property="Visibility"
+                                        Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <TextBlock Margin="0,8,0,0"
+                       Text="Có hồ sơ nhân viên cần được bổ sung thông tin."
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility"
+                                Value="Visible" />
+
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding EmployeesMissingProfileInformation}"
+                                         Value="0">
+                                            <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1"
+                    Margin="24,0,0,0"
+                    VerticalAlignment="Center">
+
+                        <TextBlock Text="{Binding EmployeesMissingProfileInformation}"
+                       HorizontalAlignment="Center"
+                       FontSize="30"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Text="hồ sơ cần bổ sung"
+                       Margin="0,4,0,0"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Grid>
+
+            </Border>
 
             <Border Margin="0,30,0,0"
                     Padding="30"
@@ -137,13 +220,13 @@
                             <DataGrid.Style>
                                 <Style TargetType="DataGrid">
                                     <Setter Property="Visibility"
-                        Value="Visible" />
+                                            Value="Visible" />
 
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding RecentEmployees.Count}"
-                                 Value="0">
+                                                     Value="0">
                                             <Setter Property="Visibility"
-                                Value="Collapsed" />
+                                                    Value="Collapsed" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -177,21 +260,21 @@
                         </DataGrid>
 
                         <TextBlock Text="Chưa có dữ liệu nhân viên."
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               Margin="0,24"
-               Foreground="{DynamicResource SecondaryTextBrush}">
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   Margin="0,24"
+                                   Foreground="{DynamicResource SecondaryTextBrush}">
 
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Visibility"
-                        Value="Collapsed" />
+                                            Value="Collapsed" />
 
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding RecentEmployees.Count}"
-                                 Value="0">
+                                                     Value="0">
                                             <Setter Property="Visibility"
-                                Value="Visible" />
+                                                    Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
@@ -287,9 +370,9 @@
 
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding Departments.Count}"
-                                         Value="0">
+                                                     Value="0">
                                             <Setter Property="Visibility"
-                                        Value="Visible" />
+                                                    Value="Visible" />
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
