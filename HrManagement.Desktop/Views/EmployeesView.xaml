@@ -68,7 +68,11 @@
 
 
         <!-- Search / Filter -->
-        <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,20,0,0">
+        <Grid Grid.ColumnSpan="3" Margin="0,75,0,0" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="0*"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -85,7 +89,7 @@
              Padding="10,6"
              VerticalContentAlignment="Center"
              Text="{Binding SearchText,
-                            UpdateSourceTrigger=PropertyChanged}">
+                            UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2" Margin="0,0,12,0" Grid.RowSpan="2">
 
                 <TextBox.InputBindings>
                     <KeyBinding Key="Enter"
@@ -98,17 +102,17 @@
               Height="36"
               ItemsSource="{Binding StatusOptions}"
               DisplayMemberPath="DisplayName"
-              SelectedItem="{Binding SelectedStatusOption}" />
+              SelectedItem="{Binding SelectedStatusOption}" Grid.ColumnSpan="2" Margin="0,0,12,0" Grid.RowSpan="2" />
 
             <Button Grid.Column="4"
             Height="36"
             Content="Tìm kiếm"
-            Command="{Binding SearchCommand}" />
+            Command="{Binding SearchCommand}" Grid.ColumnSpan="2" Margin="0,0,8,0" Grid.RowSpan="2" />
 
             <Button Grid.Column="6"
             Height="36"
             Content="Xóa lọc"
-            Command="{Binding ClearFiltersCommand}" />
+            Command="{Binding ClearFiltersCommand}" Grid.RowSpan="2" />
 
         </Grid>
 
@@ -117,8 +121,8 @@
                                     Mode=TwoWay,
                                     UpdateSourceTrigger=PropertyChanged}"
                 Command="{Binding SearchCommand}"
-                Margin="0,10,89,0"
-                VerticalAlignment="Top" Height="21" Grid.ColumnSpan="2" Grid.RowSpan="3" Grid.Row="1" />
+                Margin="0,0,198,0"
+                VerticalAlignment="Top" Height="21" Grid.ColumnSpan="2" Grid.Row="3" />
 
         <!-- Employee table -->
         <Border Grid.Row="3"

@@ -21,6 +21,8 @@
 
     <Color x:Key="NavigationActiveColor">#15803D</Color>
     <Color x:Key="NavigationHoverColor">#166534</Color>
+    <Color x:Key="NewHireColor">#2563EB</Color>
+    <Color x:Key="SeparationColor">#DC2626</Color>
 
     <!-- Shell -->
     <Color x:Key="SidebarBackgroundColor">#20252B</Color>
@@ -38,8 +40,17 @@
     <Color x:Key="BorderColor">#E5E7EB</Color>
 
     <!-- Brushes -->
-    <SolidColorBrush x:Key="WarningBrush"
-                     Color="{StaticResource WarningColor}" />
+    <SolidColorBrush
+        x:Key="SeparationBrush"
+        Color="{StaticResource SeparationColor}" />
+    
+    <SolidColorBrush
+        x:Key="NewHireBrush"
+        Color="{StaticResource NewHireColor}" />
+    
+    <SolidColorBrush
+        x:Key="WarningBrush"
+        Color="{StaticResource WarningColor}" />
     
     <SolidColorBrush
         x:Key="PrimaryBrush"

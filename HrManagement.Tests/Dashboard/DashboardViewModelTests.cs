@@ -1,4 +1,5 @@
 using HrManagement.Application.Dashboard;
+using HrManagement.Application.Dashboard.Analytics;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
@@ -20,8 +21,10 @@ public sealed class DashboardViewModelTests
             RecentEmployees: Array.Empty<RecentEmployee>(),
             Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
-        var viewModel = new DashboardViewModel(service,
-                        new StubEmployeeNavigationService());
+        var viewModel = new DashboardViewModel(
+                        service,
+                        new StubEmployeeNavigationService(),
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -40,8 +43,10 @@ public sealed class DashboardViewModelTests
     {
         var service = new FailingDashboardService();
 
-        var viewModel = new DashboardViewModel(service,
-                        new StubEmployeeNavigationService());
+        var viewModel = new DashboardViewModel(
+                        service,
+                        new StubEmployeeNavigationService(),
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -112,8 +117,10 @@ public sealed class DashboardViewModelTests
                     RecentEmployees: recentEmployees,
                     Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
-        var viewModel =
-            new DashboardViewModel(service, new StubEmployeeNavigationService());
+        var viewModel = new DashboardViewModel(
+                        service,
+                        new StubEmployeeNavigationService(),
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -188,8 +195,10 @@ public sealed class DashboardViewModelTests
                     RecentEmployees: Array.Empty<RecentEmployee>(),
                     Departments: departments));
 
-        var viewModel =
-            new DashboardViewModel(service, new StubEmployeeNavigationService());
+        var viewModel = new DashboardViewModel(
+                        service,
+                        new StubEmployeeNavigationService(),
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -245,9 +254,10 @@ public sealed class DashboardViewModelTests
                     RecentEmployees: Array.Empty<RecentEmployee>(),
                     Departments: Array.Empty<DepartmentEmployeeSummary>()));
 
-        var viewModel =
-            new DashboardViewModel(service,
-             new StubEmployeeNavigationService());
+        var viewModel = new DashboardViewModel(
+                        service,
+                        new StubEmployeeNavigationService(),
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -291,10 +301,10 @@ public sealed class DashboardViewModelTests
         var navigationService =
             new StubEmployeeNavigationService();
 
-        var viewModel =
-            new DashboardViewModel(
-                dashboardService,
-                navigationService);
+        var viewModel = new DashboardViewModel(
+                        dashboardService,
+                        navigationService,
+                        new StubWorkforceAnalyticsService());
 
         await viewModel.LoadAsync();
 
@@ -311,5 +321,268 @@ public sealed class DashboardViewModelTests
             1,
             navigationService
                 .ShowProfileCompletionRequiredCallCount);
+    }
+
+    private sealed class StubWorkforceAnalyticsService
+    : IWorkforceAnalyticsService
+    {
+        public int? LastYear { get; private set; }
+
+        public WorkforceAnalyticsGrouping?
+            LastGrouping
+        { get; private set; }
+
+        public Func<
+            int,
+            WorkforceAnalyticsGrouping,
+            WorkforceMovementSummary>?
+            ResultFactory
+        { get; set; }
+
+        public Task<WorkforceMovementSummary>
+            GetWorkforceMovementAsync(
+                int year,
+                WorkforceAnalyticsGrouping grouping =
+                    WorkforceAnalyticsGrouping.Monthly,
+                CancellationToken cancellationToken = default)
+        {
+            LastYear = year;
+            LastGrouping = grouping;
+
+            WorkforceMovementSummary result =
+                ResultFactory?.Invoke(
+                    year,
+                    grouping)
+                ?? new WorkforceMovementSummary(
+                    Year: year,
+                    Grouping: grouping,
+                    BeginningHeadcount: 0,
+                    EndingHeadcount: 0,
+                    TotalNewHires: 0,
+                    TotalSeparations: 0,
+                    NetChange: 0,
+                    AverageHeadcount: 0,
+                    TurnoverRate: 0,
+                    EmployeesWithUnknownTerminationDate: 0,
+                    Periods:
+                        Array.Empty<WorkforceMovementPeriod>());
+
+            return Task.FromResult(result);
+        }
+    }
+
+    [Fact]
+    public async Task LoadAnalyticsAsync_WithMonthlySummary_PopulatesAnalyticsProperties()
+    {
+        var analyticsService =
+            new StubWorkforceAnalyticsService
+            {
+                ResultFactory = (year, grouping) =>
+                    new WorkforceMovementSummary(
+                        Year: year,
+                        Grouping: grouping,
+                        BeginningHeadcount: 10,
+                        EndingHeadcount: 12,
+                        TotalNewHires: 4,
+                        TotalSeparations: 2,
+                        NetChange: 2,
+                        AverageHeadcount: 11m,
+                        TurnoverRate: 18.18m,
+                        EmployeesWithUnknownTerminationDate: 1,
+                        Periods:
+                        [
+                            new WorkforceMovementPeriod(
+                            PeriodNumber: 1,
+                            StartDate:
+                                new DateOnly(2026, 1, 1),
+                            EndDate:
+                                new DateOnly(2026, 1, 31),
+                            NewHires: 3,
+                            Separations: 1,
+                            BeginningHeadcount: 10,
+                            EndingHeadcount: 12,
+                            AverageHeadcount: 11m,
+                            TurnoverRate: 9.09m,
+                            NetChange: 2),
+
+                        new WorkforceMovementPeriod(
+                            PeriodNumber: 2,
+                            StartDate:
+                                new DateOnly(2026, 2, 1),
+                            EndDate:
+                                new DateOnly(2026, 2, 28),
+                            NewHires: 1,
+                            Separations: 1,
+                            BeginningHeadcount: 12,
+                            EndingHeadcount: 12,
+                            AverageHeadcount: 12m,
+                            TurnoverRate: 8.33m,
+                            NetChange: 0)
+                        ])
+            };
+
+        var viewModel =
+            new DashboardViewModel(
+                new RecentEmployeesDashboardService(
+                    new DashboardSummary(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Array.Empty<RecentEmployee>(),
+                        Array.Empty<DepartmentEmployeeSummary>())),
+                new StubEmployeeNavigationService(),
+                analyticsService);
+
+        viewModel.SelectedAnalyticsYear = 2026;
+
+        await viewModel.LoadAnalyticsAsync();
+
+        Assert.Equal(10, viewModel.AnalyticsBeginningHeadcount);
+        Assert.Equal(12, viewModel.AnalyticsEndingHeadcount);
+        Assert.Equal(4, viewModel.TotalNewHires);
+        Assert.Equal(2, viewModel.TotalSeparations);
+        Assert.Equal(2, viewModel.WorkforceNetChange);
+        Assert.Equal(11m, viewModel.WorkforceAverageHeadcount);
+        Assert.Equal(18.18m, viewModel.WorkforceTurnoverRate);
+
+        Assert.Equal(
+            1,
+            viewModel.EmployeesWithUnknownTerminationDate);
+
+        Assert.Equal(
+            2,
+            viewModel.WorkforceMovementItems.Count);
+
+        Assert.Equal(
+            "T1",
+            viewModel.WorkforceMovementItems[0].Label);
+
+        Assert.Equal(
+            "Tháng 1",
+            viewModel.WorkforceMovementItems[0].DisplayName);
+
+        Assert.Equal(
+            3,
+            viewModel.WorkforceMovementChartMaximum);
+
+        Assert.Equal(
+            2,
+            viewModel.WorkforceMovementChartMidpoint);
+
+        Assert.Equal(
+            "+2",
+            viewModel.WorkforceNetChangeDisplay);
+    }
+
+    [Fact]
+    public async Task RefreshAnalyticsCommand_WithQuarterlySelection_UsesSelectedYearAndGrouping()
+    {
+        var analyticsService =
+            new StubWorkforceAnalyticsService();
+
+        var viewModel =
+            new DashboardViewModel(
+                new RecentEmployeesDashboardService(
+                    new DashboardSummary(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Array.Empty<RecentEmployee>(),
+                        Array.Empty<DepartmentEmployeeSummary>())),
+                new StubEmployeeNavigationService(),
+                analyticsService);
+
+        viewModel.SelectedAnalyticsYear = 2025;
+
+        viewModel.SelectedAnalyticsGroupingOption =
+            viewModel.AnalyticsGroupingOptions
+                .Single(option =>
+                    option.Grouping ==
+                        WorkforceAnalyticsGrouping.Quarterly);
+
+        await viewModel.RefreshAnalyticsCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            2025,
+            analyticsService.LastYear);
+
+        Assert.Equal(
+            WorkforceAnalyticsGrouping.Quarterly,
+            analyticsService.LastGrouping);
+    }
+
+    [Fact]
+    public async Task LoadAnalyticsAsync_WhenThereIsNoMovement_UsesEmptyStateAndSafeChartScale()
+    {
+        var analyticsService =
+            new StubWorkforceAnalyticsService
+            {
+                ResultFactory = (year, grouping) =>
+                    new WorkforceMovementSummary(
+                        Year: year,
+                        Grouping: grouping,
+                        BeginningHeadcount: 5,
+                        EndingHeadcount: 5,
+                        TotalNewHires: 0,
+                        TotalSeparations: 0,
+                        NetChange: 0,
+                        AverageHeadcount: 5m,
+                        TurnoverRate: 0m,
+                        EmployeesWithUnknownTerminationDate: 0,
+                        Periods:
+                        Enumerable.Range(1, 12)
+                            .Select(month =>
+                                new WorkforceMovementPeriod(
+                                    PeriodNumber: month,
+                                    StartDate:
+                                        new DateOnly(2026, month, 1),
+                                    EndDate:
+                                        new DateOnly(
+                                            2026,
+                                            month,
+                                            DateTime.DaysInMonth(
+                                                2026,
+                                                month)),
+                                    NewHires: 0,
+                                    Separations: 0,
+                                    BeginningHeadcount: 5,
+                                    EndingHeadcount: 5,
+                                    AverageHeadcount: 5m,
+                                    TurnoverRate: 0m,
+                                    NetChange: 0))
+                            .ToList())
+            };
+
+        var viewModel =
+            new DashboardViewModel(
+                new RecentEmployeesDashboardService(
+                    new DashboardSummary(
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        Array.Empty<RecentEmployee>(),
+                        Array.Empty<DepartmentEmployeeSummary>())),
+                new StubEmployeeNavigationService(),
+                analyticsService);
+
+        await viewModel.LoadAnalyticsAsync();
+
+        Assert.False(
+            viewModel.HasWorkforceMovementData);
+
+        Assert.Equal(
+            1,
+            viewModel.WorkforceMovementChartMaximum);
+
+        Assert.Equal(
+            "0",
+            viewModel.WorkforceNetChangeDisplay);
     }
 }

@@ -1,6 +1,14 @@
 <UserControl x:Class="HrManagement.Desktop.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:HrManagement.Desktop.Converters"
+             Loaded="DashboardView_Loaded"
+             Unloaded="DashboardView_Unloaded">
+
+    <UserControl.Resources>
+        <converters:WorkforceBarHeightConverter
+        x:Key="WorkforceBarHeightConverter" />
+    </UserControl.Resources>
 
     <ScrollViewer x:Name="DashboardScrollViewer"
                   VerticalScrollBarVisibility="Auto"
@@ -15,16 +23,90 @@
             </Grid.RowDefinitions>
 
             <!-- Page header -->
-            <StackPanel Grid.Row="0">
-                <TextBlock Text="Tổng quan"
-                           Style="{StaticResource PageTitleTextStyle}" />
+                <Grid Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                <TextBlock Text="Tình hình nhân sự hiện tại"
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="Tổng quan"
+                   FontSize="24"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Text="Tình hình nhân sự hiện tại"
+                   Margin="0,6,0,0"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                    </StackPanel>
+
+                    <Border Grid.Column="1"
+            MinWidth="270"
+            Padding="16,12"
+            Background="{DynamicResource CardBackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="1" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Ngày -->
+                            <StackPanel Margin="0,0,16,0"
+                        VerticalAlignment="Center">
+
+                                <TextBlock x:Name="CurrentDayText"
+                           Text="12"
+                           HorizontalAlignment="Center"
+                           FontSize="32"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBlock x:Name="CurrentMonthYearText"
+                           Text="Tháng 8, 2026"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            </StackPanel>
+
+                            <Border Grid.Column="1"
+                    Width="1"
+                    Background="{DynamicResource BorderBrush}" />
+
+                            <!-- Thứ + giờ -->
+                            <StackPanel Grid.Column="2"
+                        Margin="16,0,0,0"
+                        VerticalAlignment="Center">
+
+                                <TextBlock x:Name="CurrentWeekdayText"
+                           Text="Thứ Tư"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBlock x:Name="CurrentDateText"
+                           Text="12/08/2026"
+                           Margin="0,4,0,0"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock x:Name="CurrentTimeText"
+                           Text="10:16:00"
                            Margin="0,6,0,0"
-                           Style="{StaticResource SecondaryTextStyle}" />
-            </StackPanel>
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
 
-            <!-- KPI cards -->
+                            </StackPanel>
+
+                        </Grid>
+
+                    </Border>
+                </Grid>
+
+                <!-- KPI cards -->
             <Grid Grid.Row="2">
 
                 <Grid.ColumnDefinitions>
@@ -195,6 +277,394 @@
 
             </Border>
 
+            <Border Margin="0,24,0,0"
+                    Padding="20"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+
+                <StackPanel>
+
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock Text="Biến động nhân sự"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                            <TextBlock Text="Tuyển mới, nghỉ việc và tỷ lệ nghỉ việc theo kỳ"
+                                       Margin="0,4,0,0"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </StackPanel>
+
+                        <ComboBox Grid.Column="1"
+                                  Width="100"
+                                  Height="32"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{Binding AnalyticsYears}"
+                                  SelectedItem="{Binding SelectedAnalyticsYear, Mode=TwoWay}" />
+
+                                                <ComboBox Grid.Column="3"
+                                  Width="120"
+                                  Height="32"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{Binding AnalyticsGroupingOptions}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedItem="{Binding SelectedAnalyticsGroupingOption, Mode=TwoWay}" />
+
+                        <Button Grid.Column="5"
+                                Width="90"
+                                Height="32"
+                                VerticalAlignment="Center"
+                                Content="Áp dụng"
+                                Command="{Binding RefreshAnalyticsCommand}" />
+
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0"
+                                Padding="16"
+                                Background="{DynamicResource PageBackgroundBrush}"
+                                CornerRadius="6">
+
+                            <StackPanel>
+                                <TextBlock Text="Tuyển mới"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Text="{Binding TotalNewHires}"
+                               Margin="0,8,0,0"
+                               FontSize="26"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="2"
+                                Padding="16"
+                                Background="{DynamicResource PageBackgroundBrush}"
+                                CornerRadius="6">
+
+                            <StackPanel>
+                                <TextBlock Text="Nghỉ việc"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Text="{Binding TotalSeparations}"
+                                           Margin="0,8,0,0"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="4"
+                                Padding="16"
+                                Background="{DynamicResource PageBackgroundBrush}"
+                                CornerRadius="6">
+
+                            <StackPanel>
+                                <TextBlock Text="Biến động ròng"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Text="{Binding WorkforceNetChangeDisplay}"
+                                           Margin="0,8,0,0"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="6"
+                                Padding="16"
+                                Background="{DynamicResource PageBackgroundBrush}"
+                                CornerRadius="6">
+
+                            <StackPanel>
+                                <TextBlock Text="Turnover rate"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Text="{Binding WorkforceTurnoverRate,
+                                             StringFormat={}{0:F2}%}"
+                                           Margin="0,8,0,0"
+                                           FontSize="26"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Margin="0,16,0,0"
+                   Foreground="{DynamicResource SecondaryTextBrush}">
+            <Run Text="Headcount đầu kỳ: " />
+            <Run Text="{Binding AnalyticsBeginningHeadcount}" />
+            <Run Text="   •   Cuối kỳ: " />
+            <Run Text="{Binding AnalyticsEndingHeadcount}" />
+            <Run Text="   •   Bình quân: " />
+            <Run Text="{Binding WorkforceAverageHeadcount,
+                                StringFormat={}{0:F2}}" />
+                    </TextBlock>
+
+                    <TextBlock Margin="0,10,0,0"
+                   Foreground="{DynamicResource WarningBrush}"
+                   TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility"
+                            Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding EmployeesWithUnknownTerminationDate}"
+                                     Value="0">
+                                        <Setter Property="Visibility"
+                                    Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+            <Run Text="⚠ Có " />
+            <Run Text="{Binding EmployeesWithUnknownTerminationDate}" />
+            <Run Text=" hồ sơ nghỉ việc cũ chưa có ngày nghỉ và chưa được tính vào thống kê." />
+                    </TextBlock>
+
+                    <!-- Bọc Legend + Chart -->
+                    <StackPanel>
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasWorkforceMovementData}"
+                                     Value="False">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <!-- Legend -->
+                        <StackPanel Orientation="Horizontal"
+                        Margin="0,22,0,12">
+                            <Border Width="12"
+                        Height="12"
+                        CornerRadius="2"
+                        Background="{DynamicResource NewHireBrush}"
+                        VerticalAlignment="Center" />
+                            <TextBlock Text="Tuyển mới"
+                           Margin="6,0,20,0"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                            <Border Width="12"
+                        Height="12"
+                        CornerRadius="2"
+                        Background="{DynamicResource SeparationBrush}"
+                        VerticalAlignment="Center" />
+                            <TextBlock Text="Nghỉ việc"
+                           Margin="6,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                        </StackPanel>
+
+                        <!-- Grouped Column Chart -->
+                        <Grid Height="235">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="46" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <!-- Y axis -->
+                            <Grid Grid.Column="0"
+                                  Height="190"
+                                  Margin="0,0,8,25">
+                                <TextBlock Text="{Binding WorkforceMovementChartMaximum}"
+                               VerticalAlignment="Top"
+                               HorizontalAlignment="Right"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="{Binding WorkforceMovementChartMidpoint}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Right"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <TextBlock Text="0"
+                               VerticalAlignment="Bottom"
+                               HorizontalAlignment="Right"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </Grid>
+                            <Grid Grid.Column="1">
+                                <!-- Horizontal guides -->
+                                <Grid Height="190"
+                          Margin="0,0,0,25">
+                                    <Border Height="1"
+                                VerticalAlignment="Top"
+                                Background="{DynamicResource BorderBrush}" />
+                                    <Border Height="1"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource BorderBrush}" />
+                                    <Border Height="1"
+                                VerticalAlignment="Bottom"
+                                Background="{DynamicResource BorderBrush}" />
+                                </Grid>
+
+                                <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                              VerticalScrollBarVisibility="Disabled"
+                                              PreviewMouseWheel="DashboardContent_PreviewMouseWheel">
+                                    <ItemsControl ItemsSource="{Binding WorkforceMovementItems}"
+                                      MinWidth="720">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="4,0">
+                                                    <Grid Height="200">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="4" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <!-- New hires -->
+                                                        <StackPanel Grid.Column="0"
+                                                        VerticalAlignment="Bottom">
+                                                            <TextBlock Text="{Binding NewHires}"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,0,0,4"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding NewHires}" Value="0">
+                                                                                <Setter Property="Visibility" Value="Hidden" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <Border Width="18"
+                                                        HorizontalAlignment="Center"
+                                                        Background="{DynamicResource NewHireBrush}"
+                                                        CornerRadius="3,3,0,0">
+                                                                <Border.Height>
+                                                                    <MultiBinding Converter="{StaticResource WorkforceBarHeightConverter}"
+                                                                      ConverterParameter="180">
+                                                                        <Binding Path="NewHires" />
+                                                                        <Binding Path="DataContext.WorkforceMovementChartMaximum"
+                                                                     RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
+                                                                    </MultiBinding>
+                                                                </Border.Height>
+                                                                <Border.ToolTip>
+                                                                    <ToolTip>
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                           FontWeight="SemiBold" />
+                                                                            <TextBlock>
+                                                                    <Run Text="Tuyển mới: " />
+                                                                    <Run Text="{Binding NewHires}" />
+                                                                            </TextBlock>
+                                                                        </StackPanel>
+                                                                    </ToolTip>
+                                                                </Border.ToolTip>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <!-- Separations -->
+                                                        <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Bottom">
+                                                            <TextBlock Text="{Binding Separations}"
+                                                           HorizontalAlignment="Center"
+                                                           Margin="0,0,0,4"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Separations}" Value="0">
+                                                                                <Setter Property="Visibility" Value="Hidden" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                            <Border Width="18"
+                                                        HorizontalAlignment="Center"
+                                                        Background="{DynamicResource SeparationBrush}"
+                                                        CornerRadius="3,3,0,0">
+                                                                <Border.Height>
+                                                                    <MultiBinding Converter="{StaticResource WorkforceBarHeightConverter}"
+                                                                      ConverterParameter="180">
+                                                                        <Binding Path="Separations" />
+                                                                        <Binding Path="DataContext.WorkforceMovementChartMaximum"
+                                                                     RelativeSource="{RelativeSource AncestorType={x:Type UserControl}}" />
+                                                                    </MultiBinding>
+                                                                </Border.Height>
+                                                                <Border.ToolTip>
+                                                                    <ToolTip>
+                                                                        <StackPanel>
+                                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                           FontWeight="SemiBold" />
+                                                                            <TextBlock>
+                                                                    <Run Text="Nghỉ việc: " />
+                                                                    <Run Text="{Binding Separations}" />
+                                                                            </TextBlock>
+                                                                        </StackPanel>
+                                                                    </ToolTip>
+                                                                </Border.ToolTip>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding Label}"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,6,0,0"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Message khi không có dữ liệu -->
+                    <TextBlock Text="Chưa có biến động nhân sự trong năm được chọn."
+                   HorizontalAlignment="Center"
+                   Margin="0,28"
+                   Foreground="{DynamicResource SecondaryTextBrush}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasWorkforceMovementData}"
+                                     Value="False">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <TextBlock Text="{Binding AnalyticsErrorMessage}"
+                   Margin="0,10,0,0"
+                   Foreground="{DynamicResource WarningBrush}"
+                   TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
             <Border Margin="0,30,0,0"
                     Padding="30"
                     Background="{DynamicResource CardBackgroundBrush}"
@@ -213,7 +683,7 @@
                     <Grid>
 
                         <DataGrid ItemsSource="{Binding RecentEmployees}"
-                                  PreviewMouseWheel="DataGrid_PreviewMouseWheel"
+                                  PreviewMouseWheel="DashboardContent_PreviewMouseWheel"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"
@@ -312,7 +782,7 @@
                     <Grid>
 
                         <DataGrid ItemsSource="{Binding Departments}"
-                                  PreviewMouseWheel="DataGrid_PreviewMouseWheel"
+                                  PreviewMouseWheel="DashboardContent_PreviewMouseWheel"
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True"
                                   CanUserAddRows="False"

@@ -1,10 +1,12 @@
 using HrManagement.Application.Dashboard;
-using HrManagement.Infrastructure.Dashboard;
-using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Application.Dashboard.Analytics;
 using HrManagement.Application.Employees;
+using HrManagement.Infrastructure.Dashboard;
+using HrManagement.Infrastructure.Dashboard.Analytics;
 using HrManagement.Infrastructure.Employees;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -23,6 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddSingleton<DatabaseInitializer>();
+        services.AddSingleton<IWorkforceAnalyticsService, EfWorkforceAnalyticsService>();
 
         return services;
     }
