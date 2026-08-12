@@ -15,9 +15,7 @@ public sealed class EfWorkforceAnalyticsServiceTests
         await using var connection =
             new SqliteConnection(
                 "Data Source=:memory:");
-
         await connection.OpenAsync();
-
         DbContextOptions<HrManagementDbContext> options =
             new DbContextOptionsBuilder<HrManagementDbContext>()
                 .UseSqlite(connection)
@@ -29,39 +27,62 @@ public sealed class EfWorkforceAnalyticsServiceTests
             await dbContext.Database
                 .EnsureCreatedAsync();
 
+            Employee emp001 = CreateEmployee(
+                "EMP001",
+                new DateOnly(2025, 12, 15),
+                EmployeeStatus.Active);
+            Employee emp002 = CreateEmployee(
+                "EMP002",
+                new DateOnly(2026, 1, 10),
+                EmployeeStatus.Active);
+            Employee emp003 = CreateEmployee(
+                "EMP003",
+                new DateOnly(2026, 1, 20),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 3, 5));
+            Employee emp004 = CreateEmployee(
+                "EMP004",
+                new DateOnly(2026, 4, 1),
+                EmployeeStatus.Active);
+            Employee emp005 = CreateEmployee(
+                "EMP005",
+                new DateOnly(2025, 6, 1),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 4, 15));
+            // Legacy: biết đã nghỉ nhưng không biết ngày.
+            Employee emp006 = CreateEmployee(
+                "EMP006",
+                new DateOnly(2024, 1, 1),
+                EmployeeStatus.Inactive);
+
             dbContext.Employees.AddRange(
-                CreateEmployee(
-                    "EMP001",
-                    new DateOnly(2025, 12, 15),
-                    EmployeeStatus.Active),
+                emp001, emp002, emp003, emp004, emp005, emp006);
 
-                CreateEmployee(
-                    "EMP002",
-                    new DateOnly(2026, 1, 10),
-                    EmployeeStatus.Active),
-
-                CreateEmployee(
-                    "EMP003",
-                    new DateOnly(2026, 1, 20),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 3, 5)),
-
-                CreateEmployee(
-                    "EMP004",
-                    new DateOnly(2026, 4, 1),
-                    EmployeeStatus.Active),
-
-                CreateEmployee(
-                    "EMP005",
-                    new DateOnly(2025, 6, 1),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 4, 15)),
-
-                // Legacy: biết đã nghỉ nhưng không biết ngày.
-                CreateEmployee(
-                    "EMP006",
-                    new DateOnly(2024, 1, 1),
-                    EmployeeStatus.Inactive));
+            // Seed period cho các employee có lịch sử xác định
+            dbContext.EmploymentPeriods.AddRange(
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp001.Id,
+                    emp001.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp002.Id,
+                    emp002.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp003.Id,
+                    emp003.HireDate,
+                    emp003.TerminationDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp004.Id,
+                    emp004.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp005.Id,
+                    emp005.HireDate,
+                    emp005.TerminationDate));
+            // CỐ Ý không tạo period cho emp006 (legacy)
 
             await dbContext.SaveChangesAsync();
         }
@@ -69,14 +90,12 @@ public sealed class EfWorkforceAnalyticsServiceTests
         var service =
             new EfWorkforceAnalyticsService(
                 new TestDbContextFactory(options));
-
         WorkforceMovementSummary summary =
             await service.GetWorkforceMovementAsync(
                 2026,
                 WorkforceAnalyticsGrouping.Monthly);
 
         Assert.Equal(12, summary.Periods.Count);
-
         Assert.Equal(2, summary.BeginningHeadcount);
         Assert.Equal(3, summary.EndingHeadcount);
         Assert.Equal(3, summary.TotalNewHires);
@@ -84,14 +103,12 @@ public sealed class EfWorkforceAnalyticsServiceTests
         Assert.Equal(1, summary.NetChange);
         Assert.Equal(2.5m, summary.AverageHeadcount);
         Assert.Equal(80m, summary.TurnoverRate);
-
         Assert.Equal(
             1,
             summary.EmployeesWithUnknownTerminationDate);
 
         WorkforceMovementPeriod january =
             summary.Periods[0];
-
         Assert.Equal(2, january.NewHires);
         Assert.Equal(0, january.Separations);
         Assert.Equal(2, january.BeginningHeadcount);
@@ -102,7 +119,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
 
         WorkforceMovementPeriod march =
             summary.Periods[2];
-
         Assert.Equal(0, march.NewHires);
         Assert.Equal(1, march.Separations);
         Assert.Equal(4, march.BeginningHeadcount);
@@ -113,7 +129,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
 
         WorkforceMovementPeriod april =
             summary.Periods[3];
-
         Assert.Equal(1, april.NewHires);
         Assert.Equal(1, april.Separations);
         Assert.Equal(3, april.BeginningHeadcount);
@@ -129,9 +144,7 @@ public sealed class EfWorkforceAnalyticsServiceTests
         await using var connection =
             new SqliteConnection(
                 "Data Source=:memory:");
-
         await connection.OpenAsync();
-
         DbContextOptions<HrManagementDbContext> options =
             new DbContextOptionsBuilder<HrManagementDbContext>()
                 .UseSqlite(connection)
@@ -143,33 +156,55 @@ public sealed class EfWorkforceAnalyticsServiceTests
             await dbContext.Database
                 .EnsureCreatedAsync();
 
+            Employee emp001 = CreateEmployee(
+                "EMP001",
+                new DateOnly(2025, 12, 15),
+                EmployeeStatus.Active);
+            Employee emp002 = CreateEmployee(
+                "EMP002",
+                new DateOnly(2026, 1, 10),
+                EmployeeStatus.Active);
+            Employee emp003 = CreateEmployee(
+                "EMP003",
+                new DateOnly(2026, 1, 20),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 3, 5));
+            Employee emp004 = CreateEmployee(
+                "EMP004",
+                new DateOnly(2026, 4, 1),
+                EmployeeStatus.Active);
+            Employee emp005 = CreateEmployee(
+                "EMP005",
+                new DateOnly(2025, 6, 1),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 4, 15));
+
             dbContext.Employees.AddRange(
-                CreateEmployee(
-                    "EMP001",
-                    new DateOnly(2025, 12, 15),
-                    EmployeeStatus.Active),
+                emp001, emp002, emp003, emp004, emp005);
 
-                CreateEmployee(
-                    "EMP002",
-                    new DateOnly(2026, 1, 10),
-                    EmployeeStatus.Active),
-
-                CreateEmployee(
-                    "EMP003",
-                    new DateOnly(2026, 1, 20),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 3, 5)),
-
-                CreateEmployee(
-                    "EMP004",
-                    new DateOnly(2026, 4, 1),
-                    EmployeeStatus.Active),
-
-                CreateEmployee(
-                    "EMP005",
-                    new DateOnly(2025, 6, 1),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 4, 15)));
+            dbContext.EmploymentPeriods.AddRange(
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp001.Id,
+                    emp001.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp002.Id,
+                    emp002.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp003.Id,
+                    emp003.HireDate,
+                    emp003.TerminationDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp004.Id,
+                    emp004.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp005.Id,
+                    emp005.HireDate,
+                    emp005.TerminationDate));
 
             await dbContext.SaveChangesAsync();
         }
@@ -177,7 +212,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
         var service =
             new EfWorkforceAnalyticsService(
                 new TestDbContextFactory(options));
-
         WorkforceMovementSummary summary =
             await service.GetWorkforceMovementAsync(
                 2026,
@@ -187,7 +221,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
 
         WorkforceMovementPeriod q1 =
             summary.Periods[0];
-
         Assert.Equal(2, q1.NewHires);
         Assert.Equal(1, q1.Separations);
         Assert.Equal(2, q1.BeginningHeadcount);
@@ -198,7 +231,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
 
         WorkforceMovementPeriod q2 =
             summary.Periods[1];
-
         Assert.Equal(1, q2.NewHires);
         Assert.Equal(1, q2.Separations);
         Assert.Equal(3, q2.BeginningHeadcount);
@@ -214,9 +246,7 @@ public sealed class EfWorkforceAnalyticsServiceTests
         await using var connection =
             new SqliteConnection(
                 "Data Source=:memory:");
-
         await connection.OpenAsync();
-
         DbContextOptions<HrManagementDbContext> options =
             new DbContextOptionsBuilder<HrManagementDbContext>()
                 .UseSqlite(connection)
@@ -232,13 +262,11 @@ public sealed class EfWorkforceAnalyticsServiceTests
         var service =
             new EfWorkforceAnalyticsService(
                 new TestDbContextFactory(options));
-
         WorkforceMovementSummary summary =
             await service.GetWorkforceMovementAsync(
                 2026);
 
         Assert.Equal(12, summary.Periods.Count);
-
         Assert.Equal(0, summary.BeginningHeadcount);
         Assert.Equal(0, summary.EndingHeadcount);
         Assert.Equal(0, summary.TotalNewHires);
@@ -246,7 +274,6 @@ public sealed class EfWorkforceAnalyticsServiceTests
         Assert.Equal(0, summary.NetChange);
         Assert.Equal(0m, summary.AverageHeadcount);
         Assert.Equal(0m, summary.TurnoverRate);
-
         Assert.All(
             summary.Periods,
             period =>
@@ -257,6 +284,104 @@ public sealed class EfWorkforceAnalyticsServiceTests
                 Assert.Equal(0, period.EndingHeadcount);
                 Assert.Equal(0m, period.TurnoverRate);
             });
+    }
+
+    [Fact]
+    public async Task GetWorkforceMovementAsync_WhenEventsOccurOnPeriodBoundaries_KeepsHeadcountBalanced()
+    {
+        await using var connection =
+            new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        DbContextOptions<HrManagementDbContext> options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database.EnsureCreatedAsync();
+
+            Employee emp001 = CreateEmployee(
+                "EMP001",
+                new DateOnly(2025, 12, 1),
+                EmployeeStatus.Active);
+            Employee emp002 = CreateEmployee(
+                "EMP002",
+                new DateOnly(2026, 1, 1),
+                EmployeeStatus.Active);
+            Employee emp003 = CreateEmployee(
+                "EMP003",
+                new DateOnly(2025, 1, 1),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 1, 1));
+            Employee emp004 = CreateEmployee(
+                "EMP004",
+                new DateOnly(2026, 1, 31),
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 1, 31));
+
+            dbContext.Employees.AddRange(
+                emp001, emp002, emp003, emp004);
+
+            dbContext.EmploymentPeriods.AddRange(
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp001.Id,
+                    emp001.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp002.Id,
+                    emp002.HireDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp003.Id,
+                    emp003.HireDate,
+                    emp003.TerminationDate),
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    emp004.Id,
+                    emp004.HireDate,
+                    emp004.TerminationDate));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var service =
+            new EfWorkforceAnalyticsService(
+                new TestDbContextFactory(options));
+        WorkforceMovementSummary summary =
+            await service.GetWorkforceMovementAsync(
+                2026,
+                WorkforceAnalyticsGrouping.Monthly);
+
+        WorkforceMovementPeriod january =
+            summary.Periods[0];
+        Assert.Equal(2, january.BeginningHeadcount);
+        Assert.Equal(2, january.NewHires);
+        Assert.Equal(2, january.Separations);
+        Assert.Equal(2, january.EndingHeadcount);
+        Assert.Equal(
+            january.BeginningHeadcount
+            + january.NewHires
+            - january.Separations,
+            january.EndingHeadcount);
+        Assert.Equal(2m, january.AverageHeadcount);
+        Assert.Equal(100m, january.TurnoverRate);
+    }
+
+    [Fact]
+    public async Task GetWorkforceMovementAsync_WhenYearIsInvalid_Throws()
+    {
+        var options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite("Data Source=:memory:")
+                .Options;
+        var service =
+            new EfWorkforceAnalyticsService(
+                new TestDbContextFactory(options));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
+            () => service.GetWorkforceMovementAsync(0));
     }
 
     private static Employee CreateEmployee(
@@ -299,10 +424,11 @@ public sealed class EfWorkforceAnalyticsServiceTests
     }
 
     [Fact]
-    public async Task GetWorkforceMovementAsync_WhenEventsOccurOnPeriodBoundaries_KeepsHeadcountBalanced()
+    public async Task GetWorkforceMovementAsync_WhenEmployeeHasBeenRehired_CountsEachEmploymentPeriod()
     {
         await using var connection =
-            new SqliteConnection("Data Source=:memory:");
+            new SqliteConnection(
+                "Data Source=:memory:");
 
         await connection.OpenAsync();
 
@@ -311,37 +437,41 @@ public sealed class EfWorkforceAnalyticsServiceTests
                 .UseSqlite(connection)
                 .Options;
 
+        Guid employeeId =
+            Guid.NewGuid();
+
         await using (var dbContext =
                      new HrManagementDbContext(options))
         {
-            await dbContext.Database.EnsureCreatedAsync();
+            await dbContext.Database
+                .EnsureCreatedAsync();
 
-            dbContext.Employees.AddRange(
-                // Có mặt trước đầu tháng và vẫn làm việc.
-                CreateEmployee(
-                    "EMP001",
-                    new DateOnly(2025, 12, 1),
-                    EmployeeStatus.Active),
+            var employee =
+                new Employee(
+                    employeeId,
+                    "EMP-REHIRE-001",
+                    "Nhân viên tái tuyển",
+                    "employee@example.com",
+                    "0901000000",
+                    new DateOnly(1995, 1, 1),
+                    new DateOnly(2022, 1, 1),
+                    "Nhân sự",
+                    "Chuyên viên",
+                    EmployeeStatus.Active);
 
-                // Tuyển đúng ngày đầu tháng.
-                CreateEmployee(
-                    "EMP002",
-                    new DateOnly(2026, 1, 1),
-                    EmployeeStatus.Active),
+            dbContext.Employees.Add(employee);
 
-                // Nghỉ đúng ngày đầu tháng.
-                CreateEmployee(
-                    "EMP003",
-                    new DateOnly(2025, 1, 1),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 1, 1)),
+            dbContext.EmploymentPeriods.AddRange(
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employeeId,
+                    new DateOnly(2022, 1, 1),
+                    new DateOnly(2026, 3, 15)),
 
-                // Vào và nghỉ đúng ngày cuối tháng.
-                CreateEmployee(
-                    "EMP004",
-                    new DateOnly(2026, 1, 31),
-                    EmployeeStatus.Inactive,
-                    new DateOnly(2026, 1, 31)));
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employeeId,
+                    new DateOnly(2026, 8, 1)));
 
             await dbContext.SaveChangesAsync();
         }
@@ -355,37 +485,97 @@ public sealed class EfWorkforceAnalyticsServiceTests
                 2026,
                 WorkforceAnalyticsGrouping.Monthly);
 
-        WorkforceMovementPeriod january =
-            summary.Periods[0];
-
-        Assert.Equal(2, january.BeginningHeadcount);
-        Assert.Equal(2, january.NewHires);
-        Assert.Equal(2, january.Separations);
-        Assert.Equal(2, january.EndingHeadcount);
+        Assert.Equal(
+            1,
+            summary.TotalNewHires);
 
         Assert.Equal(
-            january.BeginningHeadcount
-            + january.NewHires
-            - january.Separations,
-            january.EndingHeadcount);
+            1,
+            summary.TotalSeparations);
 
-        Assert.Equal(2m, january.AverageHeadcount);
-        Assert.Equal(100m, january.TurnoverRate);
+        WorkforceMovementPeriod march =
+            summary.Periods[2];
+
+        Assert.Equal(
+            1,
+            march.Separations);
+
+        WorkforceMovementPeriod august =
+            summary.Periods[7];
+
+        Assert.Equal(
+            1,
+            august.NewHires);
+
+        Assert.Equal(
+            1,
+            august.EndingHeadcount);
     }
 
     [Fact]
-    public async Task GetWorkforceMovementAsync_WhenYearIsInvalid_Throws()
+    public async Task GetWorkforceMovementAsync_AfterTerminationIsCancelled_DoesNotCountSeparation()
     {
-        var options =
+        await using var connection =
+            new SqliteConnection(
+                "Data Source=:memory:");
+
+        await connection.OpenAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
             new DbContextOptionsBuilder<HrManagementDbContext>()
-                .UseSqlite("Data Source=:memory:")
+                .UseSqlite(connection)
                 .Options;
+
+        Guid employeeId =
+            Guid.NewGuid();
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database
+                .EnsureCreatedAsync();
+
+            dbContext.Employees.Add(
+                new Employee(
+                    employeeId,
+                    "EMP-CANCEL-ANALYTICS",
+                    "Nhân viên kiểm thử",
+                    null,
+                    null,
+                    null,
+                    new DateOnly(2024, 1, 1),
+                    "Nhân sự",
+                    "Chuyên viên",
+                    EmployeeStatus.Active));
+
+            // Period đã reopen sau Cancel Deactivation.
+            dbContext.EmploymentPeriods.Add(
+                new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employeeId,
+                    new DateOnly(2024, 1, 1)));
+
+            await dbContext.SaveChangesAsync();
+        }
 
         var service =
             new EfWorkforceAnalyticsService(
                 new TestDbContextFactory(options));
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => service.GetWorkforceMovementAsync(0));
+        WorkforceMovementSummary summary =
+            await service.GetWorkforceMovementAsync(
+                2026);
+
+        Assert.Equal(
+            0,
+            summary.TotalSeparations);
+
+        Assert.Equal(
+            1,
+            summary.BeginningHeadcount);
+
+        Assert.Equal(
+            1,
+            summary.EndingHeadcount);
     }
 }

@@ -1,10 +1,19 @@
 using HrManagement.Application.Employees;
+using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Employees.EmploymentLifecycle;
 using HrManagement.Domain.Employees;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HrManagement.Tests.Employees;
 
 public sealed class EmployeeServiceTests
 {
+    private readonly StubEmploymentHistoryRepository
+    historyRepository = new();
+
+    private readonly StubEmploymentLifecyclePersistence
+        lifecyclePersistence = new();
+
     private static readonly IReadOnlyList<Employee> TestEmployees =
     [
         new Employee(
@@ -48,7 +57,10 @@ public sealed class EmployeeServiceTests
     public async Task GetEmployeesAsync_WithNoFilter_ReturnsAllEmployees()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
         IReadOnlyList<Employee> result =
             await service.GetEmployeesAsync();
@@ -60,7 +72,10 @@ public sealed class EmployeeServiceTests
     public async Task GetEmployeesAsync_WithSearchText_FiltersEmployees()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var filter = new EmployeeFilter(SearchText: "Châu");
 
@@ -76,7 +91,10 @@ public sealed class EmployeeServiceTests
     public async Task GetEmployeesAsync_SearchIsCaseInsensitive()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var filter = new EmployeeFilter(SearchText: "kinh DOANH");
 
@@ -92,7 +110,10 @@ public sealed class EmployeeServiceTests
     public async Task GetEmployeesAsync_WithStatus_FiltersEmployees()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var filter = new EmployeeFilter(
             Status: EmployeeStatus.Active);
@@ -114,7 +135,10 @@ public sealed class EmployeeServiceTests
     public async Task GetEmployeesAsync_WithSearchAndStatus_AppliesBothFilters()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var filter = new EmployeeFilter(
             SearchText: "Kinh doanh",
@@ -187,19 +211,26 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task CreateEmployeeAsync_WithValidRequest_CreatesEmployee()
     {
-        var repository = new InMemoryEmployeeRepository();
-        var service = new EmployeeService(repository);
+        var repository =
+            new InMemoryEmployeeRepository();
 
-        var request = new CreateEmployeeRequest(
-            EmployeeCode: "EMP100",
-            FullName: "Nguyễn Minh Anh",
-            Email: "minhanh@example.com",
-            PhoneNumber: "0909000000",
-            DateOfBirth: new DateOnly(1997, 6, 15),
-            HireDate: new DateOnly(2026, 8, 1),
-            Department: "Nhân sự",
-            Position: "Chuyên viên",
-            Status: EmployeeStatus.Active);
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        var request =
+            new CreateEmployeeRequest(
+                EmployeeCode: "EMP100",
+                FullName: "Nguyễn Minh Anh",
+                Email: "minhanh@example.com",
+                PhoneNumber: "0909000000",
+                DateOfBirth: new DateOnly(1997, 6, 15),
+                HireDate: new DateOnly(2026, 8, 1),
+                Department: "Nhân sự",
+                Position: "Chuyên viên",
+                Status: EmployeeStatus.Active);
 
         CreateEmployeeResult result =
             await service.CreateEmployeeAsync(request);
@@ -208,11 +239,43 @@ public sealed class EmployeeServiceTests
         Assert.NotNull(result.EmployeeId);
         Assert.Null(result.ErrorMessage);
 
-        Employee? employee =
-            await repository.GetByEmployeeCodeAsync("EMP100");
+        Employee employee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.CreatedEmployee);
 
-        Assert.NotNull(employee);
-        Assert.Equal("Nguyễn Minh Anh", employee.FullName);
+        Assert.Equal(
+            result.EmployeeId,
+            employee.Id);
+
+        Assert.Equal(
+            "EMP100",
+            employee.EmployeeCode);
+
+        Assert.Equal(
+            "Nguyễn Minh Anh",
+            employee.FullName);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            employee.Status);
+
+        EmploymentPeriod period =
+            Assert.IsType<EmploymentPeriod>(
+                lifecyclePersistence.CreatedPeriod);
+
+        Assert.Equal(
+            employee.Id,
+            period.EmployeeId);
+
+        Assert.Equal(
+            new DateOnly(2026, 8, 1),
+            period.StartDate);
+
+        Assert.Null(
+            period.EndDate);
+
+        Assert.True(
+            period.IsOpen);
     }
 
     [Fact]
@@ -233,7 +296,10 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository(existingEmployee);
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new CreateEmployeeRequest(
             "EMP001",
@@ -259,7 +325,10 @@ public sealed class EmployeeServiceTests
     public async Task CreateEmployeeAsync_WithInvalidDomainData_ReturnsFailure()
     {
         var repository = new InMemoryEmployeeRepository();
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new CreateEmployeeRequest(
             EmployeeCode: "   ",
@@ -353,51 +422,68 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task UpdateEmployeeAsync_WithValidRequest_UpdatesEmployee()
     {
-        var existingEmployee = new Employee(
-            Guid.NewGuid(),
-            "EMP001",
-            "Nguyễn Văn An",
-            null,
-            null,
-            null,
-            new DateOnly(2022, 3, 1),
-            "Nhân sự",
-            "Chuyên viên",
-            EmployeeStatus.Active);
+        var existingEmployee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2022, 3, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
 
         var repository =
-            new InMemoryEmployeeRepository(existingEmployee);
+            new InMemoryEmployeeRepository(
+                existingEmployee);
 
-        var service = new EmployeeService(repository);
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
 
-        var request = new UpdateEmployeeRequest(
-            existingEmployee.Id,
-            "EMP001",
-            "Nguyễn Văn An Updated",
-            "an.updated@example.com",
-            "0909000001",
-            null,
-            new DateOnly(2022, 3, 1),
-            "Nhân sự",
-            "Chuyên viên cao cấp",
-            EmployeeStatus.Active);
+        var request =
+            new UpdateEmployeeRequest(
+                existingEmployee.Id,
+                "EMP001",
+                "Nguyễn Văn An Updated",
+                "an.updated@example.com",
+                "0909000001",
+                null,
+                new DateOnly(2022, 3, 1),
+                "Nhân sự",
+                "Chuyên viên cao cấp",
+                EmployeeStatus.Active);
 
         UpdateEmployeeResult result =
-            await service.UpdateEmployeeAsync(request);
+            await service.UpdateEmployeeAsync(
+                request);
 
         Assert.True(result.IsSuccessful);
         Assert.Null(result.ErrorMessage);
 
         Employee? updated =
-            await repository.GetByIdAsync(existingEmployee.Id);
+            await repository.GetByIdAsync(
+                existingEmployee.Id);
 
         Assert.NotNull(updated);
+
         Assert.Equal(
             "Nguyễn Văn An Updated",
             updated.FullName);
+
         Assert.Equal(
             "Chuyên viên cao cấp",
             updated.Position);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
     }
 
     [Fact]
@@ -406,7 +492,10 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository();
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new UpdateEmployeeRequest(
             Guid.NewGuid(),
@@ -461,7 +550,10 @@ public sealed class EmployeeServiceTests
                 firstEmployee,
                 secondEmployee);
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new UpdateEmployeeRequest(
             firstEmployee.Id,
@@ -502,7 +594,10 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository(existingEmployee);
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new UpdateEmployeeRequest(
             existingEmployee.Id,
@@ -541,26 +636,68 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository(employee);
 
-        var service = new EmployeeService(repository);
+        var historyRepository =
+            new StubEmploymentHistoryRepository
+            {
+                History = new EmploymentHistory(
+                    employee.Id,
+                    [
+                        new EmploymentPeriod(
+                        Guid.NewGuid(),
+                        employee.Id,
+                        employee.HireDate)
+                    ])
+            };
+
+        var lifecyclePersistence =
+            new StubEmploymentLifecyclePersistence();
+
+        var service = new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
         DateOnly terminationDate =
-        new DateOnly(2026, 8, 1);
+            new(2026, 8, 1);
 
         DeactivateEmployeeResult result =
-        await service.DeactivateEmployeeAsync(
-        employee.Id,
-        terminationDate);
+            await service.DeactivateEmployeeAsync(
+                employee.Id,
+                terminationDate);
 
         Assert.True(result.IsSuccessful);
         Assert.Null(result.ErrorMessage);
 
-        Employee? updated =
-            await repository.GetByIdAsync(employee.Id);
+        Employee updatedEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.UpdatedEmployee);
 
-        Assert.NotNull(updated);
+        EmploymentPeriod updatedPeriod =
+            Assert.IsType<EmploymentPeriod>(
+                lifecyclePersistence.UpdatedPeriod);
+
         Assert.Equal(
             EmployeeStatus.Inactive,
-            updated.Status);
+            updatedEmployee.Status);
+
+        Assert.Equal(
+            terminationDate,
+            updatedEmployee.TerminationDate);
+
+        Assert.Equal(
+            employee.Id,
+            updatedPeriod.EmployeeId);
+
+        Assert.Equal(
+            employee.HireDate,
+            updatedPeriod.StartDate);
+
+        Assert.Equal(
+            terminationDate,
+            updatedPeriod.EndDate);
+
+        Assert.False(
+            updatedPeriod.IsOpen);
     }
 
     [Fact]
@@ -581,28 +718,60 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository(employee);
 
-        var service = new EmployeeService(repository);
+        var historyRepository =
+            new StubEmploymentHistoryRepository
+            {
+                History = new EmploymentHistory(
+                    employee.Id,
+                    [
+                        new EmploymentPeriod(
+                        Guid.NewGuid(),
+                        employee.Id,
+                        employee.HireDate)
+                    ])
+            };
+
+        var lifecyclePersistence =
+            new StubEmploymentLifecyclePersistence();
+
+        var service = new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
         DateOnly terminationDate =
-        new DateOnly(2026, 8, 1);
+            new(2026, 8, 1);
 
         DeactivateEmployeeResult result =
-        await service.DeactivateEmployeeAsync(
-        employee.Id,
-        terminationDate);
+            await service.DeactivateEmployeeAsync(
+                employee.Id,
+                terminationDate);
 
         Assert.True(result.IsSuccessful);
+        Assert.Null(result.ErrorMessage);
 
-        Employee? updated =
-            await repository.GetByIdAsync(employee.Id);
+        Employee updatedEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.UpdatedEmployee);
 
-        Assert.NotNull(updated);
+        EmploymentPeriod updatedPeriod =
+            Assert.IsType<EmploymentPeriod>(
+                lifecyclePersistence.UpdatedPeriod);
+
         Assert.Equal(
             EmployeeStatus.Inactive,
-            updated.Status);
+            updatedEmployee.Status);
+
         Assert.Equal(
             terminationDate,
-            updated.TerminationDate);
+            updatedEmployee.TerminationDate);
+
+        Assert.Equal(
+            terminationDate,
+            updatedPeriod.EndDate);
+
+        Assert.False(
+            updatedPeriod.IsOpen);
     }
 
     [Fact]
@@ -611,16 +780,26 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository();
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
         DeactivateEmployeeResult result =
             await service.DeactivateEmployeeAsync(
                 Guid.NewGuid());
 
         Assert.False(result.IsSuccessful);
+
         Assert.Equal(
             "Không tìm thấy nhân viên.",
             result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
     }
 
     [Fact]
@@ -641,21 +820,36 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository(employee);
 
-        var service = new EmployeeService(repository);
+        var service = new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
         DeactivateEmployeeResult result =
-            await service.DeactivateEmployeeAsync(employee.Id);
+            await service.DeactivateEmployeeAsync(
+                employee.Id);
 
         Assert.True(result.IsSuccessful);
         Assert.Null(result.ErrorMessage);
 
         Employee? unchanged =
-            await repository.GetByIdAsync(employee.Id);
+            await repository.GetByIdAsync(
+                employee.Id);
 
         Assert.NotNull(unchanged);
+
         Assert.Equal(
             EmployeeStatus.Inactive,
             unchanged.Status);
+
+        Assert.Null(
+            unchanged.TerminationDate);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
     }
 
     [Fact]
@@ -704,7 +898,10 @@ public sealed class EmployeeServiceTests
                 incompleteInactiveEmployee);
 
         var service =
-            new EmployeeService(repository);
+            new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         IReadOnlyList<Employee> result =
             await service.GetEmployeesAsync(
@@ -741,7 +938,10 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository(employee);
 
         var service =
-            new EmployeeService(repository);
+            new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         DeactivateEmployeeResult result =
             await service.DeactivateEmployeeAsync(employee.Id);
@@ -760,9 +960,10 @@ public sealed class EmployeeServiceTests
     }
 
     [Fact]
-    public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsFailure()
-    {
-        var employee = new Employee(
+public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsFailure()
+{
+    var employee =
+        new Employee(
             Guid.NewGuid(),
             "EMP101",
             "Nhân viên kiểm thử",
@@ -774,26 +975,36 @@ public sealed class EmployeeServiceTests
             "Chuyên viên",
             EmployeeStatus.Active);
 
-        var repository =
-            new InMemoryEmployeeRepository(employee);
+    var repository =
+        new InMemoryEmployeeRepository(employee);
 
-        var service =
-            new EmployeeService(repository);
+    var service =
+        new EmployeeService(
+            repository,
+            historyRepository,
+            lifecyclePersistence);
 
-        DateOnly tomorrow =
-            DateOnly.FromDateTime(DateTime.Today)
-                .AddDays(1);
+    DateOnly tomorrow =
+        DateOnly.FromDateTime(DateTime.Today)
+            .AddDays(1);
 
-        DeactivateEmployeeResult result =
-            await service.DeactivateEmployeeAsync(
-                employee.Id,
-                tomorrow);
+    DeactivateEmployeeResult result =
+        await service.DeactivateEmployeeAsync(
+            employee.Id,
+            tomorrow);
 
-        Assert.False(result.IsSuccessful);
-        Assert.Equal(
-            "Ngày nghỉ việc không thể ở tương lai.",
-            result.ErrorMessage);
-    }
+    Assert.False(result.IsSuccessful);
+
+    Assert.Equal(
+        "Ngày nghỉ việc không thể ở tương lai.",
+        result.ErrorMessage);
+
+    Assert.Null(
+        lifecyclePersistence.UpdatedEmployee);
+
+    Assert.Null(
+        lifecyclePersistence.UpdatedPeriod);
+}
 
     [Fact]
     public async Task UpdateEmployeeAsync_WhenChangingActiveToInactive_ReturnsFailure()
@@ -814,7 +1025,10 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository(employee);
 
         var service =
-            new EmployeeService(repository);
+            new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new UpdateEmployeeRequest(
             employee.Id,
@@ -860,7 +1074,10 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository(employee);
 
         var service =
-            new EmployeeService(repository);
+            new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new UpdateEmployeeRequest(
             employee.Id,
@@ -896,7 +1113,10 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository();
 
         var service =
-            new EmployeeService(repository);
+            new EmployeeService(
+    repository,
+    historyRepository,
+    lifecyclePersistence);
 
         var request = new CreateEmployeeRequest(
             "EMP104",
@@ -916,5 +1136,904 @@ public sealed class EmployeeServiceTests
         Assert.Equal(
             "Không thể tạo mới nhân viên ở trạng thái ngừng hoạt động.",
             result.ErrorMessage);
+    }
+
+    private sealed class StubEmploymentHistoryRepository
+    : IEmploymentHistoryRepository
+    {
+        public EmploymentHistory? History { get; set; }
+
+        public Task<EmploymentHistory>
+            GetByEmployeeIdAsync(
+                Guid employeeId,
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                History
+                ?? new EmploymentHistory(
+                    employeeId,
+                    []));
+        }
+
+        public Task AddPeriodAsync(
+            EmploymentPeriod period,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task UpdatePeriodAsync(
+            EmploymentPeriod period,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubEmploymentLifecyclePersistence
+    : IEmploymentLifecyclePersistence
+    {
+        public Employee? RehiredEmployee
+        {
+            get;
+            private set;
+        }
+
+        public EmploymentPeriod? RehirePeriod
+        {
+            get;
+            private set;
+        }
+
+        public Task UpdateEmployeeWithNewPeriodAsync(
+            Employee employee,
+            EmploymentPeriod newPeriod,
+            CancellationToken cancellationToken = default)
+        {
+            RehiredEmployee =
+                employee;
+
+            RehirePeriod =
+                newPeriod;
+
+            return Task.CompletedTask;
+        }
+
+        public Employee? CreatedEmployee { get; private set; }
+
+        public EmploymentPeriod? CreatedPeriod { get; private set; }
+
+        public Employee? UpdatedEmployee { get; private set; }
+
+        public EmploymentPeriod? UpdatedPeriod { get; private set; }
+
+        public Task CreateEmployeeWithPeriodAsync(
+            Employee employee,
+            EmploymentPeriod period,
+            CancellationToken cancellationToken = default)
+        {
+            CreatedEmployee = employee;
+            CreatedPeriod = period;
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateEmployeeWithPeriodAsync(
+            Employee employee,
+            EmploymentPeriod period,
+            CancellationToken cancellationToken = default)
+        {
+            UpdatedEmployee = employee;
+            UpdatedPeriod = period;
+
+            return Task.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public async Task DeactivateEmployeeAsync_WhenNoOpenEmploymentPeriodExists_ReturnsFailure()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-NO-PERIOD",
+                "Nhân viên không có kỳ làm việc",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                []);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        DateOnly terminationDate =
+            new(2026, 8, 1);
+
+        DeactivateEmployeeResult result =
+            await service.DeactivateEmployeeAsync(
+                employee.Id,
+                terminationDate);
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Không tìm thấy giai đoạn làm việc đang mở của nhân viên.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
+
+        Employee? unchanged =
+            await repository.GetByIdAsync(
+                employee.Id);
+
+        Assert.NotNull(unchanged);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            unchanged.Status);
+
+        Assert.Null(
+            unchanged.TerminationDate);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenValid_RestoresEmployeeToActive()
+    {
+        DateOnly terminationDate =
+            new(2026, 6, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-001",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [
+                    new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Active);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Null(result.ErrorMessage);
+
+        Employee restoredEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.UpdatedEmployee);
+
+        EmploymentPeriod reopenedPeriod =
+            Assert.IsType<EmploymentPeriod>(
+                lifecyclePersistence.UpdatedPeriod);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            restoredEmployee.Status);
+
+        Assert.Null(
+            restoredEmployee.TerminationDate);
+
+        Assert.Null(
+            reopenedPeriod.EndDate);
+
+        Assert.True(
+            reopenedPeriod.IsOpen);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenRestoredStatusIsOnLeave_RestoresEmployeeToOnLeave()
+    {
+        DateOnly terminationDate =
+            new(2026, 6, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-002",
+                "Lê Minh Châu",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 2, 1),
+                "Công nghệ thông tin",
+                "Lập trình viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [
+                    new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.OnLeave);
+
+        Assert.True(result.IsSuccessful);
+
+        Assert.Equal(
+            EmployeeStatus.OnLeave,
+            lifecyclePersistence
+                .UpdatedEmployee!
+                .Status);
+
+        Assert.Null(
+            lifecyclePersistence
+                .UpdatedEmployee
+                .TerminationDate);
+
+        Assert.True(
+            lifecyclePersistence
+                .UpdatedPeriod!
+                .IsOpen);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenEmployeeDoesNotExist_ReturnsFailure()
+    {
+        var repository =
+            new InMemoryEmployeeRepository();
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                Guid.NewGuid(),
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Không tìm thấy nhân viên.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenEmployeeIsNotInactive_ReturnsFailure()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-003",
+                "Nhân viên đang làm việc",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenTerminationDateIsMissing_ReturnsFailure()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-004",
+                "Nhân viên legacy",
+                null,
+                null,
+                null,
+                new DateOnly(2020, 1, 1),
+                "Hành chính",
+                "Chuyên viên",
+                EmployeeStatus.Inactive);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Không thể hủy ngừng hoạt động vì hồ sơ chưa có ngày nghỉ việc.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenHistoryTerminationDateDoesNotMatch_ReturnsFailure()
+    {
+        DateOnly employeeTerminationDate =
+            new(2026, 6, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-005",
+                "Nhân viên lệch lịch sử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                employeeTerminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [
+                    new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    employee.HireDate,
+                    new DateOnly(2026, 6, 20))
+                ]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Ngày kết thúc của lịch sử làm việc không khớp.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedPeriod);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_WhenRestoredStatusIsInvalid_ReturnsFailure()
+    {
+        DateOnly terminationDate =
+            new(2026, 6, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-CANCEL-006",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Inactive);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Trạng thái khôi phục phải là Đang làm việc hoặc Nghỉ phép.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.UpdatedEmployee);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenValid_RestoresEmployeeAndCreatesNewPeriod()
+    {
+        DateOnly originalHireDate =
+            new(2022, 1, 10);
+
+        DateOnly terminationDate =
+            new(2026, 3, 15);
+
+        DateOnly rehireDate =
+            new(2026, 8, 1);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-001",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                originalHireDate,
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        EmploymentPeriod previousPeriod =
+            new(
+                Guid.NewGuid(),
+                employee.Id,
+                originalHireDate,
+                terminationDate);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [previousPeriod]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                rehireDate,
+                EmployeeStatus.Active);
+
+        Assert.True(result.IsSuccessful);
+        Assert.Null(result.ErrorMessage);
+
+        Employee rehiredEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.RehiredEmployee);
+
+        EmploymentPeriod newPeriod =
+            Assert.IsType<EmploymentPeriod>(
+                lifecyclePersistence.RehirePeriod);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            rehiredEmployee.Status);
+
+        Assert.Null(
+            rehiredEmployee.TerminationDate);
+
+        Assert.Equal(
+            originalHireDate,
+            rehiredEmployee.HireDate);
+
+        Assert.Equal(
+            rehireDate,
+            newPeriod.StartDate);
+
+        Assert.Null(
+            newPeriod.EndDate);
+
+        Assert.True(
+            newPeriod.IsOpen);
+
+        // Period cũ tuyệt đối không bị sửa.
+        Assert.Equal(
+            terminationDate,
+            previousPeriod.EndDate);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenStatusIsOnLeave_RestoresEmployeeToOnLeave()
+    {
+        DateOnly terminationDate =
+            new(2026, 3, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-002",
+                "Lê Minh Châu",
+                null,
+                null,
+                null,
+                new DateOnly(2023, 1, 1),
+                "CNTT",
+                "Lập trình viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [
+                    new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                new DateOnly(2026, 8, 1),
+                EmployeeStatus.OnLeave);
+
+        Assert.True(result.IsSuccessful);
+
+        Assert.Equal(
+            EmployeeStatus.OnLeave,
+            lifecyclePersistence
+                .RehiredEmployee!
+                .Status);
+
+        Assert.True(
+            lifecyclePersistence
+                .RehirePeriod!
+                .IsOpen);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenEmployeeIsNotInactive_ReturnsFailure()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-003",
+                "Nhân viên đang làm việc",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                new DateOnly(2026, 8, 1),
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Chỉ có thể tái tuyển dụng nhân viên đã ngừng hoạt động.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.RehiredEmployee);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenTerminationDateIsMissing_ReturnsFailure()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-004",
+                "Nhân viên legacy",
+                null,
+                null,
+                null,
+                new DateOnly(2020, 1, 1),
+                "Hành chính",
+                "Chuyên viên",
+                EmployeeStatus.Inactive);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                new DateOnly(2026, 8, 1),
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Không thể tái tuyển dụng vì hồ sơ chưa có ngày nghỉ việc.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.RehiredEmployee);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenStatusIsInvalid_ReturnsFailure()
+    {
+        DateOnly terminationDate =
+            new(2026, 3, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-005",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                new DateOnly(2026, 8, 1),
+                EmployeeStatus.Inactive);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Trạng thái tái tuyển dụng phải là Đang làm việc hoặc Nghỉ phép.",
+            result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenRehireDateIsInFuture_ReturnsFailure()
+    {
+        DateOnly terminationDate =
+            DateOnly.FromDateTime(
+                DateTime.Today)
+            .AddDays(-10);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-006",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        DateOnly tomorrow =
+            DateOnly.FromDateTime(
+                DateTime.Today)
+            .AddDays(1);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                tomorrow,
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Ngày tái tuyển dụng không thể ở tương lai.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.RehiredEmployee);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenHistoryTerminationDateDoesNotMatch_ReturnsFailure()
+    {
+        DateOnly terminationDate =
+            new(2026, 3, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-REHIRE-007",
+                "Nhân viên lệch lịch sử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                terminationDate);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [
+                    new EmploymentPeriod(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    employee.HireDate,
+                    new DateOnly(2026, 3, 20))
+                ]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence);
+
+        RehireEmployeeResult result =
+            await service.RehireEmployeeAsync(
+                employee.Id,
+                new DateOnly(2026, 8, 1),
+                EmployeeStatus.Active);
+
+        Assert.False(result.IsSuccessful);
+
+        Assert.Equal(
+            "Ngày kết thúc của lịch sử làm việc không khớp.",
+            result.ErrorMessage);
+
+        Assert.Null(
+            lifecyclePersistence.RehiredEmployee);
+
+        Assert.Null(
+            lifecyclePersistence.RehirePeriod);
     }
 }

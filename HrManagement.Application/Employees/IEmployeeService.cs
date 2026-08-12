@@ -20,4 +20,16 @@ public interface IEmployeeService
         Guid employeeId,
         DateOnly? terminationDate = null,
         CancellationToken cancellationToken = default);
+
+    Task<CancelEmployeeDeactivationResult>
+    CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default);
+
+    Task<RehireEmployeeResult> RehireEmployeeAsync(
+        Guid employeeId,
+        DateOnly rehireDate,
+        EmployeeStatus rehireStatus,
+        CancellationToken cancellationToken = default);
 }

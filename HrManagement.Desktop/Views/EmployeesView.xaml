@@ -31,12 +31,13 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="64.959" />
+                <ColumnDefinition Width="55.041"/>
                 <ColumnDefinition Width="8" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0">
+            <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,140,0">
                 <TextBlock Text="Nhân viên"
                    Style="{StaticResource PageTitleTextStyle}" />
 
@@ -45,23 +46,38 @@
                    Style="{StaticResource SecondaryTextStyle}" />
             </StackPanel>
 
+            <Button Content="Hủy ngừng hoạt động"
+                    Command="{Binding CancelDeactivationCommand}"
+                    Margin="0,-32,8,50"
+                    ToolTip="Hủy sự kiện nghỉ việc đã ghi nhận cho nhân viên được chọn" Grid.Column="1" Grid.ColumnSpan="2" />
+
+            <Button Content="Tái tuyển dụng"
+                    Command="{Binding RehireEmployeeCommand}"
+                    Margin="0,-32,8,51"
+                    ToolTip="Tạo một giai đoạn làm việc mới và giữ nguyên lịch sử nghỉ việc trước đó" Grid.ColumnSpan="3" Grid.Column="3" />
+
+            <Button Content="Lịch sử làm việc"
+                    Command="{Binding ViewEmploymentHistoryCommand}"
+                    Margin="0,-32,0,51"
+                    ToolTip="Xem các giai đoạn làm việc của nhân viên được chọn" Grid.Column="6" />
+
             <Button Grid.Column="1"
                     Width="140"
                     Height="36"
                     Content="Ngừng hoạt động"
-                    Command="{Binding DeactivateEmployeeCommand}" />
+                    Command="{Binding DeactivateEmployeeCommand}" Grid.ColumnSpan="2" Margin="0,10,8,9" />
 
             <Button Grid.Column="3"
                     Width="120"
                     Height="36"
                     Content="Sửa nhân viên"
-                    Command="{Binding EditEmployeeCommand}" />
+                    Command="{Binding EditEmployeeCommand}" Grid.ColumnSpan="3" Margin="0,10,8,9" />
 
-            <Button Grid.Column="5"
+            <Button Grid.Column="6"
                     Width="130"
                     Height="36"
                     Content="Thêm nhân viên"
-                    Command="{Binding AddEmployeeCommand}" />
+                    Command="{Binding AddEmployeeCommand}" Margin="0,10,0,9" />
 
         </Grid>
 

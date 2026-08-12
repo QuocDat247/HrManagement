@@ -26,6 +26,30 @@ public sealed class AddEmployeeViewModelTests
 
     private sealed class StubEmployeeService : IEmployeeService
     {
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+        Guid employeeId,
+        DateOnly rehireDate,
+        EmployeeStatus rehireStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new RehireEmployeeResult(
+                    false,
+                    "Not used in this test."));
+        }
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CancelEmployeeDeactivationResult(
+                    false,
+                    "Not used in this test."));
+        }
+
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
             EmployeeFilter? filter = null,
             CancellationToken cancellationToken = default)

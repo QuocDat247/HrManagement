@@ -6,6 +6,9 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<EmploymentPeriod> EmploymentPeriods =>
+    Set<EmploymentPeriod>();
+
     public HrManagementDbContext(
         DbContextOptions<HrManagementDbContext> options)
         : base(options)
@@ -20,5 +23,7 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new EmployeeConfiguration());
+        modelBuilder.ApplyConfiguration(
+            new EmploymentPeriodConfiguration());
     }
 }

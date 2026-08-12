@@ -1,6 +1,8 @@
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Dashboard.Analytics;
 using HrManagement.Application.Employees;
+using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Employees.EmploymentLifecycle;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Dashboard.Analytics;
 using HrManagement.Infrastructure.Employees;
@@ -26,6 +28,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddSingleton<DatabaseInitializer>();
         services.AddSingleton<IWorkforceAnalyticsService, EfWorkforceAnalyticsService>();
+        services.AddSingleton<IEmploymentHistoryRepository, EfEmploymentHistoryRepository>();
+        services.AddSingleton<
+        IEmploymentHistoryBackfillService,
+        EfEmploymentHistoryBackfillService>();
+        services.AddSingleton<
+        IEmploymentLifecyclePersistence,
+        EfEmploymentLifecyclePersistence>();
 
         return services;
     }

@@ -95,6 +95,93 @@ public sealed class EmployeesViewModelTests
 
     private sealed class StubEmployeeService : IEmployeeService
     {
+        public Guid? RehireEmployeeId
+        {
+            get;
+            private set;
+        }
+
+        public DateOnly? RehireDate
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeStatus? RehireStatus
+        {
+            get;
+            private set;
+        }
+
+        public RehireEmployeeResult RehireResult
+        {
+            get;
+            set;
+        } =
+            new(
+                true,
+                null);
+
+
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+            Guid employeeId,
+            DateOnly rehireDate,
+            EmployeeStatus rehireStatus,
+            CancellationToken cancellationToken = default)
+        {
+            RehireEmployeeId =
+                employeeId;
+
+            RehireDate =
+                rehireDate;
+
+            RehireStatus =
+                rehireStatus;
+
+            return Task.FromResult(
+                RehireResult);
+        }
+
+        public Guid?
+        CancelDeactivationEmployeeId
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeStatus?
+            CancelDeactivationRestoredStatus
+        {
+            get;
+            private set;
+        }
+
+        public CancelEmployeeDeactivationResult
+            CancelDeactivationResult
+        {
+            get;
+            set;
+        } =
+            new(
+                true,
+                null);
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            CancelDeactivationEmployeeId =
+                employeeId;
+
+            CancelDeactivationRestoredStatus =
+                restoredStatus;
+
+            return Task.FromResult(
+                CancelDeactivationResult);
+        }
+
         private readonly IReadOnlyList<Employee> _employees;
 
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
@@ -141,6 +228,29 @@ public sealed class EmployeesViewModelTests
 
     private sealed class FailingEmployeeService : IEmployeeService
     {
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+        Guid employeeId,
+        DateOnly rehireDate,
+        EmployeeStatus rehireStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new RehireEmployeeResult(
+                    false,
+                    "Not used in this test."));
+        }
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CancelEmployeeDeactivationResult(
+                    false,
+                    "Not used in this test."));
+        }
         public Task<DeactivateEmployeeResult> DeactivateEmployeeAsync(
             Guid employeeId,
             DateOnly? terminationDate = null,
@@ -183,6 +293,69 @@ public sealed class EmployeesViewModelTests
 
     private sealed class StubEmployeeDialogService : IEmployeeDialogService
     {
+
+        public Employee?
+        EmployeePassedToEmploymentHistoryDialog
+        {
+            get;
+            private set;
+        }
+
+        public void ShowEmploymentHistoryDialog(
+            Employee employee)
+        {
+            EmployeePassedToEmploymentHistoryDialog =
+                employee;
+        }
+
+        public RehireEmployeeDialogResult?
+        RehireResultToReturn
+        {
+            get;
+            set;
+        }
+
+        public Employee?
+            EmployeePassedToRehireDialog
+        {
+            get;
+            private set;
+        }
+
+        public RehireEmployeeDialogResult?
+            ShowRehireEmployeeDialog(
+                Employee employee)
+        {
+            EmployeePassedToRehireDialog =
+                employee;
+
+            return RehireResultToReturn;
+        }
+
+        public EmployeeStatus?
+        CancelDeactivationStatusToReturn
+        {
+            get;
+            set;
+        }
+
+        public Employee?
+            EmployeePassedToCancelDeactivationDialog
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeStatus?
+        ShowCancelEmployeeDeactivationDialog(
+        Employee employee)
+        {
+            EmployeePassedToCancelDeactivationDialog =
+                employee;
+
+            return CancelDeactivationStatusToReturn;
+        }
+
         public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
             return null;
@@ -253,6 +426,30 @@ public sealed class EmployeesViewModelTests
     private sealed class ReloadingEmployeeService
     : IEmployeeService
     {
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+        Guid employeeId,
+        DateOnly rehireDate,
+        EmployeeStatus rehireStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new RehireEmployeeResult(
+                    false,
+                    "Not used in this test."));
+        }
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CancelEmployeeDeactivationResult(
+                    false,
+                    "Not used in this test."));
+        }
+
         private readonly IReadOnlyList<Employee> _firstResult;
         private readonly IReadOnlyList<Employee> _secondResult;
 
@@ -311,6 +508,24 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEmployeeDialogService : IEmployeeDialogService
     {
+        public void ShowEmploymentHistoryDialog(
+        Employee employee)
+        {
+        }
+
+        public RehireEmployeeDialogResult?
+        ShowRehireEmployeeDialog(
+        Employee employee)
+        {
+            return null;
+        }
+
+        public EmployeeStatus?
+        ShowCancelEmployeeDeactivationDialog(
+        Employee employee)
+        {
+            return null;
+        }
         public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
             return null;
@@ -389,6 +604,24 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEditEmployeeDialogService : IEmployeeDialogService
     {
+        public void ShowEmploymentHistoryDialog(
+        Employee employee)
+        {
+        }
+
+        public RehireEmployeeDialogResult?
+        ShowRehireEmployeeDialog(
+        Employee employee)
+        {
+            return null;
+        }
+
+        public EmployeeStatus?
+        ShowCancelEmployeeDeactivationDialog(
+        Employee employee)
+        {
+            return null;
+        }
         public DateOnly? ShowDeactivateEmployeeDialog(Employee employee)
         {
             return null;
@@ -538,6 +771,24 @@ public sealed class EmployeesViewModelTests
 
     private sealed class DeactivateEmployeeDialogServiceStub : IEmployeeDialogService
     {
+        public void ShowEmploymentHistoryDialog(
+        Employee employee)
+        {
+        }
+
+        public RehireEmployeeDialogResult?
+        ShowRehireEmployeeDialog(
+        Employee employee)
+        {
+            return null;
+        }
+
+        public EmployeeStatus?
+        ShowCancelEmployeeDeactivationDialog(
+        Employee employee)
+        {
+            return null;
+        }
         private readonly DateOnly? _terminationDate;
 
         public Employee? EmployeePassedToDialog { get; private set; }
@@ -560,6 +811,30 @@ public sealed class EmployeesViewModelTests
     private sealed class DeactivateEmployeeServiceStub
     : IEmployeeService
     {
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+            Guid employeeId,
+            DateOnly rehireDate,
+            EmployeeStatus rehireStatus,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new RehireEmployeeResult(
+                    false,
+                    "Not used in this test."));
+        }
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CancelEmployeeDeactivationResult(
+                    false,
+                    "Not used in this test."));
+        }
+
         private readonly IReadOnlyList<Employee> _firstResult;
         private readonly IReadOnlyList<Employee> _secondResult;
 
@@ -627,6 +902,30 @@ public sealed class EmployeesViewModelTests
     private sealed class CapturingEmployeeService
     : IEmployeeService
     {
+        public Task<RehireEmployeeResult> RehireEmployeeAsync(
+            Guid employeeId,
+            DateOnly rehireDate,
+            EmployeeStatus rehireStatus,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new RehireEmployeeResult(
+                    false,
+                    "Not used in this test."));
+        }
+
+        public Task<CancelEmployeeDeactivationResult>
+        CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new CancelEmployeeDeactivationResult(
+                    false,
+                    "Not used in this test."));
+        }
+
         public EmployeeFilter? LastFilter { get; private set; }
 
         public Task<IReadOnlyList<Employee>> GetEmployeesAsync(
@@ -738,5 +1037,352 @@ public sealed class EmployeesViewModelTests
 
         Assert.Null(
             service.LastFilter.Status);
+    }
+
+    [Fact]
+    public void CancelDeactivationCommand_CanExecuteOnlyForInactiveEmployeeWithTerminationDate()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        Employee activeEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        Employee legacyInactiveEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive);
+
+        Employee terminatedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        viewModel.SelectedEmployee =
+            activeEmployee;
+
+        Assert.False(
+            viewModel.CancelDeactivationCommand
+                .CanExecute(null));
+
+        viewModel.SelectedEmployee =
+            legacyInactiveEmployee;
+
+        Assert.False(
+            viewModel.CancelDeactivationCommand
+                .CanExecute(null));
+
+        viewModel.SelectedEmployee =
+            terminatedEmployee;
+
+        Assert.True(
+            viewModel.CancelDeactivationCommand
+                .CanExecute(null));
+    }
+
+    [Fact]
+    public async Task CancelDeactivationCommand_WhenConfirmed_CallsServiceWithSelectedStatus()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                CancelDeactivationStatusToReturn =
+                    EmployeeStatus.OnLeave
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        await viewModel
+            .CancelDeactivationCommand
+            .ExecuteAsync(null);
+
+        Assert.Same(
+            employee,
+            dialogService
+                .EmployeePassedToCancelDeactivationDialog);
+
+        Assert.Equal(
+            employee.Id,
+            employeeService
+                .CancelDeactivationEmployeeId);
+
+        Assert.Equal(
+            EmployeeStatus.OnLeave,
+            employeeService
+                .CancelDeactivationRestoredStatus);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationCommand_WhenDialogIsCancelled_DoesNotCallService()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                CancelDeactivationStatusToReturn =
+                    null
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        await viewModel
+            .CancelDeactivationCommand
+            .ExecuteAsync(null);
+
+        Assert.Null(
+            employeeService
+                .CancelDeactivationEmployeeId);
+
+        Assert.Null(
+            employeeService
+                .CancelDeactivationRestoredStatus);
+    }
+
+    private static Employee CreateTestEmployee(
+    EmployeeStatus status,
+    DateOnly? terminationDate = null)
+    {
+        return new Employee(
+            Guid.NewGuid(),
+            "EMP-TEST",
+            "Nhân viên kiểm thử",
+            null,
+            null,
+            null,
+            new DateOnly(2024, 1, 1),
+            "Nhân sự",
+            "Chuyên viên",
+            status,
+            terminationDate);
+    }
+
+    [Fact]
+    public void RehireEmployeeCommand_CanExecuteOnlyForInactiveEmployeeWithTerminationDate()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        Assert.False(
+            viewModel.RehireEmployeeCommand
+                .CanExecute(null));
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive);
+
+        Assert.False(
+            viewModel.RehireEmployeeCommand
+                .CanExecute(null));
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        Assert.True(
+            viewModel.RehireEmployeeCommand
+                .CanExecute(null));
+    }
+
+    [Fact]
+    public async Task RehireEmployeeCommand_WhenConfirmed_CallsServiceWithDialogValues()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        DateOnly rehireDate =
+            new(2026, 8, 1);
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                RehireResultToReturn =
+                    new RehireEmployeeDialogResult(
+                        rehireDate,
+                        EmployeeStatus.OnLeave)
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        await viewModel
+            .RehireEmployeeCommand
+            .ExecuteAsync(null);
+
+        Assert.Same(
+            employee,
+            dialogService
+                .EmployeePassedToRehireDialog);
+
+        Assert.Equal(
+            employee.Id,
+            employeeService.RehireEmployeeId);
+
+        Assert.Equal(
+            rehireDate,
+            employeeService.RehireDate);
+
+        Assert.Equal(
+            EmployeeStatus.OnLeave,
+            employeeService.RehireStatus);
+    }
+
+    [Fact]
+    public async Task RehireEmployeeCommand_WhenDialogIsCancelled_DoesNotCallService()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                RehireResultToReturn = null
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        await viewModel
+            .RehireEmployeeCommand
+            .ExecuteAsync(null);
+
+        Assert.Null(
+            employeeService.RehireEmployeeId);
+
+        Assert.Null(
+            employeeService.RehireDate);
+
+        Assert.Null(
+            employeeService.RehireStatus);
+    }
+
+    [Fact]
+    public void ViewEmploymentHistoryCommand_CanExecuteOnlyWhenEmployeeIsSelected()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        Assert.False(
+            viewModel
+                .ViewEmploymentHistoryCommand
+                .CanExecute(null));
+
+        viewModel.SelectedEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        Assert.True(
+            viewModel
+                .ViewEmploymentHistoryCommand
+                .CanExecute(null));
+    }
+
+    [Fact]
+    public void ViewEmploymentHistoryCommand_WhenExecuted_OpensDialogForSelectedEmployee()
+    {
+        var employeeService =
+            new StubEmployeeService(
+                Array.Empty<Employee>());
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                employeeService,
+                dialogService);
+
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 6, 15));
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        viewModel
+            .ViewEmploymentHistoryCommand
+            .Execute(null);
+
+        Assert.Same(
+            employee,
+            dialogService
+                .EmployeePassedToEmploymentHistoryDialog);
     }
 }

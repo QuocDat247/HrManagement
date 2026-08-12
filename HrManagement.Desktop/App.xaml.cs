@@ -11,6 +11,8 @@ using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.DependencyInjection;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Infrastructure.Employees;
 
 namespace HrManagement.Desktop;
 
@@ -100,6 +102,21 @@ public partial class App : System.Windows.Application
         EmployeeNavigationService>();
         services.AddTransient<DeactivateEmployeeViewModel>();
         services.AddTransient<DeactivateEmployeeWindow>();
+        services.AddTransient<
+        CancelEmployeeDeactivationViewModel>();
+        services.AddTransient<
+            CancelEmployeeDeactivationWindow>();
+        services.AddTransient<
+        RehireEmployeeViewModel>();
+        services.AddTransient<
+            RehireEmployeeWindow>();
+        services.AddSingleton<
+        IEmploymentHistoryService,
+        EmploymentHistoryService>();
+        services.AddTransient<
+        EmployeeEmploymentHistoryViewModel>();
+        services.AddTransient<
+            EmployeeEmploymentHistoryWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

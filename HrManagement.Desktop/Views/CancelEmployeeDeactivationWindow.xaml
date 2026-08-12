@@ -1,0 +1,88 @@
+<Window x:Class="HrManagement.Desktop.Views.CancelEmployeeDeactivationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Hủy ngừng hoạt động"
+        Width="480"
+        Height="410"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Hủy ngừng hoạt động"
+                       FontSize="20"
+                       FontWeight="SemiBold" />
+
+            <TextBlock Margin="0,8,0,0"
+                       Text="Khôi phục quan hệ lao động do sự kiện nghỉ việc trước đó được ghi nhận nhầm."
+                       TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1"
+                    Margin="0,22,0,0">
+
+            <TextBlock Text="Mã nhân viên"
+                       FontWeight="SemiBold" />
+
+            <TextBlock Text="{Binding EmployeeCode}"
+                       Margin="0,4,0,14" />
+
+            <TextBlock Text="Họ tên"
+                       FontWeight="SemiBold" />
+
+            <TextBlock Text="{Binding FullName}"
+                       Margin="0,4,0,14" />
+
+            <TextBlock Text="Ngày nghỉ đã ghi nhận"
+                       FontWeight="SemiBold" />
+
+            <TextBlock Text="{Binding TerminationDate,
+                                     StringFormat={}{0:dd/MM/yyyy}}"
+                       Margin="0,4,0,14" />
+
+            <TextBlock Text="Trạng thái khôi phục"
+                       FontWeight="SemiBold" />
+
+            <ComboBox Margin="0,6,0,0"
+                      ItemsSource="{Binding StatusOptions}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedItem="{Binding SelectedStatusOption,
+                                             Mode=TwoWay}" />
+
+            <TextBlock Margin="0,16,0,0"
+                       Foreground="{DynamicResource WarningBrush}"
+                       TextWrapping="Wrap"
+                       Text="⚠ Thao tác này sẽ hủy sự kiện nghỉ việc đã ghi nhận và có thể làm thay đổi số liệu lịch sử/Turnover." />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       Margin="0,10,0,0"
+                       Foreground="{DynamicResource WarningBrush}"
+                       TextWrapping="Wrap" />
+
+        </StackPanel>
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <Button Width="90"
+                    Margin="0,0,10,0"
+                    Content="Hủy"
+                    IsCancel="True" />
+
+            <Button Width="110"
+                    Content="Xác nhận"
+                    Command="{Binding ConfirmCommand}" />
+
+        </StackPanel>
+
+    </Grid>
+</Window>

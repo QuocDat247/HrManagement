@@ -1,14 +1,259 @@
 using HrManagement.Domain.Employees;
+using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Employees.EmploymentLifecycle;
 
 namespace HrManagement.Application.Employees;
 
 public sealed class EmployeeService : IEmployeeService
 {
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IEmploymentHistoryRepository
+    _employmentHistoryRepository;
 
-    public EmployeeService(IEmployeeRepository employeeRepository)
+    private readonly IEmploymentLifecyclePersistence
+        _employmentLifecyclePersistence;
+
+    public EmployeeService(IEmployeeRepository employeeRepository,
+        IEmploymentHistoryRepository employmentHistoryRepository,
+        IEmploymentLifecyclePersistence employmentLifecyclePersistence)
     {
         _employeeRepository = employeeRepository;
+        _employmentHistoryRepository =
+            employmentHistoryRepository;
+        _employmentLifecyclePersistence =
+            employmentLifecyclePersistence;
+    }
+
+    public async Task<RehireEmployeeResult>
+    RehireEmployeeAsync(
+        Guid employeeId,
+        DateOnly rehireDate,
+        EmployeeStatus rehireStatus,
+        CancellationToken cancellationToken = default)
+    {
+        Employee? existingEmployee =
+            await _employeeRepository.GetByIdAsync(
+                employeeId,
+                cancellationToken);
+
+        if (existingEmployee is null)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Không tìm thấy nhân viên.");
+        }
+
+        if (existingEmployee.Status
+            != EmployeeStatus.Inactive)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Chỉ có thể tái tuyển dụng nhân viên đã ngừng hoạt động.");
+        }
+
+        if (!existingEmployee.TerminationDate.HasValue)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Không thể tái tuyển dụng vì hồ sơ chưa có ngày nghỉ việc.");
+        }
+
+        if (rehireStatus is not EmployeeStatus.Active
+            and not EmployeeStatus.OnLeave)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Trạng thái tái tuyển dụng phải là Đang làm việc hoặc Nghỉ phép.");
+        }
+
+        if (rehireDate == default)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Ngày tái tuyển dụng không hợp lệ.");
+        }
+
+        DateOnly today =
+            DateOnly.FromDateTime(
+                DateTime.Today);
+
+        if (rehireDate > today)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Ngày tái tuyển dụng không thể ở tương lai.");
+        }
+
+        EmploymentHistory employmentHistory =
+            await _employmentHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
+
+        EmploymentPeriod? latestPeriod =
+            employmentHistory.LatestPeriod;
+
+        if (latestPeriod is null)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Không tìm thấy lịch sử làm việc của nhân viên.");
+        }
+
+        if (employmentHistory.CurrentPeriod is not null)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Nhân viên đã có giai đoạn làm việc đang mở.");
+        }
+
+        if (latestPeriod.EndDate
+            != existingEmployee.TerminationDate)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Ngày kết thúc của lịch sử làm việc không khớp.");
+        }
+
+        EmploymentPeriod newPeriod;
+
+        try
+        {
+            newPeriod =
+                employmentHistory.StartNewPeriod(
+                    Guid.NewGuid(),
+                    rehireDate);
+        }
+        catch (ArgumentException exception)
+        {
+            return new RehireEmployeeResult(
+                false,
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new RehireEmployeeResult(
+                false,
+                exception.Message);
+        }
+
+        var rehiredEmployee =
+            new Employee(
+                existingEmployee.Id,
+                existingEmployee.EmployeeCode,
+                existingEmployee.FullName,
+                existingEmployee.Email,
+                existingEmployee.PhoneNumber,
+                existingEmployee.DateOfBirth,
+
+                // CỐ Ý giữ ngày tuyển ban đầu.
+                existingEmployee.HireDate,
+
+                existingEmployee.Department,
+                existingEmployee.Position,
+                rehireStatus,
+
+                // Employee hiện tại không còn termination.
+                terminationDate: null);
+
+        await _employmentLifecyclePersistence
+            .UpdateEmployeeWithNewPeriodAsync(
+                rehiredEmployee,
+                newPeriod,
+                cancellationToken);
+
+        return new RehireEmployeeResult(
+            true,
+            null);
+    }
+
+    public async Task<CancelEmployeeDeactivationResult>
+    CancelDeactivationAsync(
+        Guid employeeId,
+        EmployeeStatus restoredStatus,
+        CancellationToken cancellationToken = default)
+    {
+        Employee? existingEmployee =
+            await _employeeRepository.GetByIdAsync(
+                employeeId,
+                cancellationToken);
+
+        if (existingEmployee is null)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Không tìm thấy nhân viên.");
+        }
+
+        if (existingEmployee.Status
+            != EmployeeStatus.Inactive)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Chỉ có thể hủy ngừng hoạt động đối với nhân viên đã ngừng hoạt động.");
+        }
+
+        if (!existingEmployee.TerminationDate.HasValue)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Không thể hủy ngừng hoạt động vì hồ sơ chưa có ngày nghỉ việc.");
+        }
+
+        if (restoredStatus is not EmployeeStatus.Active
+            and not EmployeeStatus.OnLeave)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Trạng thái khôi phục phải là Đang làm việc hoặc Nghỉ phép.");
+        }
+
+        EmploymentHistory employmentHistory =
+            await _employmentHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
+
+        EmploymentPeriod reopenedPeriod;
+
+        try
+        {
+            reopenedPeriod =
+                employmentHistory.ReopenLatestPeriod(
+                    existingEmployee
+                        .TerminationDate
+                        .Value);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                exception.Message);
+        }
+
+        var restoredEmployee =
+            new Employee(
+                existingEmployee.Id,
+                existingEmployee.EmployeeCode,
+                existingEmployee.FullName,
+                existingEmployee.Email,
+                existingEmployee.PhoneNumber,
+                existingEmployee.DateOfBirth,
+                existingEmployee.HireDate,
+                existingEmployee.Department,
+                existingEmployee.Position,
+                restoredStatus,
+                terminationDate: null);
+
+        await _employmentLifecyclePersistence
+            .UpdateEmployeeWithPeriodAsync(
+                restoredEmployee,
+                reopenedPeriod,
+                cancellationToken);
+
+        return new CancelEmployeeDeactivationResult(
+            true,
+            null);
     }
 
     public async Task<IReadOnlyList<Employee>> GetEmployeesAsync(
@@ -114,9 +359,17 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: ex.Message);
         }
 
-        await _employeeRepository.AddAsync(
-            employee,
-            cancellationToken);
+        var initialEmploymentPeriod =
+        new EmploymentPeriod(
+        Guid.NewGuid(),
+        employee.Id,
+        employee.HireDate);
+
+        await _employmentLifecyclePersistence
+            .CreateEmployeeWithPeriodAsync(
+                employee,
+                initialEmploymentPeriod,
+                cancellationToken);
 
         return new CreateEmployeeResult(
             IsSuccessful: true,
@@ -244,6 +497,34 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: "Ngày nghỉ việc không thể ở tương lai.");
         }
 
+        EmploymentHistory employmentHistory =
+        await _employmentHistoryRepository
+        .GetByEmployeeIdAsync(
+            employeeId,
+            cancellationToken);
+
+        if (employmentHistory.CurrentPeriod is null)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                "Không tìm thấy giai đoạn làm việc đang mở của nhân viên.");
+        }
+
+        EmploymentPeriod closedPeriod;
+
+        try
+        {
+            closedPeriod =
+                employmentHistory.CloseCurrentPeriod(
+                    terminationDate.Value);
+        }
+        catch (ArgumentException exception)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                exception.Message);
+        }
+
         Employee inactiveEmployee;
 
         try
@@ -268,9 +549,11 @@ public sealed class EmployeeService : IEmployeeService
                 ErrorMessage: ex.Message);
         }
 
-        await _employeeRepository.UpdateAsync(
-            inactiveEmployee,
-            cancellationToken);
+        await _employmentLifecyclePersistence
+        .UpdateEmployeeWithPeriodAsync(
+        inactiveEmployee,
+        closedPeriod,
+        cancellationToken);
 
         return new DeactivateEmployeeResult(
             IsSuccessful: true);

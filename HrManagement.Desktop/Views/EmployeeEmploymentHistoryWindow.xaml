@@ -1,0 +1,228 @@
+<Window x:Class="HrManagement.Desktop.Views.EmployeeEmploymentHistoryWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lịch sử làm việc"
+        Width="560"
+        Height="560"
+        MinWidth="520"
+        MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Loaded="EmployeeEmploymentHistoryWindow_Loaded">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel>
+
+            <TextBlock Text="Lịch sử làm việc"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+            <TextBlock Margin="0,6,0,0"
+                       Text="Các giai đoạn làm việc được lưu theo thứ tự thời gian."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+        </StackPanel>
+
+        <!-- Employee -->
+        <Border Grid.Row="1"
+                Margin="0,20,0,16"
+                Padding="16"
+                Background="{DynamicResource PageBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+
+            <StackPanel>
+
+                <TextBlock Text="{Binding FullName}"
+                           FontSize="17"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBlock Margin="0,5,0,0"
+                           Foreground="{DynamicResource SecondaryTextBrush}">
+
+                    <Run Text="Mã nhân viên: " />
+                    <Run Text="{Binding EmployeeCode}" />
+
+                </TextBlock>
+
+            </StackPanel>
+
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="2">
+
+            <!-- Loading -->
+            <TextBlock Text="Đang tải lịch sử làm việc..."
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoading}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+            <!-- Error -->
+            <TextBlock Text="{Binding ErrorMessage}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource WarningBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasError}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+            <!-- Empty state -->
+            <TextBlock Text="Chưa có lịch sử làm việc được ghi nhận."
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility"
+                                Value="Visible" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsLoading}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding HasPeriods}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding HasError}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+            <!-- History -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+                <ItemsControl ItemsSource="{Binding Periods}">
+
+                    <ItemsControl.Style>
+                        <Style TargetType="ItemsControl">
+                            <Setter Property="Visibility"
+                                    Value="Collapsed" />
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasPeriods}"
+                                             Value="True">
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ItemsControl.Style>
+
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+
+                            <Border Margin="0,0,0,12"
+                                    Padding="16"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6">
+
+                                <Grid>
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel>
+
+                                        <TextBlock Text="{Binding Title}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                        <TextBlock Text="{Binding DateRange}"
+                                                   Margin="0,7,0,0"
+                                                   FontSize="15"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding StatusText}"
+                                               Margin="18,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                </Grid>
+
+                            </Border>
+
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+
+                </ItemsControl>
+
+            </ScrollViewer>
+
+        </Grid>
+
+        <Button Grid.Row="3"
+                Width="90"
+                Margin="0,18,0,0"
+                HorizontalAlignment="Right"
+                Content="Đóng"
+                IsCancel="True" />
+
+    </Grid>
+
+</Window>

@@ -11,4 +11,14 @@ public interface IEmployeeDialogService
 
     DateOnly? ShowDeactivateEmployeeDialog(
         Employee employee);
+
+    EmployeeStatus? ShowCancelEmployeeDeactivationDialog(
+    Employee employee);
+
+    RehireEmployeeDialogResult?
+    ShowRehireEmployeeDialog(
+        Employee employee);
+
+    void ShowEmploymentHistoryDialog(
+    Employee employee);
 }

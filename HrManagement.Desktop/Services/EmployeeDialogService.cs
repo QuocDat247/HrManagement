@@ -14,6 +14,57 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
         _serviceProvider = serviceProvider;
     }
 
+    public RehireEmployeeDialogResult?
+    ShowRehireEmployeeDialog(
+        Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(employee);
+
+        RehireEmployeeWindow window =
+            _serviceProvider.GetRequiredService<
+                RehireEmployeeWindow>();
+
+        window.LoadEmployee(employee);
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        bool? result =
+            window.ShowDialog();
+
+        if (result != true
+            || !window.SelectedRehireDate.HasValue
+            || !window.SelectedRehireStatus.HasValue)
+        {
+            return null;
+        }
+
+        return new RehireEmployeeDialogResult(
+            window.SelectedRehireDate.Value,
+            window.SelectedRehireStatus.Value);
+    }
+
+    public void ShowEmploymentHistoryDialog(
+    Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(employee);
+
+        EmployeeEmploymentHistoryWindow window =
+            _serviceProvider.GetRequiredService<
+                EmployeeEmploymentHistoryWindow>();
+
+        window.LoadEmployee(employee);
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.ShowDialog();
+    }
+
     public bool ShowAddEmployeeDialog()
     {
         var window =
@@ -67,4 +118,29 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
             ? window.SelectedTerminationDate
             : null;
     }
+
+    public EmployeeStatus?
+    ShowCancelEmployeeDeactivationDialog(
+        Employee employee)
+{
+    ArgumentNullException.ThrowIfNull(employee);
+
+    CancelEmployeeDeactivationWindow window =
+        _serviceProvider.GetRequiredService<
+            CancelEmployeeDeactivationWindow>();
+
+    window.LoadEmployee(employee);
+
+    window.Owner =
+        System.Windows.Application
+            .Current
+            .MainWindow;
+
+    bool? result =
+        window.ShowDialog();
+
+    return result == true
+        ? window.SelectedRestoredStatus
+        : null;
+}
 }

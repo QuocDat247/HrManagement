@@ -33,6 +33,35 @@ public sealed partial class EmployeesViewModel : ObservableObject
     [ObservableProperty]
     private bool requiresProfileCompletionOnly;
 
+    private bool CanRehireEmployee()
+    {
+        return SelectedEmployee is
+        {
+            Status: EmployeeStatus.Inactive,
+            TerminationDate: not null
+        };
+    }
+
+    private bool CanViewEmploymentHistory()
+    {
+        return SelectedEmployee is not null;
+    }
+
+    private void ViewEmploymentHistory()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null)
+        {
+            return;
+        }
+
+        _employeeDialogService
+            .ShowEmploymentHistoryDialog(
+                employee);
+    }
+
     public string Title => "Nhân viên";
 
     public IReadOnlyList<EmployeeStatusFilterOption> StatusOptions { get; } =
@@ -48,11 +77,27 @@ public sealed partial class EmployeesViewModel : ObservableObject
     public IAsyncRelayCommand AddEmployeeCommand { get; }
     public IAsyncRelayCommand EditEmployeeCommand { get; }
     public IAsyncRelayCommand DeactivateEmployeeCommand { get; }
+    public IAsyncRelayCommand
+    CancelDeactivationCommand
+    {
+        get;
+    }
+    public IAsyncRelayCommand RehireEmployeeCommand
+    {
+        get;
+    }
+    public IRelayCommand
+    ViewEmploymentHistoryCommand
+    {
+        get;
+    }
 
+    // constructor
     public EmployeesViewModel(
     IEmployeeService employeeService,
     IEmployeeDialogService employeeDialogService)
     {
+
         _employeeService = employeeService;
         _employeeDialogService = employeeDialogService;
 
@@ -72,6 +117,21 @@ public sealed partial class EmployeesViewModel : ObservableObject
             new AsyncRelayCommand(
                 DeactivateEmployeeAsync,
                 CanDeactivateEmployee);
+
+        CancelDeactivationCommand =
+            new AsyncRelayCommand(
+                CancelDeactivationAsync,
+                CanCancelDeactivation);
+
+        RehireEmployeeCommand =
+            new AsyncRelayCommand(
+                RehireEmployeeAsync,
+                CanRehireEmployee);
+
+        ViewEmploymentHistoryCommand =
+            new RelayCommand(
+                ViewEmploymentHistory,
+                CanViewEmploymentHistory);
 
         SelectedStatusOption = StatusOptions[0];
     }
@@ -152,13 +212,32 @@ public sealed partial class EmployeesViewModel : ObservableObject
     partial void OnSelectedEmployeeChanged(Employee? value)
     {
         EditEmployeeCommand.NotifyCanExecuteChanged();
+
         DeactivateEmployeeCommand.NotifyCanExecuteChanged();
+
+        CancelDeactivationCommand
+        .NotifyCanExecuteChanged();
+
+        RehireEmployeeCommand
+        .NotifyCanExecuteChanged();
+
+        ViewEmploymentHistoryCommand
+        .NotifyCanExecuteChanged();
     }
 
     private bool CanDeactivateEmployee()
     {
         return SelectedEmployee is not null
             && SelectedEmployee.Status != EmployeeStatus.Inactive;
+    }
+
+    private bool CanCancelDeactivation()
+    {
+        return SelectedEmployee is
+        {
+            Status: EmployeeStatus.Inactive,
+            TerminationDate: not null
+        };
     }
 
     private async Task DeactivateEmployeeAsync()
@@ -211,6 +290,95 @@ public sealed partial class EmployeesViewModel : ObservableObject
         SearchText = null;
         SelectedStatusOption = StatusOptions[0];
         RequiresProfileCompletionOnly = true;
+
+        await LoadAsync();
+    }
+
+    private async Task CancelDeactivationAsync()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null
+            || employee.Status
+                != EmployeeStatus.Inactive
+            || !employee.TerminationDate.HasValue)
+        {
+            return;
+        }
+
+        EmployeeStatus? restoredStatus =
+            _employeeDialogService
+                .ShowCancelEmployeeDeactivationDialog(
+                    employee);
+
+        if (!restoredStatus.HasValue)
+        {
+            return;
+        }
+
+        ErrorMessage = null;
+
+        CancelEmployeeDeactivationResult result =
+            await _employeeService
+                .CancelDeactivationAsync(
+                    employee.Id,
+                    restoredStatus.Value);
+
+        if (!result.IsSuccessful)
+        {
+            ErrorMessage =
+                result.ErrorMessage;
+
+            return;
+        }
+
+        SelectedEmployee = null;
+
+        await LoadAsync();
+    }
+
+    private async Task RehireEmployeeAsync()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null
+            || employee.Status
+                != EmployeeStatus.Inactive
+            || !employee.TerminationDate.HasValue)
+        {
+            return;
+        }
+
+        RehireEmployeeDialogResult? dialogResult =
+            _employeeDialogService
+                .ShowRehireEmployeeDialog(
+                    employee);
+
+        if (dialogResult is null)
+        {
+            return;
+        }
+
+        ErrorMessage = null;
+
+        RehireEmployeeResult result =
+            await _employeeService
+                .RehireEmployeeAsync(
+                    employee.Id,
+                    dialogResult.RehireDate,
+                    dialogResult.RehireStatus);
+
+        if (!result.IsSuccessful)
+        {
+            ErrorMessage =
+                result.ErrorMessage;
+
+            return;
+        }
+
+        SelectedEmployee = null;
 
         await LoadAsync();
     }

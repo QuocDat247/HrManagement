@@ -302,7 +302,7 @@
                                        FontWeight="SemiBold"
                                        Foreground="{DynamicResource PrimaryTextBrush}" />
 
-                            <TextBlock Text="Tuyển mới, nghỉ việc và tỷ lệ nghỉ việc theo kỳ"
+                            <TextBlock Text="Gia nhập, nghỉ việc và tỷ lệ nghỉ việc theo kỳ"
                                        Margin="0,4,0,0"
                                        Foreground="{DynamicResource SecondaryTextBrush}" />
                         </StackPanel>
@@ -348,7 +348,7 @@
                                 CornerRadius="6">
 
                             <StackPanel>
-                                <TextBlock Text="Tuyển mới"
+                                <TextBlock Text="Gia nhập"
                                Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                 <TextBlock Text="{Binding TotalNewHires}"
@@ -466,7 +466,7 @@
                         CornerRadius="2"
                         Background="{DynamicResource NewHireBrush}"
                         VerticalAlignment="Center" />
-                            <TextBlock Text="Tuyển mới"
+                            <TextBlock Text="Gia nhập"
                            Margin="6,0,20,0"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource SecondaryTextBrush}" />
@@ -574,7 +574,7 @@
                                                                             <TextBlock Text="{Binding DisplayName}"
                                                                            FontWeight="SemiBold" />
                                                                             <TextBlock>
-                                                                    <Run Text="Tuyển mới: " />
+                                                                    <Run Text="Gia nhập: " />
                                                                     <Run Text="{Binding NewHires}" />
                                                                             </TextBlock>
                                                                         </StackPanel>
