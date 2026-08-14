@@ -1,11 +1,21 @@
-using HrManagement.Domain.Employees;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.EmploymentLifecycle;
+using HrManagement.Application.Organization.Departments;
+using HrManagement.Application.Organization.Positions;
+using HrManagement.Domain.Employees;
+using HrManagement.Domain.Organization.Departments;
+using HrManagement.Domain.Organization.Positions;
 
 namespace HrManagement.Application.Employees;
 
 public sealed class EmployeeService : IEmployeeService
 {
+    private readonly IDepartmentRepository
+    _departmentRepository;
+
+    private readonly IPositionRepository
+        _positionRepository;
+
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IEmploymentHistoryRepository
     _employmentHistoryRepository;
@@ -13,15 +23,27 @@ public sealed class EmployeeService : IEmployeeService
     private readonly IEmploymentLifecyclePersistence
         _employmentLifecyclePersistence;
 
-    public EmployeeService(IEmployeeRepository employeeRepository,
-        IEmploymentHistoryRepository employmentHistoryRepository,
-        IEmploymentLifecyclePersistence employmentLifecyclePersistence)
+    public EmployeeService(
+    IEmployeeRepository employeeRepository,
+    IEmploymentHistoryRepository employmentHistoryRepository,
+    IEmploymentLifecyclePersistence employmentLifecyclePersistence,
+    IDepartmentRepository departmentRepository,
+    IPositionRepository positionRepository)
     {
-        _employeeRepository = employeeRepository;
+        _employeeRepository =
+            employeeRepository;
+
         _employmentHistoryRepository =
             employmentHistoryRepository;
+
         _employmentLifecyclePersistence =
             employmentLifecyclePersistence;
+
+        _departmentRepository =
+            departmentRepository;
+
+        _positionRepository =
+            positionRepository;
     }
 
     public async Task<RehireEmployeeResult>
@@ -145,16 +167,14 @@ public sealed class EmployeeService : IEmployeeService
                 existingEmployee.Email,
                 existingEmployee.PhoneNumber,
                 existingEmployee.DateOfBirth,
-
                 // CỐ Ý giữ ngày tuyển ban đầu.
                 existingEmployee.HireDate,
-
                 existingEmployee.Department,
                 existingEmployee.Position,
                 rehireStatus,
-
-                // Employee hiện tại không còn termination.
-                terminationDate: null);
+                terminationDate: null,
+                departmentId: existingEmployee.DepartmentId,
+                positionId: existingEmployee.PositionId);
 
         await _employmentLifecyclePersistence
             .UpdateEmployeeWithNewPeriodAsync(
@@ -336,6 +356,44 @@ public sealed class EmployeeService : IEmployeeService
                     "Không thể tạo mới nhân viên ở trạng thái ngừng hoạt động.");
         }
 
+        Department? department =
+        await _departmentRepository.GetByIdAsync(
+        request.DepartmentId,
+        cancellationToken);
+
+        if (department is null)
+        {
+            return new CreateEmployeeResult(
+                false,
+                "Không tìm thấy phòng ban.");
+        }
+
+        if (!department.IsActive)
+        {
+            return new CreateEmployeeResult(
+                false,
+                "Phòng ban đã ngừng sử dụng.");
+        }
+
+        Position? position =
+            await _positionRepository.GetByIdAsync(
+                request.PositionId,
+                cancellationToken);
+
+        if (position is null)
+        {
+            return new CreateEmployeeResult(
+                false,
+                "Không tìm thấy chức danh.");
+        }
+
+        if (!position.IsActive)
+        {
+            return new CreateEmployeeResult(
+                false,
+                "Chức danh đã ngừng sử dụng.");
+        }
+
         Employee employee;
 
         try
@@ -348,9 +406,11 @@ public sealed class EmployeeService : IEmployeeService
                 request.PhoneNumber,
                 request.DateOfBirth,
                 request.HireDate,
-                request.Department,
-                request.Position,
-                request.Status);
+                department.Name,
+                position.Name,
+                request.Status,
+                departmentId: department.Id,
+                positionId: position.Id);
         }
         catch (ArgumentException ex)
         {
@@ -382,7 +442,7 @@ public sealed class EmployeeService : IEmployeeService
     {
         Employee? existingEmployee =
             await _employeeRepository.GetByIdAsync(
-                request.Id,
+                request.EmployeeId,
                 cancellationToken);
 
         if (existingEmployee is null)
@@ -398,7 +458,7 @@ public sealed class EmployeeService : IEmployeeService
                 cancellationToken);
 
         if (employeeWithSameCode is not null
-            && employeeWithSameCode.Id != request.Id)
+            && employeeWithSameCode.Id != request.EmployeeId)
         {
             return new UpdateEmployeeResult(
                 IsSuccessful: false,
@@ -423,22 +483,72 @@ public sealed class EmployeeService : IEmployeeService
                     "Không thể thay đổi trạng thái của nhân viên đã ngừng hoạt động từ màn hình chỉnh sửa.");
         }
 
+        Department? department =
+    await _departmentRepository.GetByIdAsync(
+        request.DepartmentId,
+        cancellationToken);
+
+        if (department is null)
+        {
+            return new UpdateEmployeeResult(
+                false,
+                "Không tìm thấy phòng ban.");
+        }
+
+        bool keepsCurrentDepartment =
+            existingEmployee.DepartmentId
+                == department.Id;
+
+        if (!department.IsActive
+            && !keepsCurrentDepartment)
+        {
+            return new UpdateEmployeeResult(
+                false,
+                "Phòng ban đã ngừng sử dụng.");
+        }
+
+        Position? position =
+    await _positionRepository.GetByIdAsync(
+        request.PositionId,
+        cancellationToken);
+
+        if (position is null)
+        {
+            return new UpdateEmployeeResult(
+                false,
+                "Không tìm thấy chức danh.");
+        }
+
+        bool keepsCurrentPosition =
+            existingEmployee.PositionId
+                == position.Id;
+
+        if (!position.IsActive
+            && !keepsCurrentPosition)
+        {
+            return new UpdateEmployeeResult(
+                false,
+                "Chức danh đã ngừng sử dụng.");
+        }
+
         Employee updatedEmployee;
 
         try
         {
             updatedEmployee = new Employee(
-                request.Id,
-                request.EmployeeCode,
-                request.FullName,
-                request.Email,
-                request.PhoneNumber,
-                request.DateOfBirth,
-                request.HireDate,
-                request.Department,
-                request.Position,
-                request.Status,
-                terminationDate: existingEmployee.TerminationDate);
+            request.EmployeeId,
+            request.EmployeeCode,
+            request.FullName,
+            request.Email,
+            request.PhoneNumber,
+            request.DateOfBirth,
+            request.HireDate,
+            department.Name,
+            position.Name,
+            request.Status,
+            terminationDate: existingEmployee.TerminationDate,
+            departmentId: department.Id,
+            positionId: position.Id);
         }
         catch (ArgumentException ex)
         {

@@ -50,14 +50,16 @@
                             SelectedDate="{Binding HireDate}" />
 
                 <TextBlock Text="Phòng ban" />
-                <TextBox Margin="0,6,0,12"
-                         Text="{Binding Department,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                <ComboBox Margin="0,6,0,12"
+                    ItemsSource="{Binding DepartmentOptions}"
+                    SelectedItem="{Binding SelectedDepartment}"
+                    DisplayMemberPath="Name" />
 
                 <TextBlock Text="Chức vụ" />
-                <TextBox Margin="0,6,0,12"
-                         Text="{Binding Position,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                <ComboBox Margin="0,6,0,12"
+                    ItemsSource="{Binding PositionOptions}"
+                    SelectedItem="{Binding SelectedPosition}"
+                    DisplayMemberPath="Name" />
 
                 <TextBlock Text="Trạng thái" />
                 <ComboBox Margin="0,6,0,12"
@@ -67,7 +69,6 @@
                 <TextBlock Text="{Binding ErrorMessage}"
                            Foreground="IndianRed"
                            Margin="0,0,0,12" />
-
                 <Button Content="Lưu"
                         Height="38"
                         Command="{Binding SaveCommand}" />

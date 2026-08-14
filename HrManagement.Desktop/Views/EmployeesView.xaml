@@ -2,150 +2,157 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:HrManagement.Desktop.Converters">
-
     <UserControl.Resources>
         <converters:EmployeeProfileWarningConverter x:Key="EmployeeProfileWarningConverter" />
     </UserControl.Resources>
 
-    <Grid Margin="32">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="36*"/>
-            <ColumnDefinition Width="5*"/>
-            <ColumnDefinition Width="31*"/>
-        </Grid.ColumnDefinitions>
-
+    <Grid Margin="24">
+        <!--
+            Row 0: Header + action buttons
+            Row 1: Search / filters
+            Row 2: DataGrid - chiếm toàn bộ phần không gian còn lại
+            Row 3: Error message
+        -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="20" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="16" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-
-
-        <!-- Header -->
-        <Grid Grid.Row="0" Grid.ColumnSpan="3">
-
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="64.959" />
-                <ColumnDefinition Width="55.041"/>
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,140,0">
-                <TextBlock Text="Nhân viên"
-                   Style="{StaticResource PageTitleTextStyle}" />
-
-                <TextBlock Text="Danh sách nhân viên trong hệ thống"
-                   Margin="0,6,0,0"
-                   Style="{StaticResource SecondaryTextStyle}" />
-            </StackPanel>
-
-            <Button Content="Hủy ngừng hoạt động"
-                    Command="{Binding CancelDeactivationCommand}"
-                    Margin="0,-32,8,50"
-                    ToolTip="Hủy sự kiện nghỉ việc đã ghi nhận cho nhân viên được chọn" Grid.Column="1" Grid.ColumnSpan="2" />
-
-            <Button Content="Tái tuyển dụng"
-                    Command="{Binding RehireEmployeeCommand}"
-                    Margin="0,-32,8,51"
-                    ToolTip="Tạo một giai đoạn làm việc mới và giữ nguyên lịch sử nghỉ việc trước đó" Grid.ColumnSpan="3" Grid.Column="3" />
-
-            <Button Content="Lịch sử làm việc"
-                    Command="{Binding ViewEmploymentHistoryCommand}"
-                    Margin="0,-32,0,51"
-                    ToolTip="Xem các giai đoạn làm việc của nhân viên được chọn" Grid.Column="6" />
-
-            <Button Grid.Column="1"
-                    Width="140"
-                    Height="36"
-                    Content="Ngừng hoạt động"
-                    Command="{Binding DeactivateEmployeeCommand}" Grid.ColumnSpan="2" Margin="0,10,8,9" />
-
-            <Button Grid.Column="3"
-                    Width="120"
-                    Height="36"
-                    Content="Sửa nhân viên"
-                    Command="{Binding EditEmployeeCommand}" Grid.ColumnSpan="3" Margin="0,10,8,9" />
-
-            <Button Grid.Column="6"
-                    Width="130"
-                    Height="36"
-                    Content="Thêm nhân viên"
-                    Command="{Binding AddEmployeeCommand}" Margin="0,10,0,9" />
-
-        </Grid>
-
-
-
-        <!-- Search / Filter -->
-        <Grid Grid.ColumnSpan="3" Margin="0,75,0,0" Grid.RowSpan="2">
+        <!-- =========================================================
+             HEADER + ACTIONS
+             ========================================================= -->
+        <Grid Grid.Row="0"
+      Margin="0,0,0,18">
             <Grid.RowDefinitions>
-                <RowDefinition Height="0*"/>
-                <RowDefinition/>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="180" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="110" />
-                <ColumnDefinition Width="8" />
-                <ColumnDefinition Width="90" />
-            </Grid.ColumnDefinitions>
+            <!-- Title (hàng 1) -->
+            <TextBlock Text="Nhân viên"
+               FontSize="26"
+               FontWeight="SemiBold"
+               Foreground="{DynamicResource PrimaryTextBrush}" Margin="0,-43,0,0" Grid.RowSpan="2" />
 
-            <TextBox Grid.Column="0"
-             Height="36"
-             Padding="10,6"
-             VerticalContentAlignment="Center"
-             Text="{Binding SearchText,
-                            UpdateSourceTrigger=PropertyChanged}" Grid.ColumnSpan="2" Margin="0,0,12,0" Grid.RowSpan="2">
+            <TextBlock Margin="0,-11,0,0"
+               Text="Danh sách nhân viên trong hệ thống"
+               Foreground="{DynamicResource SecondaryTextBrush}" Grid.RowSpan="2" />
 
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Enter"
-                        Command="{Binding SearchCommand}" />
-                </TextBox.InputBindings>
-
-            </TextBox>
-
-            <ComboBox Grid.Column="2"
-              Height="36"
-              ItemsSource="{Binding StatusOptions}"
-              DisplayMemberPath="DisplayName"
-              SelectedItem="{Binding SelectedStatusOption}" Grid.ColumnSpan="2" Margin="0,0,12,0" Grid.RowSpan="2" />
-
-            <Button Grid.Column="4"
-            Height="36"
-            Content="Tìm kiếm"
-            Command="{Binding SearchCommand}" Grid.ColumnSpan="2" Margin="0,0,8,0" Grid.RowSpan="2" />
-
-            <Button Grid.Column="6"
-            Height="36"
-            Content="Xóa lọc"
-            Command="{Binding ClearFiltersCommand}" Grid.RowSpan="2" />
-
+            <!-- Action buttons - nằm hoàn toàn bên dưới title -->
+            <WrapPanel Margin="0,16,0,0"
+               HorizontalAlignment="Left">
+                <Button Content="Lịch sử làm việc"
+                Command="{Binding ViewEmploymentHistoryCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8"
+                ToolTip="Xem các giai đoạn làm việc của nhân viên được chọn" />
+                <Button Content="Hủy ngừng hoạt động"
+                Command="{Binding CancelDeactivationCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8"
+                ToolTip="Hủy sự kiện nghỉ việc đã ghi nhận cho nhân viên được chọn" />
+                <Button Content="Tái tuyển dụng"
+                Command="{Binding RehireEmployeeCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8"
+                ToolTip="Tạo một giai đoạn làm việc mới và giữ nguyên lịch sử nghỉ việc trước đó" />
+                <Button Content="Ngừng hoạt động"
+                Command="{Binding DeactivateEmployeeCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8" />
+                <Button Content="Sửa nhân viên"
+                Command="{Binding EditEmployeeCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8" />
+                <Button Content="Thêm nhân viên"
+                Command="{Binding AddEmployeeCommand}"
+                Margin="0,0,0,8"
+                Padding="14,8" />
+            </WrapPanel>
         </Grid>
 
-        <CheckBox Content="Chỉ hiển thị hồ sơ cần bổ sung"
-                IsChecked="{Binding RequiresProfileCompletionOnly,
+        <!-- =========================================================
+             SEARCH + FILTERS
+             ========================================================= -->
+        <Grid Grid.Row="1"
+              Margin="0,0,0,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="180" />
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="110" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Search -->
+            <TextBox Grid.Row="0"
+                     Grid.Column="0"
+                     Margin="0,0,12,0"
+                     MinHeight="34"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding SearchText,
                                     Mode=TwoWay,
-                                    UpdateSourceTrigger=PropertyChanged}"
-                Command="{Binding SearchCommand}"
-                Margin="0,0,198,0"
-                VerticalAlignment="Top" Height="21" Grid.ColumnSpan="2" Grid.Row="3" />
+                                    UpdateSourceTrigger=PropertyChanged}">
+                <TextBox.InputBindings>
+                    <KeyBinding Key="Enter"
+                                Command="{Binding SearchCommand}" />
+                </TextBox.InputBindings>
+            </TextBox>
 
-        <!-- Employee table -->
-        <Border Grid.Row="3"
-                Style="{StaticResource CardBorderStyle}" Grid.ColumnSpan="3" Margin="0,16,0,0" Grid.RowSpan="2">
+            <!-- Status filter (giữ nguyên binding cũ) -->
+            <ComboBox Grid.Row="0"
+                      Grid.Column="1"
+                      Margin="0,0,12,0"
+                      MinHeight="34"
+                      ItemsSource="{Binding StatusOptions}"
+                      DisplayMemberPath="DisplayName"
+                      SelectedItem="{Binding SelectedStatusOption,
+                                             Mode=TwoWay}" />
 
+            <Button Grid.Row="0"
+                    Grid.Column="2"
+                    Margin="0,0,12,0"
+                    MinHeight="34"
+                    Content="Tìm kiếm"
+                    Command="{Binding SearchCommand}" />
+
+            <Button Grid.Row="0"
+                    Grid.Column="3"
+                    MinHeight="34"
+                    Content="Xóa lọc"
+                    Command="{Binding ClearFiltersCommand}" />
+
+            <CheckBox Grid.Row="1"
+                      Grid.Column="0"
+                      Grid.ColumnSpan="4"
+                      Margin="0,8,0,0"
+                      Content="Chỉ hiển thị hồ sơ cần bổ sung"
+                      IsChecked="{Binding RequiresProfileCompletionOnly,
+                                          Mode=TwoWay,
+                                          UpdateSourceTrigger=PropertyChanged}"
+                      Command="{Binding SearchCommand}" />
+        </Grid>
+
+        <!-- =========================================================
+             EMPLOYEE DATA GRID
+             ========================================================= -->
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="0">
+            <!--
+                Đây là phần quan trọng nhất:
+                DataGrid ở row Height="*" và tự scroll.
+            -->
             <DataGrid ItemsSource="{Binding Employees}"
-                      SelectedItem="{Binding SelectedEmployee}"
+                      SelectedItem="{Binding SelectedEmployee,
+                                             Mode=TwoWay}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
                       CanUserAddRows="False"
@@ -153,18 +160,17 @@
                       SelectionMode="Single"
                       SelectionUnit="FullRow"
                       HeadersVisibility="Column"
-                      GridLinesVisibility="Horizontal"
-                      BorderThickness="0">
-
-
+                      RowHeaderWidth="0"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
                 <DataGrid.Columns>
-
+                    <!-- Hồ sơ cần bổ sung (giữ nguyên bản cũ có converter + tooltip chi tiết) -->
                     <DataGridTemplateColumn Header="Hồ sơ"
-                        Width="70">
-
+                                            Width="70">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-
                                 <TextBlock Text="⚠"
                                            FontFamily="Segoe UI Symbol"
                                            FontSize="18"
@@ -172,12 +178,10 @@
                                            Foreground="{DynamicResource WarningBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center">
-
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Visibility"
                                                     Value="Collapsed" />
-
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding RequiresProfileCompletion}"
                                                              Value="True">
@@ -187,48 +191,45 @@
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>
-
                                     <TextBlock.ToolTip>
                                         <ToolTip>
                                             <TextBlock Text="{Binding Converter={StaticResource EmployeeProfileWarningConverter}}" />
                                         </ToolTip>
                                     </TextBlock.ToolTip>
-
-            </TextBlock>
-
+                                </TextBlock>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
-
                     </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="Mã NV"
                                         Width="100"
                                         Binding="{Binding EmployeeCode}" />
-
                     <DataGridTextColumn Header="Họ và tên"
                                         Width="SizeToCells"
                                         MinWidth="160"
                                         Binding="{Binding FullName}" />
-
                     <DataGridTextColumn Header="Phòng ban"
                                         Width="*"
                                         MinWidth="140"
                                         Binding="{Binding Department}" />
-
                     <DataGridTextColumn Header="Chức vụ"
                                         Width="*"
                                         MinWidth="160"
                                         Binding="{Binding Position}" />
-
                     <DataGridTextColumn Header="Trạng thái"
                                         Width="120"
                                         Binding="{Binding Status}" />
-
                 </DataGrid.Columns>
-
             </DataGrid>
         </Border>
 
+        <!-- =========================================================
+             ERROR MESSAGE
+             ========================================================= -->
+        <TextBlock Grid.Row="3"
+                   Margin="0,10,0,0"
+                   Text="{Binding ErrorMessage}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource WarningBrush}" />
     </Grid>
-
 </UserControl>

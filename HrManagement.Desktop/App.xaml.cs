@@ -1,18 +1,26 @@
 using System.Windows;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
+using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Organization.Assignments;
+using HrManagement.Application.Organization.Departments;
+using HrManagement.Application.Organization.Positions;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Services;
+using HrManagement.Desktop.Services.Departments;
+using HrManagement.Desktop.Services.Positions;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.DependencyInjection;
+using HrManagement.Infrastructure.Employees;
+using HrManagement.Infrastructure.Organization.Assignments;
+using HrManagement.Infrastructure.Organization.Departments;
+using HrManagement.Infrastructure.Organization.Positions;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using HrManagement.Application.Employees.EmploymentHistories;
-using HrManagement.Infrastructure.Employees;
 
 namespace HrManagement.Desktop;
 
@@ -98,25 +106,56 @@ public partial class App : System.Windows.Application
         services.AddTransient<EditEmployeeViewModel>();
         services.AddTransient<EditEmployeeWindow>();
         services.AddSingleton<
-        IEmployeeNavigationService,
-        EmployeeNavigationService>();
+            IEmployeeNavigationService,
+            EmployeeNavigationService>();
         services.AddTransient<DeactivateEmployeeViewModel>();
         services.AddTransient<DeactivateEmployeeWindow>();
         services.AddTransient<
-        CancelEmployeeDeactivationViewModel>();
+            CancelEmployeeDeactivationViewModel>();
         services.AddTransient<
             CancelEmployeeDeactivationWindow>();
         services.AddTransient<
-        RehireEmployeeViewModel>();
+            RehireEmployeeViewModel>();
         services.AddTransient<
             RehireEmployeeWindow>();
         services.AddSingleton<
-        IEmploymentHistoryService,
-        EmploymentHistoryService>();
+            IEmploymentHistoryService,
+            EmploymentHistoryService>();
         services.AddTransient<
-        EmployeeEmploymentHistoryViewModel>();
+            EmployeeEmploymentHistoryViewModel>();
         services.AddTransient<
             EmployeeEmploymentHistoryWindow>();
+        services.AddSingleton<
+            IDepartmentRepository,
+            EfDepartmentRepository>();
+        services.AddSingleton<
+            IDepartmentService,
+            DepartmentService>();
+        services.AddTransient<
+            DepartmentEditorViewModel>();
+        services.AddTransient<
+            DepartmentEditorWindow>();
+        services.AddSingleton<
+            IDepartmentDialogService,
+            DepartmentDialogService>();
+        services.AddTransient<DepartmentsViewModel>();
+        services.AddSingleton<
+            IPositionRepository,
+            EfPositionRepository>();
+        services.AddSingleton<
+            IPositionService,
+            PositionService>();
+        services.AddTransient<
+            PositionEditorViewModel>();
+        services.AddTransient<
+            PositionEditorWindow>();
+        services.AddSingleton<
+            IPositionDialogService,
+            PositionDialogService>();
+        services.AddTransient<PositionsViewModel>();
+        services.AddSingleton<
+        IEmployeeOrganizationBackfillService,
+        EfEmployeeOrganizationBackfillService>();
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -1,6 +1,10 @@
 using HrManagement.Application.Employees;
+using HrManagement.Application.Organization.Departments;
+using HrManagement.Application.Organization.Positions;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
+using HrManagement.Domain.Organization.Departments;
+using HrManagement.Domain.Organization.Positions;
 
 namespace HrManagement.Tests.Employees;
 
@@ -10,7 +14,8 @@ public sealed class EditEmployeeViewModelTests
     public void LoadEmployee_PopulatesEditableFields()
     {
         var service = new StubEmployeeService();
-        var viewModel = new EditEmployeeViewModel(service);
+        var viewModel =
+    CreateViewModel(service);
 
         var employee = CreateEmployee();
 
@@ -29,8 +34,6 @@ public sealed class EditEmployeeViewModelTests
             employee.HireDate.ToDateTime(TimeOnly.MinValue),
             viewModel.HireDate);
 
-        Assert.Equal(employee.Department, viewModel.Department);
-        Assert.Equal(employee.Position, viewModel.Position);
         Assert.Equal(employee.Status, viewModel.SelectedStatus);
     }
 
@@ -43,14 +46,34 @@ public sealed class EditEmployeeViewModelTests
                 new UpdateEmployeeResult(IsSuccessful: true)
         };
 
-        var viewModel = new EditEmployeeViewModel(service);
+        var viewModel =
+    CreateViewModel(service);
 
-        var employee = CreateEmployee();
+        var employee =
+            CreateEmployee();
 
         viewModel.LoadEmployee(employee);
 
-        viewModel.FullName = "Nguyễn Văn An Updated";
-        viewModel.Position = "Chuyên viên cao cấp";
+        var department =
+            new Department(
+                Guid.NewGuid(),
+                "HR",
+                "Nhân sự");
+
+        var position =
+            new Position(
+                Guid.NewGuid(),
+                "SR-SPEC",
+                "Chuyên viên cao cấp");
+
+        viewModel.SelectedDepartment =
+            department;
+
+        viewModel.SelectedPosition =
+            position;
+
+        viewModel.FullName =
+            "Nguyễn Văn An Updated";
 
         bool saveSucceeded = false;
 
@@ -62,18 +85,24 @@ public sealed class EditEmployeeViewModelTests
         Assert.True(saveSucceeded);
         Assert.Null(viewModel.ErrorMessage);
 
-        Assert.NotNull(service.LastUpdateRequest);
+        Assert.NotNull(
+            service.LastUpdateRequest);
+
         Assert.Equal(
             employee.Id,
-            service.LastUpdateRequest.Id);
+            service.LastUpdateRequest.EmployeeId);
 
         Assert.Equal(
             "Nguyễn Văn An Updated",
             service.LastUpdateRequest.FullName);
 
         Assert.Equal(
-            "Chuyên viên cao cấp",
-            service.LastUpdateRequest.Position);
+            department.Id,
+            service.LastUpdateRequest.DepartmentId);
+
+        Assert.Equal(
+            position.Id,
+            service.LastUpdateRequest.PositionId);
     }
 
     [Fact]
@@ -87,9 +116,29 @@ public sealed class EditEmployeeViewModelTests
                     ErrorMessage: "Mã nhân viên đã tồn tại.")
         };
 
-        var viewModel = new EditEmployeeViewModel(service);
+        var viewModel =
+            CreateViewModel(service);
 
-        viewModel.LoadEmployee(CreateEmployee());
+        viewModel.LoadEmployee(
+            CreateEmployee());
+
+        var department =
+            new Department(
+                Guid.NewGuid(),
+                "HR",
+                "Nhân sự");
+
+        var position =
+            new Position(
+                Guid.NewGuid(),
+                "SPEC",
+                "Chuyên viên");
+
+        viewModel.SelectedDepartment =
+            department;
+
+        viewModel.SelectedPosition =
+            position;
 
         bool saveSucceeded = false;
 
@@ -193,7 +242,8 @@ public sealed class EditEmployeeViewModelTests
     public void LoadEmployee_WhenActive_AllowsActiveAndOnLeaveStatuses()
     {
         var service = new StubEmployeeService();
-        var viewModel = new EditEmployeeViewModel(service);
+        var viewModel =
+            CreateViewModel(service);
 
         var employee = new Employee(
             Guid.NewGuid(),
@@ -222,7 +272,8 @@ public sealed class EditEmployeeViewModelTests
     public void LoadEmployee_WhenInactive_AllowsOnlyInactiveStatus()
     {
         var service = new StubEmployeeService();
-        var viewModel = new EditEmployeeViewModel(service);
+        var viewModel =
+            CreateViewModel(service);
 
         DateOnly terminationDate =
             new DateOnly(2026, 8, 1);
@@ -252,5 +303,285 @@ public sealed class EditEmployeeViewModelTests
         Assert.Equal(
             EmployeeStatus.Inactive,
             viewModel.SelectedStatus);
+    }
+
+    [Fact]
+    public async Task LoadOrganizationOptionsAsync_IncludesAndSelectsCurrentInactiveDepartment()
+    {
+        var currentDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "OLD-HR",
+                "Nhân sự cũ",
+                false);
+
+        var activeDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "IT",
+                "Công nghệ thông tin");
+
+        var otherInactiveDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "OLD-OTHER",
+                "Phòng ban cũ khác",
+                false);
+
+        var currentPosition =
+            new Position(
+                Guid.NewGuid(),
+                "SPEC",
+                "Chuyên viên");
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-EDIT-001",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                currentDepartment.Name,
+                currentPosition.Name,
+                EmployeeStatus.Active,
+                departmentId: currentDepartment.Id,
+                positionId: currentPosition.Id);
+
+        var employeeService =
+            new StubEmployeeService();
+
+        var departmentService =
+            new StubDepartmentService(
+                new[]
+                {
+                currentDepartment,
+                activeDepartment,
+                otherInactiveDepartment
+                });
+
+        var positionService =
+            new StubPositionService(
+                new[]
+                {
+                currentPosition
+                });
+
+        var viewModel =
+            new EditEmployeeViewModel(
+                employeeService,
+                departmentService,
+                positionService);
+
+        viewModel.LoadEmployee(employee);
+
+        await viewModel.LoadOrganizationOptionsAsync();
+
+        Assert.Contains(
+            viewModel.DepartmentOptions,
+            department =>
+                department.Id == activeDepartment.Id);
+
+        Assert.Contains(
+            viewModel.DepartmentOptions,
+            department =>
+                department.Id == currentDepartment.Id);
+
+        Assert.DoesNotContain(
+            viewModel.DepartmentOptions,
+            department =>
+                department.Id == otherInactiveDepartment.Id);
+
+        Assert.NotNull(
+            viewModel.SelectedDepartment);
+
+        Assert.Equal(
+            currentDepartment.Id,
+            viewModel.SelectedDepartment.Id);
+    }
+
+    [Fact]
+    public async Task LoadOrganizationOptionsAsync_IncludesAndSelectsCurrentInactivePosition()
+    {
+        var currentDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "HR",
+                "Nhân sự");
+
+        var currentPosition =
+            new Position(
+                Guid.NewGuid(),
+                "OLD-SPEC",
+                "Chuyên viên cũ",
+                false);
+
+        var activePosition =
+            new Position(
+                Guid.NewGuid(),
+                "DEV",
+                "Lập trình viên");
+
+        var otherInactivePosition =
+            new Position(
+                Guid.NewGuid(),
+                "OLD-OTHER",
+                "Chức danh cũ khác",
+                false);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-EDIT-002",
+                "Nguyễn Minh Anh",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                currentDepartment.Name,
+                currentPosition.Name,
+                EmployeeStatus.Active,
+                departmentId: currentDepartment.Id,
+                positionId: currentPosition.Id);
+
+        var employeeService =
+            new StubEmployeeService();
+
+        var departmentService =
+            new StubDepartmentService(
+                new[]
+                {
+                currentDepartment
+                });
+
+        var positionService =
+            new StubPositionService(
+                new[]
+                {
+                currentPosition,
+                activePosition,
+                otherInactivePosition
+                });
+
+        var viewModel =
+            new EditEmployeeViewModel(
+                employeeService,
+                departmentService,
+                positionService);
+
+        viewModel.LoadEmployee(employee);
+
+        await viewModel.LoadOrganizationOptionsAsync();
+
+        Assert.Contains(
+            viewModel.PositionOptions,
+            position =>
+                position.Id == activePosition.Id);
+
+        Assert.Contains(
+            viewModel.PositionOptions,
+            position =>
+                position.Id == currentPosition.Id);
+
+        Assert.DoesNotContain(
+            viewModel.PositionOptions,
+            position =>
+                position.Id == otherInactivePosition.Id);
+
+        Assert.NotNull(
+            viewModel.SelectedPosition);
+
+        Assert.Equal(
+            currentPosition.Id,
+            viewModel.SelectedPosition.Id);
+    }
+    private sealed class StubDepartmentService
+    : IDepartmentService
+    {
+        private readonly IReadOnlyList<Department> _departments;
+
+        public StubDepartmentService(
+            IReadOnlyList<Department>? departments = null)
+        {
+            _departments =
+                departments
+                ?? Array.Empty<Department>();
+        }
+
+        public Task<IReadOnlyList<Department>> GetDepartmentsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_departments);
+        }
+
+        public Task<DepartmentOperationResult> CreateDepartmentAsync(
+            CreateDepartmentRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<DepartmentOperationResult> UpdateDepartmentAsync(
+            UpdateDepartmentRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<DepartmentOperationResult> DeactivateDepartmentAsync(
+            Guid departmentId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<DepartmentOperationResult> ReactivateDepartmentAsync(
+            Guid departmentId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+    }
+
+    private sealed class StubPositionService
+        : IPositionService
+    {
+        private readonly IReadOnlyList<Position> _positions;
+
+        public StubPositionService(
+            IReadOnlyList<Position>? positions = null)
+        {
+            _positions =
+                positions
+                ?? Array.Empty<Position>();
+        }
+
+        public Task<IReadOnlyList<Position>> GetPositionsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_positions);
+        }
+
+        public Task<PositionOperationResult> CreatePositionAsync(
+            CreatePositionRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<PositionOperationResult> UpdatePositionAsync(
+            UpdatePositionRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<PositionOperationResult> DeactivatePositionAsync(
+            Guid positionId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<PositionOperationResult> ReactivatePositionAsync(
+            Guid positionId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+    }
+
+    private static EditEmployeeViewModel CreateViewModel(
+    StubEmployeeService service)
+    {
+        return new EditEmployeeViewModel(
+            service,
+            new StubDepartmentService(),
+            new StubPositionService());
     }
 }

@@ -30,6 +30,9 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -56,6 +59,9 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("PositionId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
 
@@ -64,8 +70,12 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
+
+                    b.HasIndex("PositionId");
 
                     b.ToTable("Employees", (string)null);
                 });
@@ -94,6 +104,73 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("EmployeeId", "StartDate");
 
                     b.ToTable("EmploymentPeriods", (string)null);
+                });
+
+            modelBuilder.Entity("HrManagement.Domain.Organization.Departments.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Departments_Code");
+
+                    b.ToTable("Departments", (string)null);
+                });
+
+            modelBuilder.Entity("HrManagement.Domain.Organization.Positions.Position", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Positions_Code");
+
+                    b.ToTable("Positions", (string)null);
+                });
+
+            modelBuilder.Entity("HrManagement.Domain.Employees.Employee", b =>
+                {
+                    b.HasOne("HrManagement.Domain.Organization.Departments.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("HrManagement.Domain.Organization.Positions.Position", null)
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("HrManagement.Domain.Employees.EmploymentPeriod", b =>

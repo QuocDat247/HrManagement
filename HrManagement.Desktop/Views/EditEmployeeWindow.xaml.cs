@@ -16,6 +16,14 @@ public partial class EditEmployeeWindow : Window
         DataContext = _viewModel;
 
         _viewModel.SaveSucceeded += ViewModel_SaveSucceeded;
+        Loaded += EditEmployeeWindow_Loaded;
+    }
+
+    private async void EditEmployeeWindow_Loaded(
+    object sender,
+    RoutedEventArgs e)
+    {
+        await _viewModel.LoadOrganizationOptionsAsync();
     }
 
     public void LoadEmployee(Employee employee)
@@ -33,6 +41,7 @@ public partial class EditEmployeeWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.SaveSucceeded -= ViewModel_SaveSucceeded;
+        Loaded -= EditEmployeeWindow_Loaded;
 
         base.OnClosed(e);
     }

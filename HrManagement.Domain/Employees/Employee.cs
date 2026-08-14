@@ -2,6 +2,10 @@ namespace HrManagement.Domain.Employees;
 
 public sealed class Employee
 {
+    // property
+    public Guid? DepartmentId { get; }
+
+    public Guid? PositionId { get; }
     public Guid Id { get; }
 
     public string EmployeeCode { get; }
@@ -24,19 +28,36 @@ public sealed class Employee
 
     public DateOnly? TerminationDate { get; }
 
+    // constructor
     public Employee(
-        Guid id,
-        string employeeCode,
-        string fullName,
-        string? email,
-        string? phoneNumber,
-        DateOnly? dateOfBirth,
-        DateOnly hireDate,
-        string department,
-        string position,
-        EmployeeStatus status,
-        DateOnly? terminationDate = null)
+    Guid id,
+    string employeeCode,
+    string fullName,
+    string? email,
+    string? phoneNumber,
+    DateOnly? dateOfBirth,
+    DateOnly hireDate,
+    string department,
+    string position,
+    EmployeeStatus status,
+    DateOnly? terminationDate = null,
+    Guid? departmentId = null,
+    Guid? positionId = null)
     {
+        if (departmentId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã định danh phòng ban không hợp lệ.",
+                nameof(departmentId));
+        }
+
+        if (positionId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã định danh chức danh không hợp lệ.",
+                nameof(positionId));
+        }
+
         if (id == Guid.Empty)
         {
             throw new ArgumentException(
@@ -117,6 +138,8 @@ public sealed class Employee
         Position = position.Trim();
         Status = status;
         TerminationDate = terminationDate;
+        DepartmentId = departmentId;
+        PositionId = positionId;
     }
 
     public bool HasMissingProfileInformation =>

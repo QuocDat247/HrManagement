@@ -1,6 +1,8 @@
 using HrManagement.Domain.Employees;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using HrManagement.Domain.Organization.Departments;
+using HrManagement.Domain.Organization.Positions;
 
 namespace HrManagement.Infrastructure.Persistence.Configurations;
 
@@ -50,5 +52,25 @@ public sealed class EmployeeConfiguration
             .IsRequired();
 
         builder.Property(employee => employee.TerminationDate);
+
+        builder.Property(employee => employee.DepartmentId)
+        .IsRequired(false);
+
+        builder.Property(employee => employee.PositionId)
+            .IsRequired(false);
+
+        builder.HasOne<Department>()
+            .WithMany()
+            .HasForeignKey(employee =>
+        employee.DepartmentId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Position>()
+            .WithMany()
+            .HasForeignKey(employee =>
+                employee.PositionId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

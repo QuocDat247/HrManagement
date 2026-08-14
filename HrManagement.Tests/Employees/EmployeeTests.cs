@@ -217,4 +217,96 @@ public sealed class EmployeeTests
         Assert.True(employee.HasMissingProfileInformation);
         Assert.False(employee.RequiresProfileCompletion);
     }
+
+    [Fact]
+    public void Constructor_WithOrganizationReferences_PreservesIdentifiers()
+    {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-001",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Công nghệ thông tin",
+                "Lập trình viên",
+                EmployeeStatus.Active,
+                departmentId: departmentId,
+                positionId: positionId);
+
+        Assert.Equal(
+            departmentId,
+            employee.DepartmentId);
+
+        Assert.Equal(
+            positionId,
+            employee.PositionId);
+    }
+
+    [Fact]
+    public void Constructor_WithoutOrganizationReferences_AllowsLegacyEmployee()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-002",
+                "Legacy Employee",
+                null,
+                null,
+                null,
+                new DateOnly(2020, 1, 1),
+                "IT",
+                "Developer",
+                EmployeeStatus.Active);
+
+        Assert.Null(
+            employee.DepartmentId);
+
+        Assert.Null(
+            employee.PositionId);
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyDepartmentId_Throws()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-003",
+                "Employee",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "IT",
+                "Developer",
+                EmployeeStatus.Active,
+                departmentId: Guid.Empty));
+    }
+
+    [Fact]
+    public void Constructor_WithEmptyPositionId_Throws()
+    {
+        Assert.Throws<ArgumentException>(
+            () => new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-004",
+                "Employee",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "IT",
+                "Developer",
+                EmployeeStatus.Active,
+                positionId: Guid.Empty));
+    }
 }

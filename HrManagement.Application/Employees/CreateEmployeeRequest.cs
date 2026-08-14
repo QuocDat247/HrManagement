@@ -9,6 +9,6 @@ public sealed record CreateEmployeeRequest(
     string? PhoneNumber,
     DateOnly? DateOfBirth,
     DateOnly HireDate,
-    string Department,
-    string Position,
+    Guid DepartmentId,
+    Guid PositionId,
     EmployeeStatus Status);

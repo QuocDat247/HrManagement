@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Theming;
@@ -46,7 +46,15 @@ public sealed partial class MainViewModel : ObservableObject
 
             new NavigationItem(
                 "Nhân viên",
-                typeof(EmployeesViewModel))
+                typeof(EmployeesViewModel)),
+
+            new NavigationItem(
+                "Phòng ban",
+                typeof(DepartmentsViewModel)),
+
+            new NavigationItem(
+                "Chức danh",
+                typeof(PositionsViewModel))
         ];
 
         NavigateCommand =

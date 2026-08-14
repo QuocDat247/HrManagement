@@ -10,11 +10,19 @@ public partial class AddEmployeeWindow : Window
     public AddEmployeeWindow(AddEmployeeViewModel viewModel)
     {
         InitializeComponent();
-
         _viewModel = viewModel;
         DataContext = _viewModel;
 
+        // Giữ nguyên dòng đăng ký sự kiện SaveSucceeded cũ của bạn:
         _viewModel.SaveSucceeded += ViewModel_SaveSucceeded;
+
+        // THÊM DÒNG MỚI NÀY:
+        Loaded += AddEmployeeWindow_Loaded;
+    }
+
+    private async void AddEmployeeWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.LoadOrganizationOptionsAsync();
     }
 
     private void ViewModel_SaveSucceeded(
@@ -29,5 +37,7 @@ public partial class AddEmployeeWindow : Window
         _viewModel.SaveSucceeded -= ViewModel_SaveSucceeded;
 
         base.OnClosed(e);
+
+        Loaded -= AddEmployeeWindow_Loaded;
     }
 }
