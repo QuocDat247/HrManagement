@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Desktop.Services.Departments;
 using HrManagement.Domain.Organization.Departments;
+using HrManagement.Application.Organization.Memberships;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -14,6 +15,9 @@ public sealed partial class DepartmentsViewModel
 
     private readonly IDepartmentDialogService
         _departmentDialogService;
+
+    private readonly IOrganizationMembershipQueryService
+        _membershipQueryService;
 
     [ObservableProperty]
     private IReadOnlyList<Department>
@@ -28,6 +32,15 @@ public sealed partial class DepartmentsViewModel
 
     [ObservableProperty]
     private string? errorMessage;
+
+    [ObservableProperty]
+    private IReadOnlyList<DepartmentStaffingViewItem>
+    departmentRows =
+        Array.Empty<DepartmentStaffingViewItem>();
+
+    [ObservableProperty]
+    private DepartmentStaffingViewItem?
+        selectedDepartmentRow;
 
     public IAsyncRelayCommand LoadCommand
     {
@@ -61,13 +74,17 @@ public sealed partial class DepartmentsViewModel
 
     public DepartmentsViewModel(
         IDepartmentService departmentService,
-        IDepartmentDialogService departmentDialogService)
+        IDepartmentDialogService departmentDialogService,
+        IOrganizationMembershipQueryService membershipQueryService)
     {
         _departmentService =
             departmentService;
 
         _departmentDialogService =
             departmentDialogService;
+
+        _membershipQueryService =
+            membershipQueryService;
 
         ViewEmployeesCommand =
             new RelayCommand(
@@ -100,8 +117,41 @@ public sealed partial class DepartmentsViewModel
 
     public async Task LoadAsync()
     {
+        IReadOnlyList<Department> loadedDepartments =
+            await _departmentService
+                .GetDepartmentsAsync();
+
+        IReadOnlyList<OrganizationStaffingCount> staffingCounts =
+            await _membershipQueryService
+                .GetDepartmentStaffingCountsAsync();
+
+        Dictionary<Guid, OrganizationStaffingCount> countsById =
+            staffingCounts.ToDictionary(
+                count => count.OrganizationId);
+
+        Departments = loadedDepartments;
         IsLoading = true;
         ErrorMessage = null;
+
+        DepartmentRows = loadedDepartments
+        .Select(department =>
+        {
+            OrganizationStaffingCount staffing =
+                countsById.TryGetValue(
+                    department.Id,
+                    out OrganizationStaffingCount? count)
+                    ? count
+                    : new OrganizationStaffingCount(
+                        department.Id,
+                        ActiveCount: 0,
+                        OnLeaveCount: 0,
+                        InactiveCount: 0);
+
+            return new DepartmentStaffingViewItem(
+                department,
+                staffing);
+        })
+        .ToList();
 
         try
         {
@@ -114,6 +164,9 @@ public sealed partial class DepartmentsViewModel
             Departments =
                 Array.Empty<Department>();
 
+            DepartmentRows =
+                Array.Empty<DepartmentStaffingViewItem>();
+
             ErrorMessage =
                 "Không thể tải danh sách phòng ban.";
         }
@@ -121,6 +174,13 @@ public sealed partial class DepartmentsViewModel
         {
             IsLoading = false;
         }
+    }
+
+    partial void OnSelectedDepartmentRowChanged(
+    DepartmentStaffingViewItem? value)
+    {
+        SelectedDepartment =
+            value?.Department;
     }
 
     private bool CanViewEmployees()
@@ -330,5 +390,12 @@ public sealed partial class DepartmentsViewModel
 
         ViewEmployeesCommand
             .NotifyCanExecuteChanged();
+
+        if (value is null
+            && SelectedDepartmentRow is not null)
+        {
+            SelectedDepartmentRow =
+                null;
+        }
     }
 }

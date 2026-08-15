@@ -7,6 +7,7 @@ using HrManagement.Application.Organization.Departments;
 using HrManagement.Desktop.Services.Departments;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Organization.Departments;
+using HrManagement.Application.Organization.Memberships;
 
 namespace HrManagement.Tests.ViewModels;
 public sealed class DepartmentsViewModelTests
@@ -36,7 +37,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel.LoadAsync();
 
@@ -49,6 +51,95 @@ public sealed class DepartmentsViewModelTests
 
         Assert.False(
             viewModel.IsLoading);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MapsDepartmentStaffingCounts()
+    {
+        Department dev =
+            CreateDepartment(
+                "DEV",
+                "Phát triển phần mềm");
+
+        Department hr =
+            CreateDepartment(
+                "HR",
+                "Nhân sự");
+
+        var service =
+            new StubDepartmentService(
+                [dev, hr]);
+
+        var dialogService =
+            new StubDepartmentDialogService();
+
+        var membershipService =
+            new StubMembershipQueryService
+            {
+                DepartmentCounts =
+                [
+                    new OrganizationStaffingCount(
+                    dev.Id,
+                    ActiveCount: 2,
+                    OnLeaveCount: 1,
+                    InactiveCount: 4)
+                ]
+            };
+
+        var viewModel =
+            new DepartmentsViewModel(
+                service,
+                dialogService,
+                membershipService);
+
+        await viewModel.LoadAsync();
+
+        DepartmentStaffingViewItem devRow =
+            Assert.Single(
+                viewModel.DepartmentRows.Where(
+                    row =>
+                        row.Id == dev.Id));
+
+        Assert.Equal(
+            3,
+            devRow.CurrentEmployeeCount);
+
+        Assert.Equal(
+            7,
+            devRow.TotalLinkedEmployeeCount);
+
+        DepartmentStaffingViewItem hrRow =
+            Assert.Single(
+                viewModel.DepartmentRows.Where(
+                    row =>
+                        row.Id == hr.Id));
+
+        Assert.Equal(
+            0,
+            hrRow.CurrentEmployeeCount);
+
+        viewModel.SelectedDepartmentRow =
+            devRow;
+
+        Assert.Same(
+            dev,
+            viewModel.SelectedDepartment);
+
+        Assert.True(
+            viewModel.ViewEmployeesCommand
+                .CanExecute(null));
+
+        Assert.Equal(
+            "3 hiện tại • 4 đã nghỉ",
+            devRow.StaffingSummaryText);
+
+        Assert.Equal(
+            "0 hiện tại • 0 đã nghỉ",
+            hrRow.StaffingSummaryText);
+
+        Assert.Equal(
+            "Đang làm việc: 2 • Nghỉ phép: 1 • Đã nghỉ: 4",
+            devRow.StaffingDetailText);
     }
 
     [Fact]
@@ -70,7 +161,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel
             .AddDepartmentCommand
@@ -112,7 +204,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedDepartment =
                     department
@@ -147,7 +240,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         Assert.False(
             viewModel
@@ -190,7 +284,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         viewModel.SelectedDepartment =
             CreateDepartment(
@@ -403,6 +498,40 @@ public sealed class DepartmentsViewModelTests
         }
     }
 
+    private sealed class StubMembershipQueryService
+    : IOrganizationMembershipQueryService
+    {
+        public IReadOnlyList<OrganizationStaffingCount>
+            DepartmentCounts
+        { get; set; } =
+                Array.Empty<OrganizationStaffingCount>();
+
+        public Task<IReadOnlyList<OrganizationEmployeeListItem>>
+            GetEmployeesByDepartmentAsync(
+                Guid departmentId,
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationEmployeeListItem>>([]);
+
+        public Task<IReadOnlyList<OrganizationEmployeeListItem>>
+            GetEmployeesByPositionAsync(
+                Guid positionId,
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationEmployeeListItem>>([]);
+
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetDepartmentStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+            => Task.FromResult(DepartmentCounts);
+
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetPositionStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationStaffingCount>>([]);
+    }
+
     [Fact]
     public async Task DeactivateDepartmentCommand_WhenConfirmed_CallsService()
     {
@@ -425,7 +554,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedDepartment =
                     department
@@ -462,7 +592,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedDepartment =
                     department
@@ -502,7 +633,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel
             .AddDepartmentCommand
@@ -531,7 +663,8 @@ public sealed class DepartmentsViewModelTests
         var viewModel =
             new DepartmentsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedDepartment =
                     department
@@ -543,5 +676,83 @@ public sealed class DepartmentsViewModelTests
         Assert.Equal(
             department.Id,
             dialogService.ViewedDepartmentId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenCalledAgain_RefreshesDepartmentStaffingCounts()
+    {
+        Department dev =
+            CreateDepartment(
+                "DEV",
+                "Phát triển phần mềm");
+
+        var service =
+            new StubDepartmentService(
+                [dev]);
+
+        var dialogService =
+            new StubDepartmentDialogService();
+
+        var membershipService =
+            new StubMembershipQueryService
+            {
+                DepartmentCounts =
+                [
+                    new OrganizationStaffingCount(
+                    dev.Id,
+                    ActiveCount: 2,
+                    OnLeaveCount: 0,
+                    InactiveCount: 1)
+                ]
+            };
+
+        var viewModel =
+            new DepartmentsViewModel(
+                service,
+                dialogService,
+                membershipService);
+
+        await viewModel.LoadAsync();
+
+        DepartmentStaffingViewItem first =
+            Assert.Single(
+                viewModel.DepartmentRows);
+
+        Assert.Equal(
+            2,
+            first.CurrentEmployeeCount);
+
+        Assert.Equal(
+            "2 hiện tại • 1 đã nghỉ",
+            first.StaffingSummaryText);
+
+        // Giả lập dữ liệu thay đổi trong màn Nhân viên:
+        // thêm 1 active + rehire 1 inactive.
+        membershipService.DepartmentCounts =
+        [
+            new OrganizationStaffingCount(
+            dev.Id,
+            ActiveCount: 4,
+            OnLeaveCount: 0,
+            InactiveCount: 0)
+        ];
+
+        await viewModel.LoadAsync();
+
+        DepartmentStaffingViewItem refreshed =
+            Assert.Single(
+                viewModel.DepartmentRows);
+
+        Assert.Equal(
+            4,
+            refreshed.CurrentEmployeeCount);
+
+        Assert.Equal(
+            0,
+            refreshed.InactiveCount);
+
+        Assert.Equal(
+            "4 hiện tại • 0 đã nghỉ",
+            refreshed.StaffingSummaryText);
     }
 }

@@ -18,6 +18,78 @@ public sealed class EfOrganizationMembershipQueryService
             dbContextFactory;
     }
 
+    public async Task<IReadOnlyList<OrganizationStaffingCount>>
+    GetDepartmentStaffingCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        return await dbContext.Employees
+            .AsNoTracking()
+            .Where(employee =>
+                employee.DepartmentId.HasValue)
+            .GroupBy(employee =>
+                employee.DepartmentId!.Value)
+            .Select(group =>
+                new OrganizationStaffingCount(
+                    group.Key,
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.Active
+                            ? 1
+                            : 0),
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.OnLeave
+                            ? 1
+                            : 0),
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.Inactive
+                            ? 1
+                            : 0)))
+            .ToListAsync(
+                cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrganizationStaffingCount>>
+    GetPositionStaffingCountsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        await using HrManagementDbContext dbContext =
+            await _dbContextFactory.CreateDbContextAsync(
+                cancellationToken);
+
+        return await dbContext.Employees
+            .AsNoTracking()
+            .Where(employee =>
+                employee.PositionId.HasValue)
+            .GroupBy(employee =>
+                employee.PositionId!.Value)
+            .Select(group =>
+                new OrganizationStaffingCount(
+                    group.Key,
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.Active
+                            ? 1
+                            : 0),
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.OnLeave
+                            ? 1
+                            : 0),
+
+                    group.Sum(employee =>
+                        employee.Status == EmployeeStatus.Inactive
+                            ? 1
+                            : 0)))
+            .ToListAsync(
+                cancellationToken);
+    }
+
     public async Task<IReadOnlyList<OrganizationEmployeeListItem>>
     GetEmployeesByDepartmentAsync(
         Guid departmentId,

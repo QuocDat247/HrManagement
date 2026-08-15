@@ -35,7 +35,7 @@ public sealed class PositionDialogService
     }
 
     public void ShowEmployees(
-    Position position)
+        Position position)
     {
         ArgumentNullException.ThrowIfNull(
             position);

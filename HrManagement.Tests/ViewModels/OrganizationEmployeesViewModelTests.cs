@@ -322,6 +322,24 @@ public sealed class OrganizationEmployeesViewModelTests
             set;
         }
 
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetDepartmentStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<
+                IReadOnlyList<OrganizationStaffingCount>>(
+                    Array.Empty<OrganizationStaffingCount>());
+        }
+
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetPositionStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<
+                IReadOnlyList<OrganizationStaffingCount>>(
+                    Array.Empty<OrganizationStaffingCount>());
+        }
+
         public Task<IReadOnlyList<OrganizationEmployeeListItem>>
             GetEmployeesByDepartmentAsync(
                 Guid departmentId,

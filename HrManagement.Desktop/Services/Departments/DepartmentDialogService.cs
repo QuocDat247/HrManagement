@@ -19,7 +19,7 @@ public sealed class DepartmentDialogService
     }
 
     public void ShowEmployees(
-    Department department)
+        Department department)
     {
         ArgumentNullException.ThrowIfNull(
             department);

@@ -1,4 +1,3 @@
-using HrManagement.Desktop.Views;
 using HrManagement.Domain.Organization.Positions;
 
 namespace HrManagement.Desktop.Services.Positions;

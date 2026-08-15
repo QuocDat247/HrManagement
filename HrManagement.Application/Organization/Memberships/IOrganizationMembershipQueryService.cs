@@ -11,4 +11,12 @@ public interface IOrganizationMembershipQueryService
         GetEmployeesByPositionAsync(
             Guid positionId,
             CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<OrganizationStaffingCount>>
+        GetDepartmentStaffingCountsAsync(
+            CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<OrganizationStaffingCount>>
+        GetPositionStaffingCountsAsync(
+            CancellationToken cancellationToken = default);
 }

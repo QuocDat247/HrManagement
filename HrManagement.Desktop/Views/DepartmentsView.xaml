@@ -54,8 +54,8 @@
         <!-- Content -->
         <Grid Grid.Row="2">
 
-            <DataGrid ItemsSource="{Binding Departments}"
-                      SelectedItem="{Binding SelectedDepartment,
+            <DataGrid ItemsSource="{Binding DepartmentRows}"
+                      SelectedItem="{Binding SelectedDepartmentRow,
                                              Mode=TwoWay}"
                       AutoGenerateColumns="False"
                       IsReadOnly="True"
@@ -72,6 +72,21 @@
                     <DataGridTextColumn Header="Tên phòng ban"
                                         Width="*"
                                         Binding="{Binding Name}" />
+
+                    <DataGridTemplateColumn Header="Nhân sự"
+                        Width="190">
+
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+
+                                <TextBlock Text="{Binding StaffingSummaryText}"
+                                           ToolTip="{Binding StaffingDetailText}"
+                                           VerticalAlignment="Center" />
+
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+
+                    </DataGridTemplateColumn>
 
                     <DataGridTemplateColumn Header="Trạng thái"
                                             Width="160">

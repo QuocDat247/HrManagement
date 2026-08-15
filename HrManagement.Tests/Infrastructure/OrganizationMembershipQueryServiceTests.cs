@@ -304,7 +304,8 @@ public sealed class OrganizationMembershipQueryServiceTests
         string employeeCode,
         string fullName,
         Guid? departmentId,
-        Guid? positionId)
+        Guid? positionId,
+        EmployeeStatus status = EmployeeStatus.Active)
     {
         return new Employee(
             Guid.NewGuid(),
@@ -316,7 +317,7 @@ public sealed class OrganizationMembershipQueryServiceTests
             new DateOnly(2024, 1, 1),
             "Legacy Department",
             "Legacy Position",
-            EmployeeStatus.Active,
+            status,
             departmentId: departmentId,
             positionId: positionId);
     }
@@ -361,5 +362,328 @@ public sealed class OrganizationMembershipQueryServiceTests
             return Task.FromResult(
                 CreateDbContext());
         }
+    }
+
+    [Fact]
+    public void OrganizationStaffingCount_CurrentEmployeeCount_ExcludesInactive()
+    {
+        var count =
+            new OrganizationStaffingCount(
+                Guid.NewGuid(),
+                ActiveCount: 5,
+                OnLeaveCount: 2,
+                InactiveCount: 3);
+
+        Assert.Equal(
+            7,
+            count.CurrentEmployeeCount);
+
+        Assert.Equal(
+            10,
+            count.TotalLinkedEmployeeCount);
+    }
+
+    [Fact]
+    public async Task GetDepartmentStaffingCountsAsync_GroupsEmployeesByDepartment()
+    {
+        await using var connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(connection);
+
+        Guid devDepartmentId =
+            Guid.NewGuid();
+
+        Guid hrDepartmentId =
+            Guid.NewGuid();
+
+        Guid developerPositionId =
+            Guid.NewGuid();
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database
+                .EnsureCreatedAsync();
+
+            dbContext.Departments.AddRange(
+                new Department(
+                    devDepartmentId,
+                    "DEV",
+                    "Phát triển phần mềm"),
+
+                new Department(
+                    hrDepartmentId,
+                    "HR",
+                    "Nhân sự"));
+
+            dbContext.Positions.Add(
+                new Position(
+                    developerPositionId,
+                    "DEV",
+                    "Lập trình viên"));
+
+            dbContext.Employees.AddRange(
+                // DEV: 2 Active
+                CreateEmployee(
+                    "EMP001",
+                    "Nguyễn Văn An",
+                    devDepartmentId,
+                    developerPositionId,
+                    EmployeeStatus.Active),
+
+                CreateEmployee(
+                    "EMP002",
+                    "Trần Thị Bình",
+                    devDepartmentId,
+                    developerPositionId,
+                    EmployeeStatus.Active),
+
+                // DEV: 1 OnLeave
+                CreateEmployee(
+                    "EMP003",
+                    "Lê Minh Châu",
+                    devDepartmentId,
+                    developerPositionId,
+                    EmployeeStatus.OnLeave),
+
+                // DEV: 1 Inactive
+                CreateEmployee(
+                    "EMP004",
+                    "Phạm Quốc Dũng",
+                    devDepartmentId,
+                    developerPositionId,
+                    EmployeeStatus.Inactive),
+
+                // HR: 1 Active
+                CreateEmployee(
+                    "EMP005",
+                    "Võ Thu Hà",
+                    hrDepartmentId,
+                    developerPositionId,
+                    EmployeeStatus.Active),
+
+                // Legacy unresolved:
+                // không được tính vào department nào.
+                CreateEmployee(
+                    "EMP006",
+                    "Nhân viên legacy",
+                    null,
+                    null,
+                    EmployeeStatus.Active));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var service =
+            CreateService(options);
+
+        IReadOnlyList<OrganizationStaffingCount> result =
+            await service
+                .GetDepartmentStaffingCountsAsync();
+
+        Assert.Equal(
+            2,
+            result.Count);
+
+        OrganizationStaffingCount dev =
+            Assert.Single(
+                result.Where(
+                    item =>
+                        item.OrganizationId ==
+                        devDepartmentId));
+
+        Assert.Equal(
+            2,
+            dev.ActiveCount);
+
+        Assert.Equal(
+            1,
+            dev.OnLeaveCount);
+
+        Assert.Equal(
+            1,
+            dev.InactiveCount);
+
+        Assert.Equal(
+            3,
+            dev.CurrentEmployeeCount);
+
+        Assert.Equal(
+            4,
+            dev.TotalLinkedEmployeeCount);
+
+        OrganizationStaffingCount hr =
+            Assert.Single(
+                result.Where(
+                    item =>
+                        item.OrganizationId ==
+                        hrDepartmentId));
+
+        Assert.Equal(
+            1,
+            hr.CurrentEmployeeCount);
+    }
+
+    [Fact]
+    public async Task GetPositionStaffingCountsAsync_GroupsEmployeesByPosition()
+    {
+        await using var connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(connection);
+
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid developerPositionId =
+            Guid.NewGuid();
+
+        Guid qaPositionId =
+            Guid.NewGuid();
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database
+                .EnsureCreatedAsync();
+
+            dbContext.Departments.Add(
+                new Department(
+                    departmentId,
+                    "DEV",
+                    "Phát triển phần mềm"));
+
+            dbContext.Positions.AddRange(
+                new Position(
+                    developerPositionId,
+                    "DEVELOPER",
+                    "Lập trình viên"),
+
+                new Position(
+                    qaPositionId,
+                    "QA",
+                    "Kiểm thử phần mềm"));
+
+            dbContext.Employees.AddRange(
+                CreateEmployee(
+                    "EMP101",
+                    "Nguyễn Văn An",
+                    departmentId,
+                    developerPositionId,
+                    EmployeeStatus.Active),
+
+                CreateEmployee(
+                    "EMP102",
+                    "Trần Thị Bình",
+                    departmentId,
+                    developerPositionId,
+                    EmployeeStatus.OnLeave),
+
+                CreateEmployee(
+                    "EMP103",
+                    "Lê Minh Châu",
+                    departmentId,
+                    developerPositionId,
+                    EmployeeStatus.Inactive),
+
+                CreateEmployee(
+                    "EMP104",
+                    "Phạm Quốc Dũng",
+                    departmentId,
+                    qaPositionId,
+                    EmployeeStatus.Active));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var service =
+            CreateService(options);
+
+        IReadOnlyList<OrganizationStaffingCount> result =
+            await service
+                .GetPositionStaffingCountsAsync();
+
+        Assert.Equal(
+            2,
+            result.Count);
+
+        OrganizationStaffingCount developer =
+            Assert.Single(
+                result.Where(
+                    item =>
+                        item.OrganizationId ==
+                        developerPositionId));
+
+        Assert.Equal(
+            1,
+            developer.ActiveCount);
+
+        Assert.Equal(
+            1,
+            developer.OnLeaveCount);
+
+        Assert.Equal(
+            1,
+            developer.InactiveCount);
+
+        Assert.Equal(
+            2,
+            developer.CurrentEmployeeCount);
+
+        Assert.Equal(
+            3,
+            developer.TotalLinkedEmployeeCount);
+
+        OrganizationStaffingCount qa =
+            Assert.Single(
+                result.Where(
+                    item =>
+                        item.OrganizationId ==
+                        qaPositionId));
+
+        Assert.Equal(
+            1,
+            qa.CurrentEmployeeCount);
+    }
+
+    [Fact]
+    public async Task GetDepartmentStaffingCountsAsync_WhenNoAssignments_ReturnsEmpty()
+    {
+        await using var connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(connection);
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            await dbContext.Database
+                .EnsureCreatedAsync();
+
+            // Employee legacy chưa resolve organization.
+            dbContext.Employees.Add(
+                CreateEmployee(
+                    "EMP-LEGACY",
+                    "Nhân viên legacy",
+                    null,
+                    null,
+                    EmployeeStatus.Active));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var service =
+            CreateService(options);
+
+        IReadOnlyList<OrganizationStaffingCount> result =
+            await service
+                .GetDepartmentStaffingCountsAsync();
+
+        Assert.Empty(
+            result);
     }
 }

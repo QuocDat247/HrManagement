@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HrManagement.Application.Organization.Memberships;
 using HrManagement.Application.Organization.Positions;
 using HrManagement.Desktop.Services.Positions;
 using HrManagement.Domain.Organization.Positions;
@@ -15,6 +16,9 @@ public sealed partial class PositionsViewModel
     private readonly IPositionDialogService
         _positionDialogService;
 
+    private readonly IOrganizationMembershipQueryService
+        _membershipQueryService;
+
     [ObservableProperty]
     private IReadOnlyList<Position>
         positions =
@@ -28,6 +32,15 @@ public sealed partial class PositionsViewModel
 
     [ObservableProperty]
     private string? errorMessage;
+
+    [ObservableProperty]
+    private IReadOnlyList<PositionStaffingViewItem>
+        positionRows =
+            Array.Empty<PositionStaffingViewItem>();
+
+    [ObservableProperty]
+    private PositionStaffingViewItem?
+        selectedPositionRow;
 
     public IAsyncRelayCommand LoadCommand
     {
@@ -61,13 +74,17 @@ public sealed partial class PositionsViewModel
 
     public PositionsViewModel(
         IPositionService positionService,
-        IPositionDialogService positionDialogService)
+        IPositionDialogService positionDialogService,
+        IOrganizationMembershipQueryService membershipQueryService)
     {
         _positionService =
             positionService;
 
         _positionDialogService =
             positionDialogService;
+
+        _membershipQueryService =
+        membershipQueryService;
 
         ViewEmployeesCommand =
             new RelayCommand(
@@ -100,6 +117,42 @@ public sealed partial class PositionsViewModel
 
     public async Task LoadAsync()
     {
+        IReadOnlyList<Position> loadedPositions =
+            await _positionService
+                .GetPositionsAsync();
+
+        IReadOnlyList<OrganizationStaffingCount> staffingCounts =
+            await _membershipQueryService
+                .GetPositionStaffingCountsAsync();
+
+        Dictionary<Guid, OrganizationStaffingCount> countsById =
+            staffingCounts.ToDictionary(
+                count => count.OrganizationId);
+
+        Positions =
+            loadedPositions;
+
+        PositionRows =
+            loadedPositions
+                .Select(position =>
+                {
+                    OrganizationStaffingCount staffing =
+                        countsById.TryGetValue(
+                            position.Id,
+                            out OrganizationStaffingCount? count)
+                            ? count
+                            : new OrganizationStaffingCount(
+                                position.Id,
+                                ActiveCount: 0,
+                                OnLeaveCount: 0,
+                                InactiveCount: 0);
+
+                    return new PositionStaffingViewItem(
+                        position,
+                        staffing);
+                })
+                .ToList();
+
         IsLoading = true;
         ErrorMessage = null;
 
@@ -114,6 +167,9 @@ public sealed partial class PositionsViewModel
             Positions =
                 Array.Empty<Position>();
 
+            PositionRows =
+                Array.Empty<PositionStaffingViewItem>();
+
             ErrorMessage =
                 "Không thể tải danh sách chức danh.";
         }
@@ -121,6 +177,13 @@ public sealed partial class PositionsViewModel
         {
             IsLoading = false;
         }
+    }
+
+    partial void OnSelectedPositionRowChanged(
+    PositionStaffingViewItem? value)
+    {
+        SelectedPosition =
+            value?.Position;
     }
 
     private bool CanViewEmployees()
@@ -330,5 +393,12 @@ public sealed partial class PositionsViewModel
 
         ViewEmployeesCommand
             .NotifyCanExecuteChanged();
+
+        if (value is null
+            && SelectedPositionRow is not null)
+        {
+            SelectedPositionRow =
+                null;
+        }
     }
 }

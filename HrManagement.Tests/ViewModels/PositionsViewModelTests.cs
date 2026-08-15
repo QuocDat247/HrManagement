@@ -7,6 +7,7 @@ using HrManagement.Application.Organization.Positions;
 using HrManagement.Desktop.Services.Positions;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Organization.Positions;
+using HrManagement.Application.Organization.Memberships;
 
 namespace HrManagement.Tests.ViewModels;
 public sealed class PositionsViewModelTests
@@ -33,7 +34,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedPosition =
                     position
@@ -70,7 +72,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedPosition =
                     position
@@ -110,7 +113,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel
             .AddPositionCommand
@@ -131,6 +135,95 @@ public sealed class PositionsViewModelTests
             code,
             name,
             isActive);
+    }
+
+    [Fact]
+    public async Task LoadAsync_MapsPositionStaffingCounts()
+    {
+        Position developer =
+            CreatePosition(
+                "DEV",
+                "Lập trình viên");
+
+        Position qa =
+            CreatePosition(
+                "QA",
+                "Kiểm thử");
+
+        var service =
+            new StubPositionService(
+                [developer, qa]);
+
+        var dialogService =
+            new StubPositionDialogService();
+
+        var membershipService =
+            new StubMembershipQueryService
+            {
+                PositionCounts =
+                [
+                    new OrganizationStaffingCount(
+                    developer.Id,
+                    ActiveCount: 4,
+                    OnLeaveCount: 2,
+                    InactiveCount: 1)
+                ]
+            };
+
+        var viewModel =
+            new PositionsViewModel(
+                service,
+                dialogService,
+                membershipService);
+
+        await viewModel.LoadAsync();
+
+        PositionStaffingViewItem developerRow =
+            Assert.Single(
+                viewModel.PositionRows.Where(
+                    row =>
+                        row.Id == developer.Id));
+
+        Assert.Equal(
+            6,
+            developerRow.CurrentEmployeeCount);
+
+        Assert.Equal(
+            7,
+            developerRow.TotalLinkedEmployeeCount);
+
+        PositionStaffingViewItem qaRow =
+            Assert.Single(
+                viewModel.PositionRows.Where(
+                    row =>
+                        row.Id == qa.Id));
+
+        Assert.Equal(
+            0,
+            qaRow.CurrentEmployeeCount);
+
+        viewModel.SelectedPositionRow =
+            developerRow;
+
+        Assert.Same(
+            developer,
+            viewModel.SelectedPosition);
+
+        Assert.True(
+            viewModel.ViewEmployeesCommand
+                .CanExecute(null));
+
+        Assert.Equal(
+            "6 hiện tại • 1 đã nghỉ",
+            developerRow.StaffingSummaryText);
+
+        Assert.Equal(
+            "0 hiện tại • 0 đã nghỉ",
+            qaRow.StaffingSummaryText);
+
+        Assert.Equal(
+            "Đang làm việc: 4 • Nghỉ phép: 2 • Đã nghỉ: 1",
+            developerRow.StaffingDetailText);
     }
 
     [Fact]
@@ -158,7 +251,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel.LoadAsync();
 
@@ -192,7 +286,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         await viewModel
             .AddPositionCommand
@@ -234,7 +329,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedPosition =
                     position
@@ -273,7 +369,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         Assert.False(
             viewModel
@@ -316,7 +413,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService);
+                dialogService,
+                new StubMembershipQueryService());
 
         Assert.False(
             viewModel
@@ -522,6 +620,40 @@ public sealed class PositionsViewModelTests
         }
     }
 
+    private sealed class StubMembershipQueryService
+    : IOrganizationMembershipQueryService
+    {
+        public IReadOnlyList<OrganizationStaffingCount>
+            PositionCounts
+        { get; set; } =
+                Array.Empty<OrganizationStaffingCount>();
+
+        public Task<IReadOnlyList<OrganizationEmployeeListItem>>
+            GetEmployeesByDepartmentAsync(
+                Guid departmentId,
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationEmployeeListItem>>([]);
+
+        public Task<IReadOnlyList<OrganizationEmployeeListItem>>
+            GetEmployeesByPositionAsync(
+                Guid positionId,
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationEmployeeListItem>>([]);
+
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetDepartmentStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+            => Task.FromResult<
+                IReadOnlyList<OrganizationStaffingCount>>([]);
+
+        public Task<IReadOnlyList<OrganizationStaffingCount>>
+            GetPositionStaffingCountsAsync(
+                CancellationToken cancellationToken = default)
+            => Task.FromResult(PositionCounts);
+    }
+
     [Fact]
     public void ViewEmployeesCommand_WhenPositionSelected_ShowsEmployeesDialog()
     {
@@ -540,7 +672,8 @@ public sealed class PositionsViewModelTests
         var viewModel =
             new PositionsViewModel(
                 service,
-                dialogService)
+                dialogService,
+                new StubMembershipQueryService())
             {
                 SelectedPosition =
                     position
@@ -552,5 +685,83 @@ public sealed class PositionsViewModelTests
         Assert.Equal(
             position.Id,
             dialogService.ViewedPositionId);
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenCalledAgain_RefreshesPositionStaffingCounts()
+    {
+        Position developer =
+            CreatePosition(
+                "DEV",
+                "Lập trình viên");
+
+        var service =
+            new StubPositionService(
+                [developer]);
+
+        var dialogService =
+            new StubPositionDialogService();
+
+        var membershipService =
+            new StubMembershipQueryService
+            {
+                PositionCounts =
+                [
+                    new OrganizationStaffingCount(
+                    developer.Id,
+                    ActiveCount: 3,
+                    OnLeaveCount: 1,
+                    InactiveCount: 2)
+                ]
+            };
+
+        var viewModel =
+            new PositionsViewModel(
+                service,
+                dialogService,
+                membershipService);
+
+        await viewModel.LoadAsync();
+
+        PositionStaffingViewItem first =
+            Assert.Single(
+                viewModel.PositionRows);
+
+        Assert.Equal(
+            4,
+            first.CurrentEmployeeCount);
+
+        Assert.Equal(
+            "4 hiện tại • 2 đã nghỉ",
+            first.StaffingSummaryText);
+
+        // Giả lập employee đổi/re-hire/deactivate
+        // rồi quay lại màn Chức danh.
+        membershipService.PositionCounts =
+        [
+            new OrganizationStaffingCount(
+            developer.Id,
+            ActiveCount: 5,
+            OnLeaveCount: 0,
+            InactiveCount: 1)
+        ];
+
+        await viewModel.LoadAsync();
+
+        PositionStaffingViewItem refreshed =
+            Assert.Single(
+                viewModel.PositionRows);
+
+        Assert.Equal(
+            5,
+            refreshed.CurrentEmployeeCount);
+
+        Assert.Equal(
+            1,
+            refreshed.InactiveCount);
+
+        Assert.Equal(
+            "5 hiện tại • 1 đã nghỉ",
+            refreshed.StaffingSummaryText);
     }
 }
