@@ -1,0 +1,246 @@
+<Window x:Class="HrManagement.Desktop.Views.OrganizationEmployeesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle}"
+        Width="900"
+        Height="600"
+        MinWidth="760"
+        MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Loaded="OrganizationEmployeesWindow_Loaded">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel>
+
+            <TextBlock Text="{Binding Heading}"
+                       FontSize="24"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+            <TextBlock Margin="0,6,0,0"
+                       Text="Danh sách được lấy từ phân công phòng ban và chức danh hiện tại."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+        </StackPanel>
+
+        <!-- Selected organization -->
+        <Border Grid.Row="1"
+                Margin="0,20,0,16"
+                Padding="16"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+
+            <StackPanel>
+
+                <TextBlock Text="{Binding ContextName}"
+                           FontSize="17"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBlock Margin="0,5,0,0"
+                           Foreground="{DynamicResource SecondaryTextBrush}">
+
+                    <Run Text="Mã: " />
+                    <Run Text="{Binding ContextCode}" />
+
+                </TextBlock>
+
+            </StackPanel>
+
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="2">
+
+            <Border BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+
+                <DataGrid ItemsSource="{Binding Employees}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          HeadersVisibility="Column"
+                          RowHeaderWidth="0"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
+                    <DataGrid.Style>
+                        <Style TargetType="DataGrid">
+
+                            <Setter Property="Visibility"
+                                    Value="Collapsed" />
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasEmployees}"
+                                             Value="True">
+
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+
+                                </DataTrigger>
+                            </Style.Triggers>
+
+                        </Style>
+                    </DataGrid.Style>
+
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Mã NV"
+                                            Width="100"
+                                            Binding="{Binding EmployeeCode}" />
+
+                        <DataGridTextColumn Header="Họ và tên"
+                                            Width="*"
+                                            MinWidth="170"
+                                            Binding="{Binding FullName}" />
+
+                        <DataGridTextColumn Header="Phòng ban"
+                                            Width="*"
+                                            MinWidth="150"
+                                            Binding="{Binding DepartmentName}" />
+
+                        <DataGridTextColumn Header="Chức danh"
+                                            Width="*"
+                                            MinWidth="150"
+                                            Binding="{Binding PositionName}" />
+
+                        <DataGridTextColumn Header="Trạng thái"
+                                            Width="130"
+                                            Binding="{Binding StatusText}" />
+
+                        <DataGridTextColumn Header="Ngày vào làm"
+                                            Width="110"
+                                            Binding="{Binding HireDateText}" />
+
+                    </DataGrid.Columns>
+
+                </DataGrid>
+
+            </Border>
+
+            <!-- Loading -->
+            <TextBlock Text="Đang tải danh sách nhân viên..."
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsLoading}"
+                                         Value="True">
+
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+            <!-- Empty -->
+            <TextBlock Text="{Binding EmptyMessage}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       Foreground="{DynamicResource SecondaryTextBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+
+                        <Setter Property="Visibility"
+                                Value="Visible" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding IsLoading}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding HasEmployees}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding HasError}"
+                                         Value="True">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+            <!-- Error -->
+            <TextBlock Text="{Binding ErrorMessage}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource WarningBrush}">
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+
+                        <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding HasError}"
+                                         Value="True">
+
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+
+                            </DataTrigger>
+
+                        </Style.Triggers>
+
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
+
+        </Grid>
+
+        <Button Grid.Row="3"
+                Width="90"
+                Margin="0,18,0,0"
+                HorizontalAlignment="Right"
+                Content="Đóng"
+                IsCancel="True" />
+
+    </Grid>
+
+</Window>

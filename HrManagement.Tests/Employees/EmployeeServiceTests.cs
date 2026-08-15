@@ -929,6 +929,162 @@ public sealed class EmployeeServiceTests
     }
 
     [Fact]
+    public async Task DeactivateEmployeeAsync_PreservesOrganizationReferences()
+    {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-DEACTIVATE",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Công nghệ thông tin",
+                "Lập trình viên",
+                EmployeeStatus.Active,
+                departmentId: departmentId,
+                positionId: positionId);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var historyRepository =
+            new StubEmploymentHistoryRepository
+            {
+                History =
+                    new EmploymentHistory(
+                        employee.Id,
+                        [
+                            new EmploymentPeriod(
+                            Guid.NewGuid(),
+                            employee.Id,
+                            employee.HireDate)
+                        ])
+            };
+
+        var lifecyclePersistence =
+            new StubEmploymentLifecyclePersistence();
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        DateOnly terminationDate =
+            new(2026, 8, 1);
+
+        DeactivateEmployeeResult result =
+            await service.DeactivateEmployeeAsync(
+                employee.Id,
+                terminationDate);
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Employee updatedEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Equal(
+            departmentId,
+            updatedEmployee.DepartmentId);
+
+        Assert.Equal(
+            positionId,
+            updatedEmployee.PositionId);
+    }
+
+    [Fact]
+    public async Task CancelDeactivationAsync_PreservesOrganizationReferences()
+    {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        DateOnly terminationDate =
+            new(2026, 6, 15);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-ORG-CANCEL",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Công nghệ thông tin",
+                "Lập trình viên",
+                EmployeeStatus.Inactive,
+                terminationDate,
+                departmentId: departmentId,
+                positionId: positionId);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var historyRepository =
+            new StubEmploymentHistoryRepository
+            {
+                History =
+                    new EmploymentHistory(
+                        employee.Id,
+                        [
+                            new EmploymentPeriod(
+                            Guid.NewGuid(),
+                            employee.Id,
+                            employee.HireDate,
+                            terminationDate)
+                        ])
+            };
+
+        var lifecyclePersistence =
+            new StubEmploymentLifecyclePersistence();
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        CancelEmployeeDeactivationResult result =
+            await service.CancelDeactivationAsync(
+                employee.Id,
+                EmployeeStatus.Active);
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Employee restoredEmployee =
+            Assert.IsType<Employee>(
+                lifecyclePersistence.UpdatedEmployee);
+
+        Assert.Equal(
+            departmentId,
+            restoredEmployee.DepartmentId);
+
+        Assert.Equal(
+            positionId,
+            restoredEmployee.PositionId);
+    }
+
+    [Fact]
     public async Task DeactivateEmployeeAsync_WhenOnLeave_SetsStatusToInactive()
     {
         var employee = new Employee(

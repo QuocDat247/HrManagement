@@ -18,6 +18,28 @@ public sealed class DepartmentDialogService
             serviceProvider;
     }
 
+    public void ShowEmployees(
+    Department department)
+    {
+        ArgumentNullException.ThrowIfNull(
+            department);
+
+        OrganizationEmployeesWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    OrganizationEmployeesWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.LoadDepartment(
+            department);
+
+        window.ShowDialog();
+    }
+
     public DepartmentEditorDialogResult?
         ShowAddDepartmentDialog()
     {

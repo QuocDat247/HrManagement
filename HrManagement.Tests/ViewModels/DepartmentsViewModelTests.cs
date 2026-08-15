@@ -230,6 +230,19 @@ public sealed class DepartmentsViewModelTests
     private sealed class StubDepartmentDialogService
     : IDepartmentDialogService
     {
+        public Guid? ViewedDepartmentId
+        {
+            get;
+            private set;
+        }
+
+        public void ShowEmployees(
+            Department department)
+        {
+            ViewedDepartmentId =
+                department.Id;
+        }
+
         public DepartmentEditorDialogResult?
             AddResult
         {
@@ -498,5 +511,37 @@ public sealed class DepartmentsViewModelTests
         Assert.Equal(
             "Mã phòng ban đã tồn tại.",
             viewModel.ErrorMessage);
+    }
+
+    [Fact]
+    public void ViewEmployeesCommand_WhenDepartmentSelected_ShowsEmployeesDialog()
+    {
+        Department department =
+            CreateDepartment(
+                "DEV",
+                "Phát triển phần mềm");
+
+        var service =
+            new StubDepartmentService(
+                [department]);
+
+        var dialogService =
+            new StubDepartmentDialogService();
+
+        var viewModel =
+            new DepartmentsViewModel(
+                service,
+                dialogService)
+            {
+                SelectedDepartment =
+                    department
+            };
+
+        viewModel.ViewEmployeesCommand
+            .Execute(null);
+
+        Assert.Equal(
+            department.Id,
+            dialogService.ViewedDepartmentId);
     }
 }

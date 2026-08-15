@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Views;
 using HrManagement.Domain.Organization.Positions;
 
 namespace HrManagement.Desktop.Services.Positions;
@@ -15,5 +16,8 @@ public interface IPositionDialogService
         Position position);
 
     bool ConfirmReactivatePosition(
+        Position position);
+
+    void ShowEmployees(
         Position position);
 }

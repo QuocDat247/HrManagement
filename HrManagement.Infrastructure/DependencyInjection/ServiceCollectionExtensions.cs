@@ -9,6 +9,8 @@ using HrManagement.Infrastructure.Employees;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Application.Organization.Memberships;
+using HrManagement.Infrastructure.Organization.Memberships;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -35,6 +37,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
         IEmploymentLifecyclePersistence,
         EfEmploymentLifecyclePersistence>();
+        services.AddSingleton<
+        IOrganizationMembershipQueryService,
+        EfOrganizationMembershipQueryService>();
 
         return services;
     }

@@ -34,6 +34,28 @@ public sealed class PositionDialogService
             : null;
     }
 
+    public void ShowEmployees(
+    Position position)
+    {
+        ArgumentNullException.ThrowIfNull(
+            position);
+
+        OrganizationEmployeesWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    OrganizationEmployeesWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.LoadPosition(
+            position);
+
+        window.ShowDialog();
+    }
+
     public PositionEditorDialogResult?
         ShowEditPositionDialog(
             Position position)

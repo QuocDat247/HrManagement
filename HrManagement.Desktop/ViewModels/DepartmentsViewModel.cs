@@ -54,6 +54,11 @@ public sealed partial class DepartmentsViewModel
         get;
     }
 
+    public IRelayCommand ViewEmployeesCommand
+    {
+        get;
+    }
+
     public DepartmentsViewModel(
         IDepartmentService departmentService,
         IDepartmentDialogService departmentDialogService)
@@ -63,6 +68,11 @@ public sealed partial class DepartmentsViewModel
 
         _departmentDialogService =
             departmentDialogService;
+
+        ViewEmployeesCommand =
+            new RelayCommand(
+                ViewEmployees,
+                CanViewEmployees);
 
         LoadCommand =
             new AsyncRelayCommand(
@@ -111,6 +121,26 @@ public sealed partial class DepartmentsViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private bool CanViewEmployees()
+    {
+        return SelectedDepartment is not null;
+    }
+
+    private void ViewEmployees()
+    {
+        Department? department =
+            SelectedDepartment;
+
+        if (department is null)
+        {
+            return;
+        }
+
+        _departmentDialogService
+            .ShowEmployees(
+                department);
     }
 
     private async Task AddDepartmentAsync()
@@ -296,6 +326,9 @@ public sealed partial class DepartmentsViewModel
             .NotifyCanExecuteChanged();
 
         ReactivateDepartmentCommand
+            .NotifyCanExecuteChanged();
+
+        ViewEmployeesCommand
             .NotifyCanExecuteChanged();
     }
 }

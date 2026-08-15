@@ -263,7 +263,9 @@ public sealed class EmployeeService : IEmployeeService
                 existingEmployee.Department,
                 existingEmployee.Position,
                 restoredStatus,
-                terminationDate: null);
+                terminationDate: null,
+                departmentId: existingEmployee.DepartmentId,
+                positionId: existingEmployee.PositionId);
 
         await _employmentLifecyclePersistence
             .UpdateEmployeeWithPeriodAsync(
@@ -650,7 +652,9 @@ public sealed class EmployeeService : IEmployeeService
                 employee.Department,
                 employee.Position,
                 EmployeeStatus.Inactive,
-                terminationDate.Value);
+                terminationDate.Value,
+                departmentId: employee.DepartmentId,
+                positionId: employee.PositionId);
         }
         catch (ArgumentException ex)
         {

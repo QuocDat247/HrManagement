@@ -43,6 +43,12 @@
                     Command="{Binding ReactivatePositionCommand}"
                     Margin="8,0,0,0" Width="90" />
 
+            <Button Content="Xem nhân viên"
+                    Command="{Binding ViewEmployeesCommand}"
+                    Margin="8,0,0,0"
+                    Padding="12,6"
+                    ToolTip="Xem các nhân viên có chức danh được chọn" />
+
         </StackPanel>
 
         <!-- Content -->

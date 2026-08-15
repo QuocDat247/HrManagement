@@ -92,70 +92,111 @@ public partial class App : System.Windows.Application
             NavigationService>();
 
         services.AddTransient<LoginViewModel>();
+
         services.AddTransient<MainViewModel>();
 
+
         services.AddTransient<LoginWindow>();
+
         services.AddTransient<MainWindow>();
+
         services.AddTransient<DashboardViewModel>();
+
         services.AddTransient<EmployeesViewModel>();
+
         services.AddSingleton<IThemeService, ThemeService>();
+
         services.AddInfrastructure();
+
         services.AddTransient<AddEmployeeViewModel>();
+
         services.AddTransient<AddEmployeeWindow>();
+
         services.AddSingleton<IEmployeeDialogService, EmployeeDialogService>();
+
         services.AddTransient<EditEmployeeViewModel>();
+
         services.AddTransient<EditEmployeeWindow>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();
+
         services.AddTransient<DeactivateEmployeeViewModel>();
+
         services.AddTransient<DeactivateEmployeeWindow>();
+
         services.AddTransient<
             CancelEmployeeDeactivationViewModel>();
+
         services.AddTransient<
             CancelEmployeeDeactivationWindow>();
+
         services.AddTransient<
             RehireEmployeeViewModel>();
+
         services.AddTransient<
             RehireEmployeeWindow>();
+
         services.AddSingleton<
             IEmploymentHistoryService,
             EmploymentHistoryService>();
+
         services.AddTransient<
             EmployeeEmploymentHistoryViewModel>();
+
         services.AddTransient<
             EmployeeEmploymentHistoryWindow>();
+
         services.AddSingleton<
             IDepartmentRepository,
             EfDepartmentRepository>();
+
         services.AddSingleton<
             IDepartmentService,
             DepartmentService>();
+
         services.AddTransient<
             DepartmentEditorViewModel>();
+
         services.AddTransient<
             DepartmentEditorWindow>();
+
         services.AddSingleton<
             IDepartmentDialogService,
             DepartmentDialogService>();
+
         services.AddTransient<DepartmentsViewModel>();
+
         services.AddSingleton<
             IPositionRepository,
             EfPositionRepository>();
+
         services.AddSingleton<
             IPositionService,
             PositionService>();
+
         services.AddTransient<
             PositionEditorViewModel>();
+
         services.AddTransient<
             PositionEditorWindow>();
+
         services.AddSingleton<
             IPositionDialogService,
             PositionDialogService>();
+
         services.AddTransient<PositionsViewModel>();
+
         services.AddSingleton<
-        IEmployeeOrganizationBackfillService,
-        EfEmployeeOrganizationBackfillService>();
+            IEmployeeOrganizationBackfillService,
+            EfEmployeeOrganizationBackfillService>();
+
+        services.AddTransient<
+            OrganizationEmployeesViewModel>();
+
+        services.AddTransient<
+            OrganizationEmployeesWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

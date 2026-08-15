@@ -54,6 +54,11 @@ public sealed partial class PositionsViewModel
         get;
     }
 
+    public IRelayCommand ViewEmployeesCommand
+    {
+        get;
+    }
+
     public PositionsViewModel(
         IPositionService positionService,
         IPositionDialogService positionDialogService)
@@ -63,6 +68,11 @@ public sealed partial class PositionsViewModel
 
         _positionDialogService =
             positionDialogService;
+
+        ViewEmployeesCommand =
+            new RelayCommand(
+                ViewEmployees,
+                CanViewEmployees);
 
         LoadCommand =
             new AsyncRelayCommand(
@@ -111,6 +121,26 @@ public sealed partial class PositionsViewModel
         {
             IsLoading = false;
         }
+    }
+
+    private bool CanViewEmployees()
+    {
+        return SelectedPosition is not null;
+    }
+
+    private void ViewEmployees()
+    {
+        Position? position =
+            SelectedPosition;
+
+        if (position is null)
+        {
+            return;
+        }
+
+        _positionDialogService
+            .ShowEmployees(
+                position);
     }
 
     private async Task AddPositionAsync()
@@ -297,180 +327,8 @@ public sealed partial class PositionsViewModel
 
         ReactivatePositionCommand
             .NotifyCanExecuteChanged();
-    }
 
-    private static Position CreatePosition(
-    string code,
-    string name,
-    bool isActive = true)
-    {
-        return new Position(
-            Guid.NewGuid(),
-            code,
-            name,
-            isActive);
-    }
-
-    private sealed class StubPositionDialogService
-    : IPositionDialogService
-    {
-        public PositionEditorDialogResult?
-            AddResult
-        {
-            get;
-            set;
-        }
-
-        public PositionEditorDialogResult?
-            EditResult
-        {
-            get;
-            set;
-        }
-
-        public bool ConfirmDeactivate
-        {
-            get;
-            set;
-        } = true;
-
-        public bool ConfirmReactivate
-        {
-            get;
-            set;
-        } = true;
-
-        public PositionEditorDialogResult?
-            ShowAddPositionDialog()
-        {
-            return AddResult;
-        }
-
-        public PositionEditorDialogResult?
-            ShowEditPositionDialog(
-                Position position)
-        {
-            return EditResult;
-        }
-
-        public bool ConfirmDeactivatePosition(
-            Position position)
-        {
-            return ConfirmDeactivate;
-        }
-
-        public bool ConfirmReactivatePosition(
-            Position position)
-        {
-            return ConfirmReactivate;
-        }
-    }
-
-    private sealed class StubPositionService
-    : IPositionService
-    {
-        private readonly IReadOnlyList<Position>
-            _positions;
-
-        public CreatePositionRequest?
-            CreateRequest
-        {
-            get;
-            private set;
-        }
-
-        public UpdatePositionRequest?
-            UpdateRequest
-        {
-            get;
-            private set;
-        }
-
-        public Guid?
-            DeactivatedPositionId
-        {
-            get;
-            private set;
-        }
-
-        public Guid?
-            ReactivatedPositionId
-        {
-            get;
-            private set;
-        }
-
-        public PositionOperationResult
-            OperationResult
-        {
-            get;
-            set;
-        } =
-            new(
-                true,
-                null);
-
-        public StubPositionService(
-            IReadOnlyList<Position> positions)
-        {
-            _positions =
-                positions;
-        }
-
-        public Task<IReadOnlyList<Position>>
-            GetPositionsAsync(
-                CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(
-                _positions);
-        }
-
-        public Task<PositionOperationResult>
-            CreatePositionAsync(
-                CreatePositionRequest request,
-                CancellationToken cancellationToken = default)
-        {
-            CreateRequest =
-                request;
-
-            return Task.FromResult(
-                OperationResult);
-        }
-
-        public Task<PositionOperationResult>
-            UpdatePositionAsync(
-                UpdatePositionRequest request,
-                CancellationToken cancellationToken = default)
-        {
-            UpdateRequest =
-                request;
-
-            return Task.FromResult(
-                OperationResult);
-        }
-
-        public Task<PositionOperationResult>
-            DeactivatePositionAsync(
-                Guid positionId,
-                CancellationToken cancellationToken = default)
-        {
-            DeactivatedPositionId =
-                positionId;
-
-            return Task.FromResult(
-                OperationResult);
-        }
-
-        public Task<PositionOperationResult>
-            ReactivatePositionAsync(
-                Guid positionId,
-                CancellationToken cancellationToken = default)
-        {
-            ReactivatedPositionId =
-                positionId;
-
-            return Task.FromResult(
-                OperationResult);
-        }
+        ViewEmployeesCommand
+            .NotifyCanExecuteChanged();
     }
 }

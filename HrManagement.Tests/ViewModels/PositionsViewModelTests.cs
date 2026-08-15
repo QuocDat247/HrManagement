@@ -349,6 +349,19 @@ public sealed class PositionsViewModelTests
     private sealed class StubPositionDialogService
     : IPositionDialogService
     {
+        public Guid? ViewedPositionId
+        {
+            get;
+            private set;
+        }
+
+        public void ShowEmployees(
+            Position position)
+        {
+            ViewedPositionId =
+                position.Id;
+        }
+
         public PositionEditorDialogResult?
             AddResult
         {
@@ -507,5 +520,37 @@ public sealed class PositionsViewModelTests
             return Task.FromResult(
                 OperationResult);
         }
+    }
+
+    [Fact]
+    public void ViewEmployeesCommand_WhenPositionSelected_ShowsEmployeesDialog()
+    {
+        Position position =
+            CreatePosition(
+                "DEV",
+                "Lập trình viên");
+
+        var service =
+            new StubPositionService(
+                [position]);
+
+        var dialogService =
+            new StubPositionDialogService();
+
+        var viewModel =
+            new PositionsViewModel(
+                service,
+                dialogService)
+            {
+                SelectedPosition =
+                    position
+            };
+
+        viewModel.ViewEmployeesCommand
+            .Execute(null);
+
+        Assert.Equal(
+            position.Id,
+            dialogService.ViewedPositionId);
     }
 }
