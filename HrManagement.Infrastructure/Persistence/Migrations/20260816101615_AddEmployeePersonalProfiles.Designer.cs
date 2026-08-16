@@ -3,6 +3,7 @@ using System;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HrManagement.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HrManagementDbContext))]
-    partial class HrManagementDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260816101615_AddEmployeePersonalProfiles")]
+    partial class AddEmployeePersonalProfiles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
@@ -173,94 +176,6 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                     b.ToTable("EmployeeOrganizationAssignments", (string)null);
                 });
 
-            modelBuilder.Entity("HrManagement.Domain.Employees.Profiles.EmployeeAddress", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AddressLine")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("District")
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("PostalCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Province")
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Ward")
-                        .HasMaxLength(150)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId", "Type")
-                        .IsUnique();
-
-                    b.ToTable("EmployeeAddresses", (string)null);
-                });
-
-            modelBuilder.Entity("HrManagement.Domain.Employees.Profiles.EmployeeEmergencyContact", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsPrimary")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Relationship")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_EmployeeEmergencyContacts_EmployeeId_Primary")
-                        .HasFilter("\"IsPrimary\" = 1");
-
-                    b.HasIndex("EmployeeId", "Id")
-                        .HasDatabaseName("IX_EmployeeEmergencyContacts_EmployeeId_Id");
-
-                    b.ToTable("EmployeeEmergencyContacts", (string)null);
-                });
-
             modelBuilder.Entity("HrManagement.Domain.Employees.Profiles.EmployeePersonalProfile", b =>
                 {
                     b.Property<Guid>("EmployeeId")
@@ -386,24 +301,6 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("HrManagement.Domain.Employees.Profiles.EmployeeAddress", b =>
-                {
-                    b.HasOne("HrManagement.Domain.Employees.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("HrManagement.Domain.Employees.Profiles.EmployeeEmergencyContact", b =>
-                {
-                    b.HasOne("HrManagement.Domain.Employees.Employee", null)
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

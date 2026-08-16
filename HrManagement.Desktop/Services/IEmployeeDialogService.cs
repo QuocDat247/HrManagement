@@ -27,4 +27,7 @@ public interface IEmployeeDialogService
 
     void ShowOrganizationHistoryDialog(
         Employee employee);
+
+    void ShowEmployeeProfileDialog(
+        Employee employee);
 }

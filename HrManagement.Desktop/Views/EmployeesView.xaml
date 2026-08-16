@@ -43,6 +43,12 @@
             <!-- Action buttons - nằm hoàn toàn bên dưới title -->
             <WrapPanel Margin="0,16,0,0"
                HorizontalAlignment="Left">
+
+                <Button Content="Hồ sơ nhân viên"
+                Command="{Binding ViewEmployeeProfileCommand}"
+                Margin="0,0,8,8"
+                Padding="14,8"
+                ToolTip="Xem và cập nhật hồ sơ nhân sự của nhân viên được chọn" />
                 
                 <Button Content="Lịch sử làm việc"
                 Command="{Binding ViewEmploymentHistoryCommand}"

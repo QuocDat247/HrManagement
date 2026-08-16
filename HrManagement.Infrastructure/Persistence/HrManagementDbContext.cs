@@ -4,20 +4,37 @@ using HrManagement.Infrastructure.Persistence.Configurations;
 using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
 using HrManagement.Domain.Employees.OrganizationAssignments;
+using HrManagement.Domain.Employees.Profiles;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<EmployeeEmergencyContact>
+        EmployeeEmergencyContacts =>
+            Set<EmployeeEmergencyContact>();
+
+    public DbSet<EmployeeAddress>
+        EmployeeAddresses =>
+            Set<EmployeeAddress>();
+
+    public DbSet<EmployeePersonalProfile>
+        EmployeePersonalProfiles =>
+            Set<EmployeePersonalProfile>();
+
     public DbSet<EmployeeOrganizationAssignment>
-    EmployeeOrganizationAssignments =>
-        Set<EmployeeOrganizationAssignment>();
+        EmployeeOrganizationAssignments =>
+            Set<EmployeeOrganizationAssignment>();
+
     public DbSet<Position> Positions =>
         Set<Position>();
+
     public DbSet<EmploymentPeriod> EmploymentPeriods =>
         Set<EmploymentPeriod>();
+
     public DbSet<Department> Departments =>
         Set<Department>();
+
 
     public HrManagementDbContext(
         DbContextOptions<HrManagementDbContext> options)
@@ -45,5 +62,14 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new EmployeeOrganizationAssignmentConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeePersonalProfileConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeAddressConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeEmergencyContactConfiguration());
     }
 }

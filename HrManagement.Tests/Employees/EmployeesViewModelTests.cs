@@ -294,6 +294,20 @@ public sealed class EmployeesViewModelTests
     private sealed class StubEmployeeDialogService : IEmployeeDialogService
     {
         public Employee?
+            EmployeePassedToProfileDialog
+        {
+            get;
+            private set;
+        }
+
+        public void ShowEmployeeProfileDialog(
+            Employee employee)
+        {
+            EmployeePassedToProfileDialog =
+                employee;
+        }
+
+        public Employee?
             EmployeePassedToOrganizationHistoryDialog
         {
             get;
@@ -543,6 +557,11 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEmployeeDialogService : IEmployeeDialogService
     {
+        public void ShowEmployeeProfileDialog(
+            Employee employee)
+        {
+        }
+
         public void ShowOrganizationHistoryDialog(
             Employee employee)
         {
@@ -647,8 +666,14 @@ public sealed class EmployeesViewModelTests
             dialogService.EmployeePassedToDialog);
     }
 
-    private sealed class SuccessfulEditEmployeeDialogService : IEmployeeDialogService
+    private sealed class SuccessfulEditEmployeeDialogService
+        : IEmployeeDialogService
     {
+        public void ShowEmployeeProfileDialog(
+            Employee employee)
+        {
+        }
+
         public void ShowOrganizationHistoryDialog(
             Employee employee)
         {
@@ -826,6 +851,11 @@ public sealed class EmployeesViewModelTests
 
     private sealed class DeactivateEmployeeDialogServiceStub : IEmployeeDialogService
     {
+        public void ShowEmployeeProfileDialog(
+            Employee employee)
+        {
+        }
+
         public void ShowOrganizationHistoryDialog(
             Employee employee)
         {
@@ -1744,5 +1774,82 @@ public sealed class EmployeesViewModelTests
             employee,
             dialogService
                 .EmployeePassedToOrganizationHistoryDialog);
+    }
+
+    [Fact]
+    public void ViewEmployeeProfileCommand_WhenNoEmployeeSelected_CannotExecute()
+    {
+        var service =
+            new StubEmployeeService(
+                []);
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        Assert.Null(
+            viewModel.SelectedEmployee);
+
+        Assert.False(
+            viewModel.ViewEmployeeProfileCommand
+                .CanExecute(null));
+    }
+
+    [Fact]
+    public void ViewEmployeeProfileCommand_WhenEmployeeSelected_OpensCorrectProfile()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-PROFILE-CMD",
+                "Nguyễn Minh Anh",
+                null,
+                null,
+                null,
+                new DateOnly(
+                    1998,
+                    5,
+                    10),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                new DateOnly(
+                    2026,
+                    7,
+                    31),
+                departmentId:
+                    Guid.NewGuid(),
+                positionId:
+                    Guid.NewGuid());
+
+        var service =
+            new StubEmployeeService(
+                [employee]);
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        Assert.True(
+            viewModel.ViewEmployeeProfileCommand
+                .CanExecute(null));
+
+        viewModel.ViewEmployeeProfileCommand
+            .Execute(null);
+
+        Assert.Same(
+            employee,
+            dialogService.EmployeePassedToProfileDialog);
     }
 }

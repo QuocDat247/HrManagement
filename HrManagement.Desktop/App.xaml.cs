@@ -3,6 +3,7 @@ using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
+using HrManagement.Application.Employees.Profiles;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
@@ -17,6 +18,7 @@ using HrManagement.Infrastructure.Authentication;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.DependencyInjection;
 using HrManagement.Infrastructure.Employees;
+using HrManagement.Infrastructure.Employees.Profiles;
 using HrManagement.Infrastructure.Organization.Assignments;
 using HrManagement.Infrastructure.Organization.Departments;
 using HrManagement.Infrastructure.Organization.Positions;
@@ -218,6 +220,25 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             EmployeeOrganizationHistoryWindow>();
+
+        services.AddTransient<
+            EmployeePersonalProfileSectionViewModel>();
+
+        services.AddTransient<
+            EmployeeProfileViewModel>();
+
+        services.AddTransient<
+            EmployeeProfileWindow>();
+
+        services.AddTransient<
+            EmployeeAddressSectionViewModel>();
+
+        services.AddSingleton<
+            IEmployeeEmergencyContactRepository,
+            EfEmployeeEmergencyContactRepository>();
+
+        services.AddTransient<
+            EmployeeEmergencyContactSectionViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)

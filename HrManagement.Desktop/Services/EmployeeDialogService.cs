@@ -14,6 +14,28 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
         _serviceProvider = serviceProvider;
     }
 
+    public void ShowEmployeeProfileDialog(
+    Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(
+            employee);
+
+        EmployeeProfileWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    EmployeeProfileWindow>();
+
+        window.LoadEmployee(
+            employee);
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.ShowDialog();
+    }
+
     public void ShowOrganizationHistoryDialog(
     Employee employee)
     {

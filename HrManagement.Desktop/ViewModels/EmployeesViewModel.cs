@@ -115,11 +115,22 @@ public sealed partial class EmployeesViewModel : ObservableObject
         get;
     }
 
+    public IRelayCommand
+    ViewEmployeeProfileCommand
+    {
+        get;
+    }
+
     // constructor
     public EmployeesViewModel(
     IEmployeeService employeeService,
     IEmployeeDialogService employeeDialogService)
     {
+        ViewEmployeeProfileCommand =
+            new RelayCommand(
+                ViewEmployeeProfile,
+                CanViewEmployeeProfile);
+
         ViewOrganizationHistoryCommand =
             new RelayCommand(
                 ViewOrganizationHistory,
@@ -193,6 +204,26 @@ public sealed partial class EmployeesViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    private bool CanViewEmployeeProfile()
+    {
+        return SelectedEmployee is not null;
+    }
+
+    private void ViewEmployeeProfile()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null)
+        {
+            return;
+        }
+
+        _employeeDialogService
+            .ShowEmployeeProfileDialog(
+                employee);
     }
 
     private bool CanViewOrganizationHistory()
@@ -307,6 +338,9 @@ public sealed partial class EmployeesViewModel : ObservableObject
         .NotifyCanExecuteChanged();
 
         ViewOrganizationHistoryCommand
+        .NotifyCanExecuteChanged();
+
+        ViewEmployeeProfileCommand
         .NotifyCanExecuteChanged();
     }
 

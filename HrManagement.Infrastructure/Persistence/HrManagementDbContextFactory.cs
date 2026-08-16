@@ -12,7 +12,7 @@ public sealed class HrManagementDbContextFactory
             new DbContextOptionsBuilder<HrManagementDbContext>();
 
         optionsBuilder.UseSqlite(
-            "Data Source=hrmanagement.db");
+            DatabasePath.GetConnectionString());
 
         return new HrManagementDbContext(
             optionsBuilder.Options);

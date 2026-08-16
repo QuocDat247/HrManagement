@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Application.Organization.Memberships;
 using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Application.Employees.OrganizationAssignments;
+using HrManagement.Application.Employees.Profiles;
+using HrManagement.Infrastructure.Employees.Profiles;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -23,7 +25,7 @@ public static class ServiceCollectionExtensions
         services.AddDbContextFactory<HrManagementDbContext>(
             options =>
                 options.UseSqlite(
-                    "Data Source=hrmanagement.db"));
+                    DatabasePath.GetConnectionString()));
 
         services.AddSingleton<IDashboardService, EfDashboardService>();
 
@@ -64,6 +66,26 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IEmployeeOrganizationTransferPersistence,
             EfEmployeeOrganizationTransferPersistence>();
+
+        services.AddSingleton<
+            IEmployeePersonalProfileRepository,
+            EfEmployeePersonalProfileRepository>();
+
+        services.AddScoped<
+            IEmployeePersonalProfileService,
+            EmployeePersonalProfileService>();
+
+        services.AddSingleton<
+            IEmployeeAddressRepository,
+            EfEmployeeAddressRepository>();
+
+        services.AddScoped<
+            IEmployeeAddressService,
+            EmployeeAddressService>();
+
+        services.AddScoped<
+            IEmployeeEmergencyContactService,
+            EmployeeEmergencyContactService>();
 
         return services;
     }

@@ -1,0 +1,152 @@
+using System.Windows;
+using HrManagement.Desktop.ViewModels;
+using HrManagement.Domain.Employees;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+
+namespace HrManagement.Desktop.Views;
+
+public partial class EmployeeProfileWindow
+    : Window
+{
+    private readonly EmployeeProfileViewModel
+        _viewModel;
+
+    private Employee? _employee;
+
+    private bool _loaded;
+
+    public EmployeeProfileWindow(
+        EmployeeProfileViewModel viewModel)
+    {
+        InitializeComponent();
+
+        _viewModel =
+            viewModel;
+
+        DataContext =
+            viewModel;
+    }
+
+    public void LoadEmployee(
+        Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(
+            employee);
+
+        _employee =
+            employee;
+
+        _loaded =
+            false;
+    }
+
+    private void EmergencyContactsList_PreviewMouseWheel(
+    object sender,
+    MouseWheelEventArgs e)
+    {
+        if (sender is not ListBox listBox)
+        {
+            return;
+        }
+
+        ScrollViewer? innerScrollViewer =
+            FindVisualChild<ScrollViewer>(
+                listBox);
+
+        if (innerScrollViewer is null)
+        {
+            return;
+        }
+
+        bool canScrollUp =
+            e.Delta > 0
+            && innerScrollViewer.VerticalOffset > 0;
+
+        bool canScrollDown =
+            e.Delta < 0
+            && innerScrollViewer.VerticalOffset
+                < innerScrollViewer.ScrollableHeight;
+
+        if (canScrollUp || canScrollDown)
+        {
+            // ListBox vẫn còn nội dung để cuộn.
+            // Cho nó xử lý MouseWheel bình thường.
+            return;
+        }
+
+        // ListBox đã tới biên hoặc không có gì để cuộn.
+        // Chuyển MouseWheel lên ScrollViewer cha.
+        e.Handled =
+            true;
+
+        var forwardedEvent =
+            new MouseWheelEventArgs(
+                e.MouseDevice,
+                e.Timestamp,
+                e.Delta)
+            {
+                RoutedEvent =
+                    Mouse.MouseWheelEvent,
+
+                Source =
+                    listBox
+            };
+
+        listBox.RaiseEvent(
+            forwardedEvent);
+    }
+
+    private static T? FindVisualChild<T>(
+        DependencyObject parent)
+        where T : DependencyObject
+    {
+        int childCount =
+            VisualTreeHelper.GetChildrenCount(
+                parent);
+
+        for (int index = 0;
+             index < childCount;
+             index++)
+        {
+            DependencyObject child =
+                VisualTreeHelper.GetChild(
+                    parent,
+                    index);
+
+            if (child is T match)
+            {
+                return match;
+            }
+
+            T? descendant =
+                FindVisualChild<T>(
+                    child);
+
+            if (descendant is not null)
+            {
+                return descendant;
+            }
+        }
+
+        return null;
+    }
+    private async void EmployeeProfileWindow_Loaded(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (_loaded
+            || _employee is null)
+        {
+            return;
+        }
+
+        _loaded =
+            true;
+
+        await _viewModel
+            .LoadEmployeeAsync(
+                _employee);
+    }
+}
