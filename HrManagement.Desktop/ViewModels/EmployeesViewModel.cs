@@ -82,6 +82,7 @@ public sealed partial class EmployeesViewModel : ObservableObject
     new("Ngừng hoạt động", EmployeeStatus.Inactive)
 ];
 
+    // Command
     public IAsyncRelayCommand SearchCommand { get; }
     public IAsyncRelayCommand ClearFiltersCommand { get; }
     public IAsyncRelayCommand AddEmployeeCommand { get; }
@@ -108,11 +109,22 @@ public sealed partial class EmployeesViewModel : ObservableObject
         get;
     }
 
+    public IRelayCommand
+    ViewOrganizationHistoryCommand
+    {
+        get;
+    }
+
     // constructor
     public EmployeesViewModel(
     IEmployeeService employeeService,
     IEmployeeDialogService employeeDialogService)
     {
+        ViewOrganizationHistoryCommand =
+            new RelayCommand(
+                ViewOrganizationHistory,
+                CanViewOrganizationHistory);
+
         TransferEmployeeCommand =
             new AsyncRelayCommand(
                 TransferEmployeeAsync,
@@ -181,6 +193,26 @@ public sealed partial class EmployeesViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    private bool CanViewOrganizationHistory()
+    {
+        return SelectedEmployee is not null;
+    }
+
+    private void ViewOrganizationHistory()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null)
+        {
+            return;
+        }
+
+        _employeeDialogService
+            .ShowOrganizationHistoryDialog(
+                employee);
     }
 
     private async Task TransferEmployeeAsync()
@@ -272,6 +304,9 @@ public sealed partial class EmployeesViewModel : ObservableObject
         .NotifyCanExecuteChanged();
 
         TransferEmployeeCommand
+        .NotifyCanExecuteChanged();
+
+        ViewOrganizationHistoryCommand
         .NotifyCanExecuteChanged();
     }
 

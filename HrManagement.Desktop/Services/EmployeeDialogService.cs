@@ -14,6 +14,27 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
         _serviceProvider = serviceProvider;
     }
 
+    public void ShowOrganizationHistoryDialog(
+    Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(
+            employee);
+
+        EmployeeOrganizationHistoryWindow window =
+            _serviceProvider.GetRequiredService<
+                EmployeeOrganizationHistoryWindow>();
+
+        window.LoadEmployee(
+            employee);
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.ShowDialog();
+    }
+
     public bool ShowTransferEmployeeDialog(
     Employee employee)
     {

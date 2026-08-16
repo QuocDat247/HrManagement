@@ -208,6 +208,16 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             TransferEmployeeWindow>();
+
+        services.AddSingleton<
+            IEmployeeOrganizationHistoryService,
+            EmployeeOrganizationHistoryService>();
+
+        services.AddTransient<
+            EmployeeOrganizationHistoryViewModel>();
+
+        services.AddTransient<
+            EmployeeOrganizationHistoryWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

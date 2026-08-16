@@ -293,6 +293,19 @@ public sealed class EmployeesViewModelTests
 
     private sealed class StubEmployeeDialogService : IEmployeeDialogService
     {
+        public Employee?
+            EmployeePassedToOrganizationHistoryDialog
+        {
+            get;
+            private set;
+        }
+
+        public void ShowOrganizationHistoryDialog(
+            Employee employee)
+        {
+            EmployeePassedToOrganizationHistoryDialog =
+                employee;
+        }
 
         public Employee?
             EmployeePassedToEmploymentHistoryDialog
@@ -530,6 +543,11 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEmployeeDialogService : IEmployeeDialogService
     {
+        public void ShowOrganizationHistoryDialog(
+            Employee employee)
+        {
+        }
+
         public bool ShowTransferEmployeeDialog(
             Employee employee)
         {
@@ -631,6 +649,10 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEditEmployeeDialogService : IEmployeeDialogService
     {
+        public void ShowOrganizationHistoryDialog(
+            Employee employee)
+        {
+        }
         public bool ShowTransferEmployeeDialog(
             Employee employee)
         {
@@ -804,6 +826,11 @@ public sealed class EmployeesViewModelTests
 
     private sealed class DeactivateEmployeeDialogServiceStub : IEmployeeDialogService
     {
+        public void ShowOrganizationHistoryDialog(
+            Employee employee)
+        {
+        }
+
         public bool ShowTransferEmployeeDialog(
             Employee employee)
         {
@@ -1643,5 +1670,79 @@ public sealed class EmployeesViewModelTests
             employee,
             dialogService
                 .EmployeePassedToTransferDialog);
+    }
+
+    // Không chọn nhân viên → command disabled
+    [Fact]
+    public void ViewOrganizationHistoryCommand_WhenNoEmployeeSelected_CannotExecute()
+    {
+        var service =
+            new StubEmployeeService(
+                []);
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        Assert.Null(
+            viewModel.SelectedEmployee);
+
+        Assert.False(
+            viewModel.ViewOrganizationHistoryCommand
+                .CanExecute(null));
+    }
+
+    // Có selection → mở đúng employee
+    [Fact]
+    public void ViewOrganizationHistoryCommand_WhenEmployeeSelected_OpensHistoryDialog()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-HISTORY-CMD-001",
+                "Trần Thị Bình",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 2, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 7, 31),
+                departmentId:
+                    Guid.NewGuid(),
+                positionId:
+                    Guid.NewGuid());
+
+        var service =
+            new StubEmployeeService(
+                [employee]);
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        Assert.True(
+            viewModel.ViewOrganizationHistoryCommand
+                .CanExecute(null));
+
+        viewModel.ViewOrganizationHistoryCommand
+            .Execute(null);
+
+        Assert.Same(
+            employee,
+            dialogService
+                .EmployeePassedToOrganizationHistoryDialog);
     }
 }

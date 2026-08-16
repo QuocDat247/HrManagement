@@ -24,4 +24,7 @@ public interface IEmployeeDialogService
 
     bool ShowTransferEmployeeDialog(
         Employee employee);
+
+    void ShowOrganizationHistoryDialog(
+        Employee employee);
 }

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Điều chuyển nhân viên"
         Width="520"
-        Height="560"
+        Height="600"
         MinWidth="480"
         MinHeight="520"
         WindowStartupLocation="CenterOwner"
