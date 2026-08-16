@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Application.Organization.Memberships;
 using HrManagement.Infrastructure.Organization.Memberships;
+using HrManagement.Application.Employees.OrganizationAssignments;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -27,19 +28,34 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDashboardService, EfDashboardService>();
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
+
         services.AddScoped<IEmployeeService, EmployeeService>();
+
         services.AddSingleton<DatabaseInitializer>();
+
         services.AddSingleton<IWorkforceAnalyticsService, EfWorkforceAnalyticsService>();
+
         services.AddSingleton<IEmploymentHistoryRepository, EfEmploymentHistoryRepository>();
+
         services.AddSingleton<
         IEmploymentHistoryBackfillService,
         EfEmploymentHistoryBackfillService>();
+
         services.AddSingleton<
         IEmploymentLifecyclePersistence,
         EfEmploymentLifecyclePersistence>();
+
         services.AddSingleton<
         IOrganizationMembershipQueryService,
         EfOrganizationMembershipQueryService>();
+
+        services.AddSingleton<
+        IEmployeeOrganizationHistoryRepository,
+        EfEmployeeOrganizationHistoryRepository>();
+
+        services.AddSingleton<
+        IEmployeeOrganizationAssignmentBackfillService,
+        EfEmployeeOrganizationAssignmentBackfillService>();
 
         return services;
     }

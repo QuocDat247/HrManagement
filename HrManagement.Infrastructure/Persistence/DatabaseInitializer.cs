@@ -1,4 +1,5 @@
 using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Domain.Employees;
 using Microsoft.EntityFrameworkCore;
@@ -7,21 +8,30 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class DatabaseInitializer
 {
-    // dependency
+    // Dependency
+    private readonly
+        IEmployeeOrganizationAssignmentBackfillService
+            _employeeOrganizationAssignmentBackfillService;
+
     private readonly IEmployeeOrganizationBackfillService
-    _employeeOrganizationBackfillService;
+        _employeeOrganizationBackfillService;
 
     private readonly IDbContextFactory<HrManagementDbContext>
         _dbContextFactory;
 
     private readonly IEmploymentHistoryBackfillService
-    _employmentHistoryBackfillService;
+        _employmentHistoryBackfillService;
 
+    // Constructor
     public DatabaseInitializer(
     IDbContextFactory<HrManagementDbContext> dbContextFactory,
     IEmploymentHistoryBackfillService employmentHistoryBackfillService, IEmployeeOrganizationBackfillService
-    employeeOrganizationBackfillService)
+    employeeOrganizationBackfillService, IEmployeeOrganizationAssignmentBackfillService
+    employeeOrganizationAssignmentBackfillService)
     {
+        _employeeOrganizationAssignmentBackfillService =
+            employeeOrganizationAssignmentBackfillService;
+
         _dbContextFactory = dbContextFactory;
 
         _employmentHistoryBackfillService =
@@ -122,6 +132,10 @@ public sealed class DatabaseInitializer
             .BackfillAsync(
                 cancellationToken);
         await _employeeOrganizationBackfillService
+            .BackfillAsync(
+                cancellationToken);
+
+        await _employeeOrganizationAssignmentBackfillService
             .BackfillAsync(
                 cancellationToken);
     }

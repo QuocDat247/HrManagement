@@ -4,17 +4,20 @@ using HrManagement.Infrastructure.Employees;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using HrManagement.Domain.Employees.OrganizationAssignments;
+using HrManagement.Domain.Organization.Departments;
+using HrManagement.Domain.Organization.Positions;
 using static HrManagement.Tests.Employees.EfEmploymentHistoryRepositoryTests;
 
 namespace HrManagement.Tests.Employees;
 public sealed class EfEmploymentLifecyclePersistenceTests
 {
     [Fact]
-    public async Task CreateEmployeeWithPeriodAsync_PersistsBothEntities()
+    public async Task CreateEmployeeWithPeriodAndAssignmentAsync_WhenAssignmentCannotBeInserted_RollsBackEmployeeAndPeriod()
     {
         await using var connection =
             new SqliteConnection(
-                "Data Source=:memory:");
+                "Data Source=:memory:;Foreign Keys=True");
 
         await connection.OpenAsync();
 
@@ -23,169 +26,166 @@ public sealed class EfEmploymentLifecyclePersistenceTests
                 .UseSqlite(connection)
                 .Options;
 
+        var organization =
+            await SeedOrganizationAsync(
+                options);
+
+        DateOnly hireDate =
+            new(2026, 8, 1);
+
+        Guid existingEmployeeId =
+            Guid.NewGuid();
+
+        Guid existingPeriodId =
+            Guid.NewGuid();
+
+        Guid duplicateAssignmentId =
+            Guid.NewGuid();
+
+        // Seed một lifecycle hợp lệ trước,
+        // để lấy assignment Id gây duplicate PK.
         await using (var dbContext =
                      new HrManagementDbContext(options))
         {
-            await dbContext.Database.EnsureCreatedAsync();
-        }
+            Employee existingEmployee =
+                CreateEmployeeWithOrganization(
+                    existingEmployeeId,
+                    "EMP-CREATE-EXISTING",
+                    hireDate,
+                    EmployeeStatus.Active,
+                    organization.Department,
+                    organization.Position);
 
-        Guid employeeId =
-            Guid.NewGuid();
+            var existingPeriod =
+                new EmploymentPeriod(
+                    existingPeriodId,
+                    existingEmployeeId,
+                    hireDate);
 
-        DateOnly hireDate =
-            new(2026, 8, 12);
-
-        Employee employee =
-            CreateEmployee(
-                employeeId,
-                "EMP-ATOMIC-001",
-                hireDate,
-                EmployeeStatus.Active);
-
-        var period =
-            new EmploymentPeriod(
-                Guid.NewGuid(),
-                employeeId,
-                hireDate);
-
-        var persistence =
-            new EfEmploymentLifecyclePersistence(
-                new TestDbContextFactory(options));
-
-        await persistence.CreateEmployeeWithPeriodAsync(
-            employee,
-            period);
-
-        await using var verificationContext =
-            new HrManagementDbContext(options);
-
-        Employee persistedEmployee =
-            await verificationContext.Employees
-                .SingleAsync();
-
-        EmploymentPeriod persistedPeriod =
-            await verificationContext
-                .EmploymentPeriods
-                .SingleAsync();
-
-        Assert.Equal(
-            employeeId,
-            persistedEmployee.Id);
-
-        Assert.Equal(
-            employeeId,
-            persistedPeriod.EmployeeId);
-
-        Assert.Equal(
-            hireDate,
-            persistedPeriod.StartDate);
-
-        Assert.Null(
-            persistedPeriod.EndDate);
-    }
-
-    [Fact]
-    public async Task UpdateEmployeeWithPeriodAsync_PersistsEmployeeAndClosedPeriod()
-    {
-        await using var connection =
-            new SqliteConnection(
-                "Data Source=:memory:");
-
-        await connection.OpenAsync();
-
-        DbContextOptions<HrManagementDbContext> options =
-            new DbContextOptionsBuilder<HrManagementDbContext>()
-                .UseSqlite(connection)
-                .Options;
-
-        Guid employeeId =
-            Guid.NewGuid();
-
-        Guid periodId =
-            Guid.NewGuid();
-
-        DateOnly hireDate =
-            new(2025, 1, 10);
-
-        await using (var dbContext =
-                     new HrManagementDbContext(options))
-        {
-            await dbContext.Database.EnsureCreatedAsync();
+            var existingAssignment =
+                new EmployeeOrganizationAssignment(
+                    duplicateAssignmentId,
+                    existingEmployeeId,
+                    existingPeriodId,
+                    organization.Department.Id,
+                    organization.Department.Code,
+                    organization.Department.Name,
+                    organization.Position.Id,
+                    organization.Position.Code,
+                    organization.Position.Name,
+                    hireDate);
 
             dbContext.Employees.Add(
-                CreateEmployee(
-                    employeeId,
-                    "EMP-ATOMIC-002",
-                    hireDate,
-                    EmployeeStatus.Active));
+                existingEmployee);
 
             dbContext.EmploymentPeriods.Add(
-                new EmploymentPeriod(
-                    periodId,
-                    employeeId,
-                    hireDate));
+                existingPeriod);
+
+            dbContext.EmployeeOrganizationAssignments.Add(
+                existingAssignment);
 
             await dbContext.SaveChangesAsync();
         }
 
-        DateOnly terminationDate =
-            new(2026, 8, 12);
+        // Lifecycle mới hoàn toàn hợp lệ...
+        Guid newEmployeeId =
+            Guid.NewGuid();
 
-        Employee inactiveEmployee =
-            CreateEmployee(
-                employeeId,
-                "EMP-ATOMIC-002",
+        Employee newEmployee =
+            CreateEmployeeWithOrganization(
+                newEmployeeId,
+                "EMP-CREATE-ROLLBACK",
                 hireDate,
-                EmployeeStatus.Inactive,
-                terminationDate);
+                EmployeeStatus.Active,
+                organization.Department,
+                organization.Position);
 
-        var closedPeriod =
+        var newPeriod =
             new EmploymentPeriod(
-                periodId,
-                employeeId,
+                Guid.NewGuid(),
+                newEmployeeId,
                 hireDate);
 
-        closedPeriod.Close(
-            terminationDate);
+        // ...nhưng cố tình dùng lại assignment PK cũ.
+        var invalidAssignment =
+            new EmployeeOrganizationAssignment(
+                duplicateAssignmentId,
+                newEmployeeId,
+                newPeriod.Id,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                hireDate);
 
         var persistence =
             new EfEmploymentLifecyclePersistence(
                 new TestDbContextFactory(options));
 
-        await persistence.UpdateEmployeeWithPeriodAsync(
-            inactiveEmployee,
-            closedPeriod);
+        await Assert.ThrowsAsync<DbUpdateException>(
+            () =>
+                persistence
+                    .CreateEmployeeWithPeriodAndAssignmentAsync(
+                        newEmployee,
+                        newPeriod,
+                        invalidAssignment));
 
         await using var verificationContext =
             new HrManagementDbContext(options);
 
-        Employee persistedEmployee =
-            await verificationContext.Employees
-                .SingleAsync();
+        List<Employee> employees =
+            await verificationContext
+                .Employees
+                .ToListAsync();
 
-        EmploymentPeriod persistedPeriod =
+        List<EmploymentPeriod> periods =
             await verificationContext
                 .EmploymentPeriods
-                .SingleAsync();
+                .ToListAsync();
+
+        List<EmployeeOrganizationAssignment> assignments =
+            await verificationContext
+                .EmployeeOrganizationAssignments
+                .ToListAsync();
+
+        // Employee mới phải rollback.
+        Assert.DoesNotContain(
+            employees,
+            employee =>
+                employee.Id == newEmployeeId);
+
+        // Period mới cũng phải rollback.
+        Assert.DoesNotContain(
+            periods,
+            period =>
+                period.Id == newPeriod.Id);
+
+        // Assignment seed cũ vẫn còn nguyên,
+        // assignment mới không được tạo.
+        EmployeeOrganizationAssignment persistedAssignment =
+            Assert.Single(
+                assignments);
 
         Assert.Equal(
-            EmployeeStatus.Inactive,
-            persistedEmployee.Status);
+            duplicateAssignmentId,
+            persistedAssignment.Id);
 
         Assert.Equal(
-            terminationDate,
-            persistedEmployee.TerminationDate);
+            existingEmployeeId,
+            persistedAssignment.EmployeeId);
 
         Assert.Equal(
-            terminationDate,
-            persistedPeriod.EndDate);
+            existingPeriodId,
+            persistedAssignment.EmploymentPeriodId);
 
-        Assert.False(
-            persistedPeriod.IsOpen);
+        Assert.True(
+            persistedAssignment.IsOpen);
     }
 
     [Fact]
-    public async Task UpdateEmployeeWithPeriodAsync_WhenSaveFails_RollsBackBothChanges()
+    public async Task UpdateEmployeeWithPeriodAndAssignmentAsync_WhenSaveFails_RollsBackAllChanges()
     {
         await using var connection =
             new SqliteConnection(
@@ -197,6 +197,10 @@ public sealed class EfEmploymentLifecyclePersistenceTests
             new DbContextOptionsBuilder<HrManagementDbContext>()
                 .UseSqlite(connection)
                 .Options;
+
+        var organization =
+            await SeedOrganizationAsync(
+                options);
 
         Guid targetEmployeeId =
             Guid.NewGuid();
@@ -207,31 +211,49 @@ public sealed class EfEmploymentLifecyclePersistenceTests
         Guid periodId =
             Guid.NewGuid();
 
+        Guid assignmentId =
+            Guid.NewGuid();
+
         DateOnly hireDate =
             new(2025, 1, 10);
 
         await using (var dbContext =
-                     new HrManagementDbContext(options))
+             new HrManagementDbContext(options))
         {
-            await dbContext.Database.EnsureCreatedAsync();
-
             dbContext.Employees.AddRange(
-                CreateEmployee(
+                CreateEmployeeWithOrganization(
                     targetEmployeeId,
                     "EMP-ATOMIC-A",
                     hireDate,
-                    EmployeeStatus.Active),
+                    EmployeeStatus.Active,
+                    organization.Department,
+                    organization.Position),
 
-                CreateEmployee(
+                CreateEmployeeWithOrganization(
                     otherEmployeeId,
                     "EMP-ATOMIC-B",
                     hireDate,
-                    EmployeeStatus.Active));
+                    EmployeeStatus.Active,
+                    organization.Department,
+                    organization.Position));
 
             dbContext.EmploymentPeriods.Add(
                 new EmploymentPeriod(
                     periodId,
                     targetEmployeeId,
+                    hireDate));
+
+            dbContext.EmployeeOrganizationAssignments.Add(
+                new EmployeeOrganizationAssignment(
+                    assignmentId,
+                    targetEmployeeId,
+                    periodId,
+                    organization.Department.Id,
+                    organization.Department.Code,
+                    organization.Department.Name,
+                    organization.Position.Id,
+                    organization.Position.Code,
+                    organization.Position.Name,
                     hireDate));
 
             await dbContext.SaveChangesAsync();
@@ -240,47 +262,70 @@ public sealed class EfEmploymentLifecyclePersistenceTests
         DateOnly terminationDate =
             new(2026, 8, 12);
 
-        // Cố tình dùng code của employee khác
-        // để vi phạm unique EmployeeCode.
-        Employee invalidUpdate =
-            CreateEmployee(
+        Employee invalidEmployee =
+            CreateEmployeeWithOrganization(
                 targetEmployeeId,
                 "EMP-ATOMIC-B",
                 hireDate,
                 EmployeeStatus.Inactive,
+                organization.Department,
+                organization.Position,
                 terminationDate);
 
         var closedPeriod =
             new EmploymentPeriod(
                 periodId,
                 targetEmployeeId,
-                hireDate);
+                hireDate,
+                terminationDate);
 
-        closedPeriod.Close(
-            terminationDate);
+        var closedAssignment =
+            new EmployeeOrganizationAssignment(
+                assignmentId,
+                targetEmployeeId,
+                periodId,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                hireDate,
+                terminationDate);
 
         var persistence =
             new EfEmploymentLifecyclePersistence(
                 new TestDbContextFactory(options));
 
         await Assert.ThrowsAsync<DbUpdateException>(
-            () => persistence.UpdateEmployeeWithPeriodAsync(
-                invalidUpdate,
-                closedPeriod));
+            () =>
+                persistence
+                    .UpdateEmployeeWithPeriodAndAssignmentAsync(
+                        invalidEmployee,
+                        closedPeriod,
+                        closedAssignment));
 
         await using var verificationContext =
             new HrManagementDbContext(options);
 
         Employee originalEmployee =
             await verificationContext.Employees
-                .SingleAsync(employee =>
-                    employee.Id == targetEmployeeId);
+                .SingleAsync(
+                    employee =>
+                        employee.Id == targetEmployeeId);
 
         EmploymentPeriod originalPeriod =
+            await verificationContext.EmploymentPeriods
+                .SingleAsync(
+                    period =>
+                        period.Id == periodId);
+
+        EmployeeOrganizationAssignment originalAssignment =
             await verificationContext
-                .EmploymentPeriods
-                .SingleAsync(period =>
-                    period.Id == periodId);
+                .EmployeeOrganizationAssignments
+                .SingleAsync(
+                    assignment =>
+                        assignment.Id == assignmentId);
 
         Assert.Equal(
             "EMP-ATOMIC-A",
@@ -293,11 +338,17 @@ public sealed class EfEmploymentLifecyclePersistenceTests
         Assert.Null(
             originalEmployee.TerminationDate);
 
+        Assert.True(
+            originalPeriod.IsOpen);
+
         Assert.Null(
             originalPeriod.EndDate);
 
         Assert.True(
-            originalPeriod.IsOpen);
+            originalAssignment.IsOpen);
+
+        Assert.Null(
+            originalAssignment.EndDate);
     }
 
     private static Employee CreateEmployee(
@@ -340,12 +391,73 @@ public sealed class EfEmploymentLifecyclePersistenceTests
         }
     }
 
+    private static async Task<(Department Department, Position Position)>
+    SeedOrganizationAsync(
+        DbContextOptions<HrManagementDbContext> options)
+    {
+        var department =
+            new Department(
+                Guid.NewGuid(),
+                "DEV",
+                "Phát triển phần mềm");
+
+        var position =
+            new Position(
+                Guid.NewGuid(),
+                "SWE",
+                "Kỹ sư phần mềm");
+
+        await using var dbContext =
+            new HrManagementDbContext(
+                options);
+
+        await dbContext.Database
+            .EnsureCreatedAsync();
+
+        dbContext.Departments.Add(
+            department);
+
+        dbContext.Positions.Add(
+            position);
+
+        await dbContext.SaveChangesAsync();
+
+        return (
+            department,
+            position);
+    }
+
+    private static Employee CreateEmployeeWithOrganization(
+        Guid id,
+        string employeeCode,
+        DateOnly hireDate,
+        EmployeeStatus status,
+        Department department,
+        Position position,
+        DateOnly? terminationDate = null)
+    {
+        return new Employee(
+            id,
+            employeeCode,
+            $"Nhân viên {employeeCode}",
+            "employee@example.com",
+            "0901000000",
+            new DateOnly(1995, 1, 1),
+            hireDate,
+            department.Name,
+            position.Name,
+            status,
+            terminationDate,
+            departmentId: department.Id,
+            positionId: position.Id);
+    }
+
     [Fact]
-    public async Task UpdateEmployeeWithNewPeriodAsync_PersistsRestoredEmployeeAndNewOpenPeriod()
+    public async Task CreateEmployeeWithPeriodAndAssignmentAsync_PersistsAllThreeEntities()
     {
         await using var connection =
             new SqliteConnection(
-                "Data Source=:memory:");
+                "Data Source=:memory:;Foreign Keys=True");
 
         await connection.OpenAsync();
 
@@ -354,51 +466,298 @@ public sealed class EfEmploymentLifecyclePersistenceTests
                 .UseSqlite(connection)
                 .Options;
 
+        var organization =
+            await SeedOrganizationAsync(
+                options);
+
+        DateOnly hireDate =
+            new(2026, 8, 1);
+
+        Employee employee =
+            CreateEmployeeWithOrganization(
+                Guid.NewGuid(),
+                "EMP-LC-ORG-001",
+                hireDate,
+                EmployeeStatus.Active,
+                organization.Department,
+                organization.Position);
+
+        var period =
+            new EmploymentPeriod(
+                Guid.NewGuid(),
+                employee.Id,
+                hireDate);
+
+        var assignment =
+            new EmployeeOrganizationAssignment(
+                Guid.NewGuid(),
+                employee.Id,
+                period.Id,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                hireDate);
+
+        var persistence =
+            new EfEmploymentLifecyclePersistence(
+                new TestDbContextFactory(options));
+
+        await persistence
+            .CreateEmployeeWithPeriodAndAssignmentAsync(
+                employee,
+                period,
+                assignment);
+
+        await using var verificationContext =
+            new HrManagementDbContext(options);
+
+        Assert.Equal(
+            1,
+            await verificationContext.Employees.CountAsync());
+
+        Assert.Equal(
+            1,
+            await verificationContext.EmploymentPeriods.CountAsync());
+
+        EmployeeOrganizationAssignment persistedAssignment =
+            await verificationContext
+                .EmployeeOrganizationAssignments
+                .SingleAsync();
+
+        Assert.Equal(
+            employee.Id,
+            persistedAssignment.EmployeeId);
+
+        Assert.Equal(
+            period.Id,
+            persistedAssignment.EmploymentPeriodId);
+
+        Assert.False(
+            persistedAssignment.IsBaseline);
+
+        Assert.True(
+            persistedAssignment.IsOpen);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeWithPeriodAndAssignmentAsync_PersistsClosedLifecycle()
+    {
+        await using var connection =
+            new SqliteConnection(
+                "Data Source=:memory:;Foreign Keys=True");
+
+        await connection.OpenAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        var organization =
+            await SeedOrganizationAsync(
+                options);
+
         Guid employeeId =
             Guid.NewGuid();
 
-        Guid previousPeriodId =
+        Guid periodId =
             Guid.NewGuid();
 
-        DateOnly originalHireDate =
-            new(2022, 1, 10);
+        Guid assignmentId =
+            Guid.NewGuid();
 
-        DateOnly terminationDate =
-            new(2026, 3, 15);
+        DateOnly hireDate =
+            new(2025, 1, 10);
 
         await using (var dbContext =
                      new HrManagementDbContext(options))
         {
-            await dbContext.Database
-                .EnsureCreatedAsync();
-
             dbContext.Employees.Add(
-                CreateEmployee(
+                CreateEmployeeWithOrganization(
                     employeeId,
-                    "EMP-REHIRE-001",
-                    originalHireDate,
+                    "EMP-LC-ORG-002",
+                    hireDate,
+                    EmployeeStatus.Active,
+                    organization.Department,
+                    organization.Position));
+
+            dbContext.EmploymentPeriods.Add(
+                new EmploymentPeriod(
+                    periodId,
+                    employeeId,
+                    hireDate));
+
+            dbContext.EmployeeOrganizationAssignments.Add(
+                new EmployeeOrganizationAssignment(
+                    assignmentId,
+                    employeeId,
+                    periodId,
+                    organization.Department.Id,
+                    organization.Department.Code,
+                    organization.Department.Name,
+                    organization.Position.Id,
+                    organization.Position.Code,
+                    organization.Position.Name,
+                    hireDate));
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        DateOnly terminationDate =
+            new(2026, 8, 10);
+
+        Employee inactiveEmployee =
+            CreateEmployeeWithOrganization(
+                employeeId,
+                "EMP-LC-ORG-002",
+                hireDate,
+                EmployeeStatus.Inactive,
+                organization.Department,
+                organization.Position,
+                terminationDate);
+
+        var closedPeriod =
+            new EmploymentPeriod(
+                periodId,
+                employeeId,
+                hireDate,
+                terminationDate);
+
+        var closedAssignment =
+            new EmployeeOrganizationAssignment(
+                assignmentId,
+                employeeId,
+                periodId,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                hireDate,
+                terminationDate);
+
+        var persistence =
+            new EfEmploymentLifecyclePersistence(
+                new TestDbContextFactory(options));
+
+        await persistence
+            .UpdateEmployeeWithPeriodAndAssignmentAsync(
+                inactiveEmployee,
+                closedPeriod,
+                closedAssignment);
+
+        await using var verificationContext =
+            new HrManagementDbContext(options);
+
+        Employee persistedEmployee =
+            await verificationContext.Employees.SingleAsync();
+
+        EmploymentPeriod persistedPeriod =
+            await verificationContext.EmploymentPeriods.SingleAsync();
+
+        EmployeeOrganizationAssignment persistedAssignment =
+            await verificationContext
+                .EmployeeOrganizationAssignments
+                .SingleAsync();
+
+        Assert.Equal(
+            EmployeeStatus.Inactive,
+            persistedEmployee.Status);
+
+        Assert.Equal(
+            terminationDate,
+            persistedPeriod.EndDate);
+
+        Assert.Equal(
+            terminationDate,
+            persistedAssignment.EndDate);
+
+        Assert.False(
+            persistedAssignment.IsOpen);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeWithNewPeriodAndAssignmentAsync_PersistsRehireLifecycle()
+    {
+        await using var connection =
+            new SqliteConnection(
+                "Data Source=:memory:;Foreign Keys=True");
+
+        await connection.OpenAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            new DbContextOptionsBuilder<HrManagementDbContext>()
+                .UseSqlite(connection)
+                .Options;
+
+        var organization =
+            await SeedOrganizationAsync(
+                options);
+
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid oldPeriodId =
+            Guid.NewGuid();
+
+        DateOnly hireDate =
+            new(2024, 1, 1);
+
+        DateOnly terminationDate =
+            new(2026, 3, 31);
+
+        await using (var dbContext =
+                     new HrManagementDbContext(options))
+        {
+            dbContext.Employees.Add(
+                CreateEmployeeWithOrganization(
+                    employeeId,
+                    "EMP-LC-ORG-003",
+                    hireDate,
                     EmployeeStatus.Inactive,
+                    organization.Department,
+                    organization.Position,
                     terminationDate));
 
             dbContext.EmploymentPeriods.Add(
                 new EmploymentPeriod(
-                    previousPeriodId,
+                    oldPeriodId,
                     employeeId,
-                    originalHireDate,
+                    hireDate,
+                    terminationDate));
+
+            dbContext.EmployeeOrganizationAssignments.Add(
+                new EmployeeOrganizationAssignment(
+                    Guid.NewGuid(),
+                    employeeId,
+                    oldPeriodId,
+                    organization.Department.Id,
+                    organization.Department.Code,
+                    organization.Department.Name,
+                    organization.Position.Id,
+                    organization.Position.Code,
+                    organization.Position.Name,
+                    hireDate,
                     terminationDate));
 
             await dbContext.SaveChangesAsync();
         }
 
         DateOnly rehireDate =
-            new(2026, 8, 12);
+            new(2026, 8, 1);
 
         Employee restoredEmployee =
-            CreateEmployee(
+            CreateEmployeeWithOrganization(
                 employeeId,
-                "EMP-REHIRE-001",
-                originalHireDate,
-                EmployeeStatus.Active);
+                "EMP-LC-ORG-003",
+                hireDate,
+                EmployeeStatus.Active,
+                organization.Department,
+                organization.Position);
 
         var newPeriod =
             new EmploymentPeriod(
@@ -406,72 +765,70 @@ public sealed class EfEmploymentLifecyclePersistenceTests
                 employeeId,
                 rehireDate);
 
+        var newAssignment =
+            new EmployeeOrganizationAssignment(
+                Guid.NewGuid(),
+                employeeId,
+                newPeriod.Id,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                rehireDate);
+
         var persistence =
             new EfEmploymentLifecyclePersistence(
                 new TestDbContextFactory(options));
 
         await persistence
-            .UpdateEmployeeWithNewPeriodAsync(
+            .UpdateEmployeeWithNewPeriodAndAssignmentAsync(
                 restoredEmployee,
-                newPeriod);
+                newPeriod,
+                newAssignment);
 
         await using var verificationContext =
             new HrManagementDbContext(options);
 
-        Employee persistedEmployee =
-            await verificationContext.Employees
-                .SingleAsync();
-
-        List<EmploymentPeriod> periods =
+        Assert.Equal(
+            2,
             await verificationContext
                 .EmploymentPeriods
-                .OrderBy(period =>
-                    period.StartDate)
+                .CountAsync());
+
+        List<EmployeeOrganizationAssignment> assignments =
+            await verificationContext
+                .EmployeeOrganizationAssignments
+                .OrderBy(
+                    assignment =>
+                        assignment.StartDate)
                 .ToListAsync();
 
         Assert.Equal(
-            EmployeeStatus.Active,
-            persistedEmployee.Status);
-
-        Assert.Null(
-            persistedEmployee.TerminationDate);
-
-        // Ngày tuyển ban đầu của Employee không bị thay.
-        Assert.Equal(
-            originalHireDate,
-            persistedEmployee.HireDate);
-
-        Assert.Equal(
             2,
-            periods.Count);
+            assignments.Count);
 
-        EmploymentPeriod previousPeriod =
-            periods[0];
-
-        EmploymentPeriod rehiredPeriod =
-            periods[1];
+        EmployeeOrganizationAssignment current =
+            assignments[1];
 
         Assert.Equal(
-            previousPeriodId,
-            previousPeriod.Id);
-
-        Assert.Equal(
-            terminationDate,
-            previousPeriod.EndDate);
+            newPeriod.Id,
+            current.EmploymentPeriodId);
 
         Assert.Equal(
             rehireDate,
-            rehiredPeriod.StartDate);
-
-        Assert.Null(
-            rehiredPeriod.EndDate);
+            current.StartDate);
 
         Assert.True(
-            rehiredPeriod.IsOpen);
+            current.IsOpen);
+
+        Assert.False(
+            current.IsBaseline);
     }
 
     [Fact]
-    public async Task UpdateEmployeeWithNewPeriodAsync_WhenNewPeriodCannotBeInserted_RollsBackEmployeeUpdate()
+    public async Task UpdateEmployeeWithNewPeriodAndAssignmentAsync_WhenNewPeriodCannotBeInserted_RollsBackAllChanges()
     {
         await using var connection =
             new SqliteConnection(
@@ -484,10 +841,17 @@ public sealed class EfEmploymentLifecyclePersistenceTests
                 .UseSqlite(connection)
                 .Options;
 
+        var organization =
+            await SeedOrganizationAsync(
+                options);
+
         Guid employeeId =
             Guid.NewGuid();
 
         Guid existingPeriodId =
+            Guid.NewGuid();
+
+        Guid previousAssignmentId =
             Guid.NewGuid();
 
         DateOnly hireDate =
@@ -497,17 +861,16 @@ public sealed class EfEmploymentLifecyclePersistenceTests
             new(2026, 3, 15);
 
         await using (var dbContext =
-                     new HrManagementDbContext(options))
+             new HrManagementDbContext(options))
         {
-            await dbContext.Database
-                .EnsureCreatedAsync();
-
             dbContext.Employees.Add(
-                CreateEmployee(
+                CreateEmployeeWithOrganization(
                     employeeId,
-                    "EMP-REHIRE-002",
+                    "EMP-REHIRE-ROLLBACK",
                     hireDate,
                     EmployeeStatus.Inactive,
+                    organization.Department,
+                    organization.Position,
                     terminationDate));
 
             dbContext.EmploymentPeriods.Add(
@@ -517,32 +880,66 @@ public sealed class EfEmploymentLifecyclePersistenceTests
                     hireDate,
                     terminationDate));
 
+            dbContext.EmployeeOrganizationAssignments.Add(
+                new EmployeeOrganizationAssignment(
+                    previousAssignmentId,
+                    employeeId,
+                    existingPeriodId,
+                    organization.Department.Id,
+                    organization.Department.Code,
+                    organization.Department.Name,
+                    organization.Position.Id,
+                    organization.Position.Code,
+                    organization.Position.Name,
+                    hireDate,
+                    terminationDate));
+
             await dbContext.SaveChangesAsync();
         }
 
         Employee restoredEmployee =
-            CreateEmployee(
+            CreateEmployeeWithOrganization(
                 employeeId,
-                "EMP-REHIRE-002",
+                "EMP-REHIRE-ROLLBACK",
                 hireDate,
-                EmployeeStatus.Active);
+                EmployeeStatus.Active,
+                organization.Department,
+                organization.Position);
 
         // Cố tình trùng PK với period cũ.
+        DateOnly rehireDate =
+            new(2026, 8, 12);
+
         var invalidNewPeriod =
             new EmploymentPeriod(
                 existingPeriodId,
                 employeeId,
-                new DateOnly(2026, 8, 12));
+                rehireDate);
+
+        var newAssignment =
+            new EmployeeOrganizationAssignment(
+                Guid.NewGuid(),
+                employeeId,
+                invalidNewPeriod.Id,
+                organization.Department.Id,
+                organization.Department.Code,
+                organization.Department.Name,
+                organization.Position.Id,
+                organization.Position.Code,
+                organization.Position.Name,
+                rehireDate);
 
         var persistence =
             new EfEmploymentLifecyclePersistence(
                 new TestDbContextFactory(options));
 
         await Assert.ThrowsAsync<DbUpdateException>(
-            () => persistence
-                .UpdateEmployeeWithNewPeriodAsync(
-                    restoredEmployee,
-                    invalidNewPeriod));
+            () =>
+                persistence
+                    .UpdateEmployeeWithNewPeriodAndAssignmentAsync(
+                        restoredEmployee,
+                        invalidNewPeriod,
+                        newAssignment));
 
         await using var verificationContext =
             new HrManagementDbContext(options);
@@ -554,6 +951,11 @@ public sealed class EfEmploymentLifecyclePersistenceTests
         List<EmploymentPeriod> periods =
             await verificationContext
                 .EmploymentPeriods
+                .ToListAsync();
+
+        List<EmployeeOrganizationAssignment> assignments =
+            await verificationContext
+                .EmployeeOrganizationAssignments
                 .ToListAsync();
 
         Assert.Equal(
@@ -564,15 +966,31 @@ public sealed class EfEmploymentLifecyclePersistenceTests
             terminationDate,
             persistedEmployee.TerminationDate);
 
-        Assert.Single(
-            periods);
+        EmploymentPeriod persistedPeriod =
+            Assert.Single(
+                periods);
 
         Assert.Equal(
             existingPeriodId,
-            periods[0].Id);
+            persistedPeriod.Id);
 
         Assert.Equal(
             terminationDate,
-            periods[0].EndDate);
+            persistedPeriod.EndDate);
+
+        EmployeeOrganizationAssignment persistedAssignment =
+            Assert.Single(
+                assignments);
+
+        Assert.Equal(
+            previousAssignmentId,
+            persistedAssignment.Id);
+
+        Assert.Equal(
+            terminationDate,
+            persistedAssignment.EndDate);
+
+        Assert.False(
+            persistedAssignment.IsOpen);
     }
 }

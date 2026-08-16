@@ -4,8 +4,10 @@ using HrManagement.Application.Employees.EmploymentLifecycle;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
 using HrManagement.Domain.Employees;
+using HrManagement.Domain.Employees.OrganizationAssignments;
 using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
+using HrManagement.Application.Employees.OrganizationAssignments;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HrManagement.Tests.Employees;
@@ -21,8 +23,48 @@ public sealed class EmployeeServiceTests
     private readonly StubEmploymentHistoryRepository
         historyRepository = new();
 
+    private readonly StubEmployeeOrganizationHistoryRepository
+        organizationHistoryRepository = new();
+
     private readonly StubEmploymentLifecyclePersistence
         lifecyclePersistence = new();
+
+    private sealed class
+    StubEmployeeOrganizationHistoryRepository
+    : IEmployeeOrganizationHistoryRepository
+    {
+        public EmployeeOrganizationHistory? History
+        {
+            get;
+            set;
+        }
+
+        public Task<EmployeeOrganizationHistory>
+            GetByEmployeeIdAsync(
+                Guid employeeId,
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                History
+                ?? new EmployeeOrganizationHistory(
+                    employeeId,
+                    []));
+        }
+
+        public Task AddAssignmentAsync(
+            EmployeeOrganizationAssignment assignment,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAssignmentAsync(
+            EmployeeOrganizationAssignment assignment,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+    }
 
     private sealed class StubDepartmentRepository
     : IDepartmentRepository
@@ -146,12 +188,13 @@ public sealed class EmployeeServiceTests
     {
         var repository = new StubEmployeeRepository(TestEmployees);
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         IReadOnlyList<Employee> result =
             await service.GetEmployeesAsync();
@@ -164,12 +207,13 @@ public sealed class EmployeeServiceTests
     {
         var repository = new StubEmployeeRepository(TestEmployees);
         var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var filter = new EmployeeFilter(SearchText: "Châu");
 
@@ -186,12 +230,13 @@ public sealed class EmployeeServiceTests
     {
         var repository = new StubEmployeeRepository(TestEmployees);
         var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var filter = new EmployeeFilter(SearchText: "kinh DOANH");
 
@@ -208,12 +253,13 @@ public sealed class EmployeeServiceTests
     {
         var repository = new StubEmployeeRepository(TestEmployees);
         var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var filter = new EmployeeFilter(
             Status: EmployeeStatus.Active);
@@ -236,12 +282,13 @@ public sealed class EmployeeServiceTests
     {
         var repository = new StubEmployeeRepository(TestEmployees);
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var filter = new EmployeeFilter(
             SearchText: "Kinh doanh",
@@ -315,10 +362,10 @@ public sealed class EmployeeServiceTests
     public async Task CreateEmployeeAsync_WithValidRequest_CreatesEmployee()
     {
         var department =
-        new Department(
-        Guid.NewGuid(),
-        "IT",
-        "Công nghệ thông tin");
+            new Department(
+            Guid.NewGuid(),
+            "IT",
+            "Công nghệ thông tin");
 
         var position =
             new Position(
@@ -336,12 +383,13 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository();
 
         var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request =
             new CreateEmployeeRequest(
@@ -399,6 +447,20 @@ public sealed class EmployeeServiceTests
 
         Assert.True(
             period.IsOpen);
+
+        EmployeeOrganizationAssignment createdAssignment =
+        Assert.IsType<EmployeeOrganizationAssignment>(
+            lifecyclePersistence.CreatedAssignment);
+
+        Assert.Equal(
+            period.Id,
+            createdAssignment.EmploymentPeriodId);
+
+        Assert.True(
+            createdAssignment.IsOpen);
+
+        Assert.False(
+            createdAssignment.IsBaseline);
     }
 
     [Fact]
@@ -430,20 +492,23 @@ public sealed class EmployeeServiceTests
             null,
             null,
             new DateOnly(2022, 3, 1),
-            "Nhân sự",
-            "Chuyên viên",
-            EmployeeStatus.Active);
+            department.Name,
+            position.Name,
+            EmployeeStatus.Active,
+            departmentId: department.Id,
+            positionId: position.Id);
 
         var repository =
             new InMemoryEmployeeRepository(existingEmployee);
 
         var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new CreateEmployeeRequest(
             "EMP001",
@@ -469,10 +534,10 @@ public sealed class EmployeeServiceTests
     public async Task CreateEmployeeAsync_WithInvalidDomainData_ReturnsFailure()
     {
         var department =
-        new Department(
-        Guid.NewGuid(),
-        "HR",
-        "Nhân sự");
+            new Department(
+            Guid.NewGuid(),
+            "HR",
+            "Nhân sự");
 
         var position =
             new Position(
@@ -488,12 +553,13 @@ public sealed class EmployeeServiceTests
 
         var repository = new InMemoryEmployeeRepository();
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new CreateEmployeeRequest(
             EmployeeCode: "   ",
@@ -589,9 +655,9 @@ public sealed class EmployeeServiceTests
     {
         var department =
             new Department(
-        Guid.NewGuid(),
-        "HR",
-        "Nhân sự");
+                Guid.NewGuid(),
+                "HR",
+                "Nhân sự");
 
         var position =
             new Position(
@@ -614,9 +680,11 @@ public sealed class EmployeeServiceTests
                 null,
                 null,
                 new DateOnly(2022, 3, 1),
-                "Nhân sự",
-                "Chuyên viên",
-                EmployeeStatus.Active);
+                department.Name,
+                position.Name,
+                EmployeeStatus.Active,
+                departmentId: department.Id,
+                positionId: position.Id);
 
         var repository =
             new InMemoryEmployeeRepository(
@@ -625,13 +693,13 @@ public sealed class EmployeeServiceTests
         var organization =
         AddActiveOrganization();
 
-        var service =
-        new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request =
             new UpdateEmployeeRequest(
@@ -699,12 +767,13 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository();
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new UpdateEmployeeRequest(
             Guid.NewGuid(),
@@ -764,13 +833,13 @@ public sealed class EmployeeServiceTests
                 firstEmployee,
                 secondEmployee);
 
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new UpdateEmployeeRequest(
             firstEmployee.Id,
@@ -816,13 +885,13 @@ public sealed class EmployeeServiceTests
         "Nhân sự",
         "Chuyên viên");
 
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new UpdateEmployeeRequest(
             existingEmployee.Id,
@@ -846,6 +915,15 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task DeactivateEmployeeAsync_WhenActive_SetsStatusToInactive()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         var employee = new Employee(
             Guid.NewGuid(),
             "EMP001",
@@ -856,7 +934,9 @@ public sealed class EmployeeServiceTests
             new DateOnly(2022, 3, 1),
             "Nhân sự",
             "Chuyên viên",
-            EmployeeStatus.Active);
+            EmployeeStatus.Active,
+            departmentId: departmentId,
+            positionId: positionId);
 
         var repository =
             new InMemoryEmployeeRepository(employee);
@@ -868,8 +948,28 @@ public sealed class EmployeeServiceTests
                     employee.Id,
                     [
                         new EmploymentPeriod(
+                        periodId,
+                        employee.Id,
+                        employee.HireDate)
+                    ])
+            };
+
+        var organizationHistoryRepository =
+            new StubEmployeeOrganizationHistoryRepository
+            {
+                History = new EmployeeOrganizationHistory(
+                    employee.Id,
+                    [
+                        new EmployeeOrganizationAssignment(
                         Guid.NewGuid(),
                         employee.Id,
+                        periodId,
+                        departmentId,
+                        "HR",
+                        employee.Department,
+                        positionId,
+                        "SPEC",
+                        employee.Position,
                         employee.HireDate)
                     ])
             };
@@ -877,13 +977,13 @@ public sealed class EmployeeServiceTests
         var lifecyclePersistence =
             new StubEmploymentLifecyclePersistence();
 
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DateOnly terminationDate =
             new(2026, 8, 1);
@@ -903,6 +1003,10 @@ public sealed class EmployeeServiceTests
         EmploymentPeriod updatedPeriod =
             Assert.IsType<EmploymentPeriod>(
                 lifecyclePersistence.UpdatedPeriod);
+
+        EmployeeOrganizationAssignment updatedAssignment =
+            Assert.IsType<EmployeeOrganizationAssignment>(
+                lifecyclePersistence.UpdatedAssignment);
 
         Assert.Equal(
             EmployeeStatus.Inactive,
@@ -926,6 +1030,13 @@ public sealed class EmployeeServiceTests
 
         Assert.False(
             updatedPeriod.IsOpen);
+
+        Assert.Equal(
+            terminationDate,
+            updatedAssignment.EndDate);
+
+        Assert.False(
+            updatedAssignment.IsOpen);
     }
 
     [Fact]
@@ -935,6 +1046,9 @@ public sealed class EmployeeServiceTests
             Guid.NewGuid();
 
         Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
             Guid.NewGuid();
 
         var employee =
@@ -964,8 +1078,29 @@ public sealed class EmployeeServiceTests
                         employee.Id,
                         [
                             new EmploymentPeriod(
+                            periodId,
+                            employee.Id,
+                            employee.HireDate)
+                        ])
+            };
+
+        var organizationHistoryRepository =
+            new StubEmployeeOrganizationHistoryRepository
+            {
+                History =
+                    new EmployeeOrganizationHistory(
+                        employee.Id,
+                        [
+                            new EmployeeOrganizationAssignment(
                             Guid.NewGuid(),
                             employee.Id,
+                            periodId,
+                            departmentId,
+                            "IT",
+                            employee.Department,
+                            positionId,
+                            "DEV",
+                            employee.Position,
                             employee.HireDate)
                         ])
             };
@@ -977,6 +1112,7 @@ public sealed class EmployeeServiceTests
             new EmployeeService(
                 repository,
                 historyRepository,
+                organizationHistoryRepository,
                 lifecyclePersistence,
                 departmentRepository,
                 positionRepository);
@@ -1014,6 +1150,9 @@ public sealed class EmployeeServiceTests
         Guid positionId =
             Guid.NewGuid();
 
+        Guid periodId =
+            Guid.NewGuid();
+
         DateOnly terminationDate =
             new(2026, 6, 15);
 
@@ -1045,8 +1184,30 @@ public sealed class EmployeeServiceTests
                         employee.Id,
                         [
                             new EmploymentPeriod(
+                            periodId,
+                            employee.Id,
+                            employee.HireDate,
+                            terminationDate)
+                        ])
+            };
+
+        var organizationHistoryRepository =
+            new StubEmployeeOrganizationHistoryRepository
+            {
+                History =
+                    new EmployeeOrganizationHistory(
+                        employee.Id,
+                        [
+                            new EmployeeOrganizationAssignment(
                             Guid.NewGuid(),
                             employee.Id,
+                            periodId,
+                            departmentId,
+                            "IT",
+                            employee.Department,
+                            positionId,
+                            "DEV",
+                            employee.Position,
                             employee.HireDate,
                             terminationDate)
                         ])
@@ -1059,6 +1220,7 @@ public sealed class EmployeeServiceTests
             new EmployeeService(
                 repository,
                 historyRepository,
+                organizationHistoryRepository,
                 lifecyclePersistence,
                 departmentRepository,
                 positionRepository);
@@ -1087,6 +1249,15 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task DeactivateEmployeeAsync_WhenOnLeave_SetsStatusToInactive()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         var employee = new Employee(
             Guid.NewGuid(),
             "EMP002",
@@ -1097,7 +1268,9 @@ public sealed class EmployeeServiceTests
             new DateOnly(2023, 2, 10),
             "Công nghệ thông tin",
             "Lập trình viên",
-            EmployeeStatus.OnLeave);
+            EmployeeStatus.OnLeave,
+            departmentId: departmentId,
+            positionId: positionId);
 
         var repository =
             new InMemoryEmployeeRepository(employee);
@@ -1109,8 +1282,28 @@ public sealed class EmployeeServiceTests
                     employee.Id,
                     [
                         new EmploymentPeriod(
+                        periodId,
+                        employee.Id,
+                        employee.HireDate)
+                    ])
+            };
+
+        var organizationHistoryRepository =
+            new StubEmployeeOrganizationHistoryRepository
+            {
+                History = new EmployeeOrganizationHistory(
+                    employee.Id,
+                    [
+                        new EmployeeOrganizationAssignment(
                         Guid.NewGuid(),
                         employee.Id,
+                        periodId,
+                        departmentId,
+                        "IT",
+                        employee.Department,
+                        positionId,
+                        "DEV",
+                        employee.Position,
                         employee.HireDate)
                     ])
             };
@@ -1118,13 +1311,13 @@ public sealed class EmployeeServiceTests
         var lifecyclePersistence =
             new StubEmploymentLifecyclePersistence();
 
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DateOnly terminationDate =
             new(2026, 8, 1);
@@ -1145,6 +1338,10 @@ public sealed class EmployeeServiceTests
             Assert.IsType<EmploymentPeriod>(
                 lifecyclePersistence.UpdatedPeriod);
 
+        EmployeeOrganizationAssignment updatedAssignment =
+            Assert.IsType<EmployeeOrganizationAssignment>(
+                lifecyclePersistence.UpdatedAssignment);
+
         Assert.Equal(
             EmployeeStatus.Inactive,
             updatedEmployee.Status);
@@ -1159,6 +1356,13 @@ public sealed class EmployeeServiceTests
 
         Assert.False(
             updatedPeriod.IsOpen);
+
+        Assert.Equal(
+            terminationDate,
+            updatedAssignment.EndDate);
+
+        Assert.False(
+            updatedAssignment.IsOpen);
     }
 
     [Fact]
@@ -1167,13 +1371,13 @@ public sealed class EmployeeServiceTests
         var repository =
             new InMemoryEmployeeRepository();
 
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+        var service = new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DeactivateEmployeeResult result =
             await service.DeactivateEmployeeAsync(
@@ -1195,6 +1399,15 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task DeactivateEmployeeAsync_WhenAlreadyInactive_ReturnsSuccess()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         var employee = new Employee(
             Guid.NewGuid(),
             "EMP003",
@@ -1211,12 +1424,13 @@ public sealed class EmployeeServiceTests
             new InMemoryEmployeeRepository(employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DeactivateEmployeeResult result =
             await service.DeactivateEmployeeAsync(
@@ -1291,12 +1505,13 @@ public sealed class EmployeeServiceTests
                 incompleteInactiveEmployee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         IReadOnlyList<Employee> result =
             await service.GetEmployeesAsync(
@@ -1317,6 +1532,15 @@ public sealed class EmployeeServiceTests
     [Fact]
     public async Task DeactivateEmployeeAsync_WhenTerminationDateIsMissing_ReturnsFailure()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         var employee = new Employee(
             Guid.NewGuid(),
             "EMP100",
@@ -1327,18 +1551,50 @@ public sealed class EmployeeServiceTests
             new DateOnly(2024, 1, 1),
             "Nhân sự",
             "Chuyên viên",
-            EmployeeStatus.Active);
+            EmployeeStatus.Active,
+            departmentId: departmentId,
+            positionId: positionId);
+
+
+        var period =
+            new EmploymentPeriod(
+                periodId,
+                employee.Id,
+                employee.HireDate);
+
+        historyRepository.History =
+            new EmploymentHistory(
+                employee.Id,
+                [period]);
+
+        organizationHistoryRepository.History =
+            new EmployeeOrganizationHistory(
+                employee.Id,
+                [
+            new EmployeeOrganizationAssignment(
+                Guid.NewGuid(),
+                employee.Id,
+                period.Id,
+                departmentId,
+                "HR",
+                employee.Department,
+                positionId,
+                "SPEC",
+                employee.Position,
+                period.StartDate)
+                ]);
 
         var repository =
             new InMemoryEmployeeRepository(employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DeactivateEmployeeResult result =
             await service.DeactivateEmployeeAsync(employee.Id);
@@ -1359,7 +1615,16 @@ public sealed class EmployeeServiceTests
     [Fact]
 public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsFailure()
 {
-    var employee =
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
+        var employee =
         new Employee(
             Guid.NewGuid(),
             "EMP101",
@@ -1376,12 +1641,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
         new InMemoryEmployeeRepository(employee);
 
         var service =
-        new EmployeeService(
-            repository,
-            historyRepository,
-            lifecyclePersistence,
-            departmentRepository,
-            positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DateOnly tomorrow =
         DateOnly.FromDateTime(DateTime.Today)
@@ -1429,12 +1695,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
         employee.Position);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new UpdateEmployeeRequest(
             employee.Id,
@@ -1463,34 +1730,38 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
         DateOnly terminationDate =
             new DateOnly(2026, 7, 31);
 
-        var employee = new Employee(
-            Guid.NewGuid(),
-            "EMP103",
-            "Nhân viên kiểm thử",
-            null,
-            null,
-            null,
-            new DateOnly(2024, 1, 1),
-            "Nhân sự",
-            "Chuyên viên",
-            EmployeeStatus.Inactive,
-            terminationDate);
+        var organization =
+            AddActiveOrganization(
+                "Nhân sự",
+                "Chuyên viên");
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP103",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                organization.Department.Name,
+                organization.Position.Name,
+                EmployeeStatus.Inactive,
+                terminationDate,
+                departmentId: organization.Department.Id,
+                positionId: organization.Position.Id);
 
         var repository =
             new InMemoryEmployeeRepository(employee);
 
-        var organization =
-    AddActiveOrganization(
-        employee.Department,
-        employee.Position);
-
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new UpdateEmployeeRequest(
             employee.Id,
@@ -1551,12 +1822,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             position);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         var request = new CreateEmployeeRequest(
             "EMP1004",
@@ -1613,6 +1885,24 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
     private sealed class StubEmploymentLifecyclePersistence
     : IEmploymentLifecyclePersistence
     {
+        public EmployeeOrganizationAssignment? CreatedAssignment
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeOrganizationAssignment? UpdatedAssignment
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeOrganizationAssignment? RehireAssignment
+        {
+            get;
+            private set;
+        }
+
         public Employee? RehiredEmployee
         {
             get;
@@ -1624,6 +1914,61 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             get;
             private set;
         }
+
+        public Task CreateEmployeeWithPeriodAndAssignmentAsync(
+            Employee employee,
+            EmploymentPeriod period,
+            EmployeeOrganizationAssignment assignment,
+            CancellationToken cancellationToken = default)
+        {
+            CreatedEmployee =
+                employee;
+
+            CreatedPeriod =
+                period;
+
+            CreatedAssignment =
+                assignment;
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateEmployeeWithPeriodAndAssignmentAsync(
+            Employee employee,
+            EmploymentPeriod period,
+            EmployeeOrganizationAssignment assignment,
+            CancellationToken cancellationToken = default)
+        {
+            UpdatedEmployee =
+                employee;
+
+            UpdatedPeriod =
+                period;
+
+            UpdatedAssignment =
+                assignment;
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateEmployeeWithNewPeriodAndAssignmentAsync(
+            Employee employee,
+            EmploymentPeriod newPeriod,
+            EmployeeOrganizationAssignment newAssignment,
+            CancellationToken cancellationToken = default)
+        {
+            RehiredEmployee =
+                employee;
+
+            RehirePeriod =
+                newPeriod;
+
+            RehireAssignment =
+                newAssignment;
+
+            return Task.CompletedTask;
+        }
+
 
         public Task UpdateEmployeeWithNewPeriodAsync(
             Employee employee,
@@ -1673,6 +2018,15 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
     [Fact]
     public async Task DeactivateEmployeeAsync_WhenNoOpenEmploymentPeriodExists_ReturnsFailure()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         var employee =
             new Employee(
                 Guid.NewGuid(),
@@ -1696,12 +2050,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 []);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DateOnly terminationDate =
             new(2026, 8, 1);
@@ -1741,6 +2096,15 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
     [Fact]
     public async Task CancelDeactivationAsync_WhenValid_RestoresEmployeeToActive()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         DateOnly terminationDate =
             new(2026, 6, 15);
 
@@ -1756,7 +2120,9 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 "Nhân sự",
                 "Chuyên viên",
                 EmployeeStatus.Inactive,
-                terminationDate);
+                terminationDate,
+                departmentId: departmentId,
+                positionId: positionId);
 
         var repository =
             new InMemoryEmployeeRepository(
@@ -1767,19 +2133,38 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee.Id,
                 [
                     new EmploymentPeriod(
-                    Guid.NewGuid(),
+                    periodId,
                     employee.Id,
                     employee.HireDate,
                     terminationDate)
                 ]);
 
+        organizationHistoryRepository.History =
+            new EmployeeOrganizationHistory(
+                employee.Id,
+                [
+                    new EmployeeOrganizationAssignment(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    periodId,
+                    departmentId,
+                    "HR",
+                    employee.Department,
+                    positionId,
+                    "SPEC",
+                    employee.Position,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -1797,6 +2182,10 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             Assert.IsType<EmploymentPeriod>(
                 lifecyclePersistence.UpdatedPeriod);
 
+        EmployeeOrganizationAssignment reopenedAssignment =
+            Assert.IsType<EmployeeOrganizationAssignment>(
+                lifecyclePersistence.UpdatedAssignment);
+
         Assert.Equal(
             EmployeeStatus.Active,
             restoredEmployee.Status);
@@ -1809,11 +2198,26 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
 
         Assert.True(
             reopenedPeriod.IsOpen);
+
+        Assert.True(
+            reopenedAssignment.IsOpen);
+
+        Assert.Null(
+            reopenedAssignment.EndDate);
     }
 
     [Fact]
     public async Task CancelDeactivationAsync_WhenRestoredStatusIsOnLeave_RestoresEmployeeToOnLeave()
     {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
+
         DateOnly terminationDate =
             new(2026, 6, 15);
 
@@ -1829,7 +2233,9 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 "Công nghệ thông tin",
                 "Lập trình viên",
                 EmployeeStatus.Inactive,
-                terminationDate);
+                terminationDate,
+                departmentId: departmentId,
+                positionId: positionId);
 
         var repository =
             new InMemoryEmployeeRepository(
@@ -1840,19 +2246,38 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee.Id,
                 [
                     new EmploymentPeriod(
-                    Guid.NewGuid(),
+                    periodId,
                     employee.Id,
                     employee.HireDate,
                     terminationDate)
                 ]);
 
+        organizationHistoryRepository.History =
+            new EmployeeOrganizationHistory(
+                employee.Id,
+                [
+                    new EmployeeOrganizationAssignment(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    periodId,
+                    departmentId,
+                    "IT",
+                    employee.Department,
+                    positionId,
+                    "DEV",
+                    employee.Position,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -1876,6 +2301,16 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             lifecyclePersistence
                 .UpdatedPeriod!
                 .IsOpen);
+
+        EmployeeOrganizationAssignment reopenedAssignment =
+            Assert.IsType<EmployeeOrganizationAssignment>(
+                lifecyclePersistence.UpdatedAssignment);
+
+        Assert.True(
+            reopenedAssignment.IsOpen);
+
+        Assert.Null(
+            reopenedAssignment.EndDate);
     }
 
     [Fact]
@@ -1885,12 +2320,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             new InMemoryEmployeeRepository();
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -1928,12 +2364,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -1967,12 +2404,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -2028,12 +2466,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 ]);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -2078,12 +2517,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         CancelEmployeeDeactivationResult result =
             await service.CancelDeactivationAsync(
@@ -2101,104 +2541,164 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
     }
 
     [Fact]
-    public async Task RehireEmployeeAsync_WhenValid_RestoresEmployeeAndCreatesNewPeriod()
+public async Task RehireEmployeeAsync_WhenValid_RestoresEmployeeAndCreatesNewPeriod()
+{
+    Guid departmentId =
+        Guid.NewGuid();
+
+    Guid positionId =
+        Guid.NewGuid();
+
+    Guid periodId =
+        Guid.NewGuid();
+
+    DateOnly originalHireDate =
+        new(2022, 1, 10);
+
+    DateOnly terminationDate =
+        new(2026, 3, 15);
+
+    DateOnly rehireDate =
+        new(2026, 8, 1);
+
+    var employee =
+        new Employee(
+            Guid.NewGuid(),
+            "EMP-REHIRE-001",
+            "Nguyễn Văn An",
+            null,
+            null,
+            null,
+            originalHireDate,
+            "Nhân sự",
+            "Chuyên viên",
+            EmployeeStatus.Inactive,
+            terminationDate,
+            departmentId: departmentId,
+            positionId: positionId);
+
+    var repository =
+        new InMemoryEmployeeRepository(
+            employee);
+
+    EmploymentPeriod previousPeriod =
+        new(
+            periodId,
+            employee.Id,
+            originalHireDate,
+            terminationDate);
+
+    historyRepository.History =
+        new EmploymentHistory(
+            employee.Id,
+            [previousPeriod]);
+
+    organizationHistoryRepository.History =
+        new EmployeeOrganizationHistory(
+            employee.Id,
+            [
+                new EmployeeOrganizationAssignment(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    periodId,
+                    departmentId,
+                    "HR",
+                    employee.Department,
+                    positionId,
+                    "SPEC",
+                    employee.Position,
+                    originalHireDate,
+                    terminationDate)
+            ]);
+
+    var service =
+        new EmployeeService(
+            repository,
+            historyRepository,
+            organizationHistoryRepository,
+            lifecyclePersistence,
+            departmentRepository,
+            positionRepository);
+
+    RehireEmployeeResult result =
+        await service.RehireEmployeeAsync(
+            employee.Id,
+            rehireDate,
+            EmployeeStatus.Active);
+
+    Assert.True(result.IsSuccessful);
+    Assert.Null(result.ErrorMessage);
+
+    Employee rehiredEmployee =
+        Assert.IsType<Employee>(
+            lifecyclePersistence.RehiredEmployee);
+
+    EmploymentPeriod newPeriod =
+        Assert.IsType<EmploymentPeriod>(
+            lifecyclePersistence.RehirePeriod);
+
+    Assert.Equal(
+        EmployeeStatus.Active,
+        rehiredEmployee.Status);
+
+    Assert.Null(
+        rehiredEmployee.TerminationDate);
+
+    Assert.Equal(
+        originalHireDate,
+        rehiredEmployee.HireDate);
+
+    Assert.Equal(
+        rehireDate,
+        newPeriod.StartDate);
+
+    Assert.Null(
+        newPeriod.EndDate);
+
+    Assert.True(
+        newPeriod.IsOpen);
+
+    // Period cũ tuyệt đối không bị sửa.
+    Assert.Equal(
+        terminationDate,
+        previousPeriod.EndDate);
+
+    EmployeeOrganizationAssignment rehireAssignment =
+        Assert.IsType<EmployeeOrganizationAssignment>(
+            lifecyclePersistence.RehireAssignment);
+
+    Assert.Equal(
+        newPeriod.Id,
+        rehireAssignment.EmploymentPeriodId);
+
+    Assert.Equal(
+        rehireDate,
+        rehireAssignment.StartDate);
+
+    Assert.True(
+        rehireAssignment.IsOpen);
+
+    Assert.False(
+        rehireAssignment.IsBaseline);
+}
+
+    [Fact]
+    public async Task RehireEmployeeAsync_WhenStatusIsOnLeave_RestoresEmployeeToOnLeave()
     {
-        DateOnly originalHireDate =
-            new(2022, 1, 10);
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        Guid periodId =
+            Guid.NewGuid();
 
         DateOnly terminationDate =
             new(2026, 3, 15);
 
         DateOnly rehireDate =
             new(2026, 8, 1);
-
-        var employee =
-            new Employee(
-                Guid.NewGuid(),
-                "EMP-REHIRE-001",
-                "Nguyễn Văn An",
-                null,
-                null,
-                null,
-                originalHireDate,
-                "Nhân sự",
-                "Chuyên viên",
-                EmployeeStatus.Inactive,
-                terminationDate);
-
-        var repository =
-            new InMemoryEmployeeRepository(
-                employee);
-
-        EmploymentPeriod previousPeriod =
-            new(
-                Guid.NewGuid(),
-                employee.Id,
-                originalHireDate,
-                terminationDate);
-
-        historyRepository.History =
-            new EmploymentHistory(
-                employee.Id,
-                [previousPeriod]);
-
-        var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
-
-        RehireEmployeeResult result =
-            await service.RehireEmployeeAsync(
-                employee.Id,
-                rehireDate,
-                EmployeeStatus.Active);
-
-        Assert.True(result.IsSuccessful);
-        Assert.Null(result.ErrorMessage);
-
-        Employee rehiredEmployee =
-            Assert.IsType<Employee>(
-                lifecyclePersistence.RehiredEmployee);
-
-        EmploymentPeriod newPeriod =
-            Assert.IsType<EmploymentPeriod>(
-                lifecyclePersistence.RehirePeriod);
-
-        Assert.Equal(
-            EmployeeStatus.Active,
-            rehiredEmployee.Status);
-
-        Assert.Null(
-            rehiredEmployee.TerminationDate);
-
-        Assert.Equal(
-            originalHireDate,
-            rehiredEmployee.HireDate);
-
-        Assert.Equal(
-            rehireDate,
-            newPeriod.StartDate);
-
-        Assert.Null(
-            newPeriod.EndDate);
-
-        Assert.True(
-            newPeriod.IsOpen);
-
-        // Period cũ tuyệt đối không bị sửa.
-        Assert.Equal(
-            terminationDate,
-            previousPeriod.EndDate);
-    }
-
-    [Fact]
-    public async Task RehireEmployeeAsync_WhenStatusIsOnLeave_RestoresEmployeeToOnLeave()
-    {
-        DateOnly terminationDate =
-            new(2026, 3, 15);
 
         var employee =
             new Employee(
@@ -2212,7 +2712,9 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 "CNTT",
                 "Lập trình viên",
                 EmployeeStatus.Inactive,
-                terminationDate);
+                terminationDate,
+                departmentId: departmentId,
+                positionId: positionId);
 
         var repository =
             new InMemoryEmployeeRepository(
@@ -2223,24 +2725,43 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee.Id,
                 [
                     new EmploymentPeriod(
-                    Guid.NewGuid(),
+                    periodId,
                     employee.Id,
                     employee.HireDate,
                     terminationDate)
                 ]);
 
+        organizationHistoryRepository.History =
+            new EmployeeOrganizationHistory(
+                employee.Id,
+                [
+                    new EmployeeOrganizationAssignment(
+                    Guid.NewGuid(),
+                    employee.Id,
+                    periodId,
+                    departmentId,
+                    "IT",
+                    employee.Department,
+                    positionId,
+                    "DEV",
+                    employee.Position,
+                    employee.HireDate,
+                    terminationDate)
+                ]);
+
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         RehireEmployeeResult result =
             await service.RehireEmployeeAsync(
                 employee.Id,
-                new DateOnly(2026, 8, 1),
+                rehireDate,
                 EmployeeStatus.OnLeave);
 
         Assert.True(result.IsSuccessful);
@@ -2255,6 +2776,24 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
             lifecyclePersistence
                 .RehirePeriod!
                 .IsOpen);
+
+        EmployeeOrganizationAssignment rehireAssignment =
+            Assert.IsType<EmployeeOrganizationAssignment>(
+                lifecyclePersistence.RehireAssignment);
+
+        Assert.Equal(
+            lifecyclePersistence.RehirePeriod!.Id,
+            rehireAssignment.EmploymentPeriodId);
+
+        Assert.Equal(
+            rehireDate,
+            rehireAssignment.StartDate);
+
+        Assert.True(
+            rehireAssignment.IsOpen);
+
+        Assert.False(
+            rehireAssignment.IsBaseline);
     }
 
     [Fact]
@@ -2278,12 +2817,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         RehireEmployeeResult result =
             await service.RehireEmployeeAsync(
@@ -2322,12 +2862,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         RehireEmployeeResult result =
             await service.RehireEmployeeAsync(
@@ -2370,12 +2911,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         RehireEmployeeResult result =
             await service.RehireEmployeeAsync(
@@ -2417,12 +2959,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 employee);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         DateOnly tomorrow =
             DateOnly.FromDateTime(
@@ -2481,12 +3024,13 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
                 ]);
 
         var service =
-    new EmployeeService(
-        repository,
-        historyRepository,
-        lifecyclePersistence,
-        departmentRepository,
-        positionRepository);
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
 
         RehireEmployeeResult result =
             await service.RehireEmployeeAsync(
@@ -2505,6 +3049,192 @@ public async Task DeactivateEmployeeAsync_WhenTerminationDateIsInFuture_ReturnsF
 
         Assert.Null(
             lifecyclePersistence.RehirePeriod);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeAsync_WhenDepartmentChanges_ReturnsFailure()
+    {
+        var currentDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "DEV",
+                "Phát triển phần mềm");
+
+        var targetDepartment =
+            new Department(
+                Guid.NewGuid(),
+                "RD",
+                "Nghiên cứu và phát triển");
+
+        var position =
+            new Position(
+                Guid.NewGuid(),
+                "DEV",
+                "Lập trình viên");
+
+        departmentRepository.Departments.Add(
+            currentDepartment);
+
+        departmentRepository.Departments.Add(
+            targetDepartment);
+
+        positionRepository.Positions.Add(
+            position);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP150",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2025, 1, 1),
+                currentDepartment.Name,
+                position.Name,
+                EmployeeStatus.Active,
+                departmentId: currentDepartment.Id,
+                positionId: position.Id);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        var request =
+            new UpdateEmployeeRequest(
+                employee.Id,
+                employee.EmployeeCode,
+                employee.FullName,
+                employee.Email,
+                employee.PhoneNumber,
+                employee.DateOfBirth,
+                employee.HireDate,
+                targetDepartment.Id,
+                position.Id,
+                employee.Status);
+
+        UpdateEmployeeResult result =
+            await service.UpdateEmployeeAsync(
+                request);
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Không thể thay đổi phòng ban hoặc chức danh "
+            + "từ màn hình chỉnh sửa. "
+            + "Vui lòng sử dụng chức năng Điều chuyển.",
+            result.ErrorMessage);
+
+        Employee? unchanged =
+            await repository.GetByIdAsync(
+                employee.Id);
+
+        Assert.Equal(
+            currentDepartment.Id,
+            unchanged!.DepartmentId);
+    }
+
+    [Fact]
+    public async Task UpdateEmployeeAsync_WhenPositionChanges_ReturnsFailure()
+    {
+        var department =
+            new Department(
+                Guid.NewGuid(),
+                "DEV",
+                "Phát triển phần mềm");
+
+        var currentPosition =
+            new Position(
+                Guid.NewGuid(),
+                "DEV",
+                "Lập trình viên");
+
+        var targetPosition =
+            new Position(
+                Guid.NewGuid(),
+                "LEAD",
+                "Trưởng nhóm kỹ thuật");
+
+        departmentRepository.Departments.Add(
+            department);
+
+        positionRepository.Positions.Add(
+            currentPosition);
+
+        positionRepository.Positions.Add(
+            targetPosition);
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP151",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2025, 1, 1),
+                department.Name,
+                currentPosition.Name,
+                EmployeeStatus.Active,
+                departmentId: department.Id,
+                positionId: currentPosition.Id);
+
+        var repository =
+            new InMemoryEmployeeRepository(
+                employee);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        var request =
+            new UpdateEmployeeRequest(
+                employee.Id,
+                employee.EmployeeCode,
+                employee.FullName,
+                employee.Email,
+                employee.PhoneNumber,
+                employee.DateOfBirth,
+                employee.HireDate,
+                department.Id,
+                targetPosition.Id,
+                employee.Status);
+
+        UpdateEmployeeResult result =
+            await service.UpdateEmployeeAsync(
+                request);
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Không thể thay đổi phòng ban hoặc chức danh "
+            + "từ màn hình chỉnh sửa. "
+            + "Vui lòng sử dụng chức năng Điều chuyển.",
+            result.ErrorMessage);
+
+        Employee? unchanged =
+            await repository.GetByIdAsync(
+                employee.Id);
+
+        Assert.Equal(
+            currentPosition.Id,
+            unchanged!.PositionId);
     }
 
     private (

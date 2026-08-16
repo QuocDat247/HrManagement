@@ -5,11 +5,16 @@ using HrManagement.Application.Organization.Positions;
 using HrManagement.Domain.Employees;
 using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
+using HrManagement.Application.Employees.OrganizationAssignments;
+using HrManagement.Domain.Employees.OrganizationAssignments;
 
 namespace HrManagement.Application.Employees;
 
 public sealed class EmployeeService : IEmployeeService
 {
+    private readonly IEmployeeOrganizationHistoryRepository
+    _employeeOrganizationHistoryRepository;
+
     private readonly IDepartmentRepository
     _departmentRepository;
 
@@ -26,6 +31,8 @@ public sealed class EmployeeService : IEmployeeService
     public EmployeeService(
     IEmployeeRepository employeeRepository,
     IEmploymentHistoryRepository employmentHistoryRepository,
+    IEmployeeOrganizationHistoryRepository
+        employeeOrganizationHistoryRepository,
     IEmploymentLifecyclePersistence employmentLifecyclePersistence,
     IDepartmentRepository departmentRepository,
     IPositionRepository positionRepository)
@@ -35,6 +42,9 @@ public sealed class EmployeeService : IEmployeeService
 
         _employmentHistoryRepository =
             employmentHistoryRepository;
+
+        _employeeOrganizationHistoryRepository =
+            employeeOrganizationHistoryRepository;
 
         _employmentLifecyclePersistence =
             employmentLifecyclePersistence;
@@ -46,12 +56,11 @@ public sealed class EmployeeService : IEmployeeService
             positionRepository;
     }
 
-    public async Task<RehireEmployeeResult>
-    RehireEmployeeAsync(
-        Guid employeeId,
-        DateOnly rehireDate,
-        EmployeeStatus rehireStatus,
-        CancellationToken cancellationToken = default)
+    public async Task<RehireEmployeeResult> RehireEmployeeAsync(
+    Guid employeeId,
+    DateOnly rehireDate,
+    EmployeeStatus rehireStatus,
+    CancellationToken cancellationToken = default)
     {
         Employee? existingEmployee =
             await _employeeRepository.GetByIdAsync(
@@ -65,8 +74,7 @@ public sealed class EmployeeService : IEmployeeService
                 "Không tìm thấy nhân viên.");
         }
 
-        if (existingEmployee.Status
-            != EmployeeStatus.Inactive)
+        if (existingEmployee.Status != EmployeeStatus.Inactive)
         {
             return new RehireEmployeeResult(
                 false,
@@ -129,12 +137,60 @@ public sealed class EmployeeService : IEmployeeService
                 "Nhân viên đã có giai đoạn làm việc đang mở.");
         }
 
-        if (latestPeriod.EndDate
-            != existingEmployee.TerminationDate)
+        if (latestPeriod.EndDate != existingEmployee.TerminationDate)
         {
             return new RehireEmployeeResult(
                 false,
                 "Ngày kết thúc của lịch sử làm việc không khớp.");
+        }
+
+        EmployeeOrganizationHistory organizationHistory =
+            await _employeeOrganizationHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
+
+        if (organizationHistory.CurrentAssignment is not null)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Nhân viên đã có phân công tổ chức đang mở.");
+        }
+
+        EmployeeOrganizationAssignment? latestAssignment =
+            organizationHistory.LatestAssignment;
+
+        if (latestAssignment is null)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Không tìm thấy lịch sử phân công tổ chức "
+                + "của nhân viên.");
+        }
+
+        if (latestAssignment.EndDate != existingEmployee.TerminationDate)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Ngày kết thúc của lịch sử phân công "
+                + "không khớp.");
+        }
+
+        if (latestAssignment.EmploymentPeriodId != latestPeriod.Id)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Phân công gần nhất không khớp với "
+                + "giai đoạn làm việc gần nhất.");
+        }
+
+        if (existingEmployee.DepartmentId != latestAssignment.DepartmentId
+            || existingEmployee.PositionId != latestAssignment.PositionId)
+        {
+            return new RehireEmployeeResult(
+                false,
+                "Phân công gần nhất không khớp với "
+                + "tổ chức của nhân viên.");
         }
 
         EmploymentPeriod newPeriod;
@@ -144,6 +200,35 @@ public sealed class EmployeeService : IEmployeeService
             newPeriod =
                 employmentHistory.StartNewPeriod(
                     Guid.NewGuid(),
+                    rehireDate);
+        }
+        catch (ArgumentException exception)
+        {
+            return new RehireEmployeeResult(
+                false,
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return new RehireEmployeeResult(
+                false,
+                exception.Message);
+        }
+
+        EmployeeOrganizationAssignment newAssignment;
+
+        try
+        {
+            newAssignment =
+                organizationHistory.StartNewAssignment(
+                    Guid.NewGuid(),
+                    newPeriod.Id,
+                    latestAssignment.DepartmentId,
+                    latestAssignment.DepartmentCode,
+                    latestAssignment.DepartmentName,
+                    latestAssignment.PositionId,
+                    latestAssignment.PositionCode,
+                    latestAssignment.PositionName,
                     rehireDate);
         }
         catch (ArgumentException exception)
@@ -177,9 +262,10 @@ public sealed class EmployeeService : IEmployeeService
                 positionId: existingEmployee.PositionId);
 
         await _employmentLifecyclePersistence
-            .UpdateEmployeeWithNewPeriodAsync(
+            .UpdateEmployeeWithNewPeriodAndAssignmentAsync(
                 rehiredEmployee,
                 newPeriod,
+                newAssignment,
                 cancellationToken);
 
         return new RehireEmployeeResult(
@@ -187,11 +273,10 @@ public sealed class EmployeeService : IEmployeeService
             null);
     }
 
-    public async Task<CancelEmployeeDeactivationResult>
-    CancelDeactivationAsync(
-        Guid employeeId,
-        EmployeeStatus restoredStatus,
-        CancellationToken cancellationToken = default)
+    public async Task<CancelEmployeeDeactivationResult> CancelDeactivationAsync(
+    Guid employeeId,
+    EmployeeStatus restoredStatus,
+    CancellationToken cancellationToken = default)
     {
         Employee? existingEmployee =
             await _employeeRepository.GetByIdAsync(
@@ -205,8 +290,7 @@ public sealed class EmployeeService : IEmployeeService
                 "Không tìm thấy nhân viên.");
         }
 
-        if (existingEmployee.Status
-            != EmployeeStatus.Inactive)
+        if (existingEmployee.Status != EmployeeStatus.Inactive)
         {
             return new CancelEmployeeDeactivationResult(
                 false,
@@ -234,22 +318,85 @@ public sealed class EmployeeService : IEmployeeService
                     employeeId,
                     cancellationToken);
 
-        EmploymentPeriod reopenedPeriod;
-
-        try
-        {
-            reopenedPeriod =
-                employmentHistory.ReopenLatestPeriod(
-                    existingEmployee
-                        .TerminationDate
-                        .Value);
-        }
-        catch (InvalidOperationException exception)
+        if (employmentHistory.CurrentPeriod is not null)
         {
             return new CancelEmployeeDeactivationResult(
                 false,
-                exception.Message);
+                "Nhân viên đã có giai đoạn làm việc đang mở.");
         }
+
+        EmploymentPeriod? latestPeriod =
+            employmentHistory.LatestPeriod;
+
+        if (latestPeriod is null)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Nhân viên chưa có lịch sử làm việc.");
+        }
+
+        if (latestPeriod.EndDate != existingEmployee.TerminationDate)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Ngày kết thúc của lịch sử làm việc không khớp.");
+        }
+
+        EmployeeOrganizationHistory organizationHistory =
+            await _employeeOrganizationHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
+
+        if (organizationHistory.CurrentAssignment is not null)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Nhân viên đã có phân công tổ chức đang mở.");
+        }
+
+        EmployeeOrganizationAssignment? latestAssignment =
+            organizationHistory.LatestAssignment;
+
+        if (latestAssignment is null)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Nhân viên chưa có lịch sử phân công tổ chức.");
+        }
+
+        if (latestAssignment.EndDate != existingEmployee.TerminationDate)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Ngày kết thúc của lịch sử phân công "
+                + "không khớp.");
+        }
+
+        if (latestAssignment.EmploymentPeriodId != latestPeriod.Id)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Phân công gần nhất không khớp với "
+                + "giai đoạn làm việc gần nhất.");
+        }
+
+        if (existingEmployee.DepartmentId != latestAssignment.DepartmentId
+            || existingEmployee.PositionId != latestAssignment.PositionId)
+        {
+            return new CancelEmployeeDeactivationResult(
+                false,
+                "Phân công gần nhất không khớp với "
+                + "tổ chức của nhân viên.");
+        }
+
+        EmploymentPeriod reopenedPeriod =
+            employmentHistory.ReopenLatestPeriod(
+                existingEmployee.TerminationDate.Value);
+
+        EmployeeOrganizationAssignment reopenedAssignment =
+            organizationHistory.ReopenLatestAssignment(
+                existingEmployee.TerminationDate.Value);
 
         var restoredEmployee =
             new Employee(
@@ -268,9 +415,10 @@ public sealed class EmployeeService : IEmployeeService
                 positionId: existingEmployee.PositionId);
 
         await _employmentLifecyclePersistence
-            .UpdateEmployeeWithPeriodAsync(
+            .UpdateEmployeeWithPeriodAndAssignmentAsync(
                 restoredEmployee,
                 reopenedPeriod,
+                reopenedAssignment,
                 cancellationToken);
 
         return new CancelEmployeeDeactivationResult(
@@ -422,15 +570,29 @@ public sealed class EmployeeService : IEmployeeService
         }
 
         var initialEmploymentPeriod =
-        new EmploymentPeriod(
-        Guid.NewGuid(),
-        employee.Id,
-        employee.HireDate);
+            new EmploymentPeriod(
+                Guid.NewGuid(),
+                employee.Id,
+                employee.HireDate);
+
+        var initialAssignment =
+            new EmployeeOrganizationAssignment(
+                Guid.NewGuid(),
+                employee.Id,
+                initialEmploymentPeriod.Id,
+                department.Id,
+                department.Code,
+                department.Name,
+                position.Id,
+                position.Code,
+                position.Name,
+                employee.HireDate);
 
         await _employmentLifecyclePersistence
-            .CreateEmployeeWithPeriodAsync(
+            .CreateEmployeeWithPeriodAndAssignmentAsync(
                 employee,
                 initialEmploymentPeriod,
+                initialAssignment,
                 cancellationToken);
 
         return new CreateEmployeeResult(
@@ -483,6 +645,25 @@ public sealed class EmployeeService : IEmployeeService
                 IsSuccessful: false,
                 ErrorMessage:
                     "Không thể thay đổi trạng thái của nhân viên đã ngừng hoạt động từ màn hình chỉnh sửa.");
+        }
+
+        bool departmentChanged =
+            existingEmployee.DepartmentId
+                != request.DepartmentId;
+
+        bool positionChanged =
+            existingEmployee.PositionId
+                != request.PositionId;
+
+        if (departmentChanged
+            || positionChanged)
+        {
+            return new UpdateEmployeeResult(
+                IsSuccessful: false,
+                ErrorMessage:
+                    "Không thể thay đổi phòng ban hoặc chức danh "
+                    + "từ màn hình chỉnh sửa. "
+                    + "Vui lòng sử dụng chức năng Điều chuyển.");
         }
 
         Department? department =
@@ -610,32 +791,76 @@ public sealed class EmployeeService : IEmployeeService
         }
 
         EmploymentHistory employmentHistory =
-        await _employmentHistoryRepository
-        .GetByEmployeeIdAsync(
-            employeeId,
-            cancellationToken);
+            await _employmentHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
 
-        if (employmentHistory.CurrentPeriod is null)
+        EmploymentPeriod? currentPeriod =
+            employmentHistory.CurrentPeriod;
+
+        if (currentPeriod is null)
         {
             return new DeactivateEmployeeResult(
                 false,
                 "Không tìm thấy giai đoạn làm việc đang mở của nhân viên.");
         }
 
-        EmploymentPeriod closedPeriod;
-
-        try
-        {
-            closedPeriod =
-                employmentHistory.CloseCurrentPeriod(
-                    terminationDate.Value);
-        }
-        catch (ArgumentException exception)
+        if (terminationDate.Value < currentPeriod.StartDate)
         {
             return new DeactivateEmployeeResult(
                 false,
-                exception.Message);
+                "Ngày kết thúc không thể trước ngày bắt đầu.");
         }
+
+        EmployeeOrganizationHistory organizationHistory =
+            await _employeeOrganizationHistoryRepository
+                .GetByEmployeeIdAsync(
+                    employeeId,
+                    cancellationToken);
+
+        EmployeeOrganizationAssignment? currentAssignment =
+            organizationHistory.CurrentAssignment;
+
+        if (currentAssignment is null)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                "Không tìm thấy phân công tổ chức đang mở của nhân viên.");
+        }
+
+        if (currentAssignment.EmploymentPeriodId != currentPeriod.Id)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                "Phân công hiện tại không khớp với "
+                + "giai đoạn làm việc đang mở.");
+        }
+
+        if (employee.DepartmentId != currentAssignment.DepartmentId
+            || employee.PositionId != currentAssignment.PositionId)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                "Phân công hiện tại không khớp với "
+                + "tổ chức của nhân viên.");
+        }
+
+        if (terminationDate.Value < currentAssignment.StartDate)
+        {
+            return new DeactivateEmployeeResult(
+                false,
+                "Ngày kết thúc phân công không thể "
+                + "trước ngày bắt đầu.");
+        }
+
+        EmploymentPeriod closedPeriod =
+            employmentHistory.CloseCurrentPeriod(
+                terminationDate.Value);
+
+        EmployeeOrganizationAssignment closedAssignment =
+            organizationHistory.CloseCurrentAssignment(
+                terminationDate.Value);
 
         Employee inactiveEmployee;
 
@@ -664,10 +889,11 @@ public sealed class EmployeeService : IEmployeeService
         }
 
         await _employmentLifecyclePersistence
-        .UpdateEmployeeWithPeriodAsync(
-        inactiveEmployee,
-        closedPeriod,
-        cancellationToken);
+            .UpdateEmployeeWithPeriodAndAssignmentAsync(
+                inactiveEmployee,
+                closedPeriod,
+                closedAssignment,
+                cancellationToken);
 
         return new DeactivateEmployeeResult(
             IsSuccessful: true);

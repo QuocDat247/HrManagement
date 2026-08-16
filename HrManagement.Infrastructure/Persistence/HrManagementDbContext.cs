@@ -3,17 +3,21 @@ using Microsoft.EntityFrameworkCore;
 using HrManagement.Infrastructure.Persistence.Configurations;
 using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
+using HrManagement.Domain.Employees.OrganizationAssignments;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<EmployeeOrganizationAssignment>
+    EmployeeOrganizationAssignments =>
+        Set<EmployeeOrganizationAssignment>();
     public DbSet<Position> Positions =>
-    Set<Position>();
+        Set<Position>();
     public DbSet<EmploymentPeriod> EmploymentPeriods =>
-    Set<EmploymentPeriod>();
+        Set<EmploymentPeriod>();
     public DbSet<Department> Departments =>
-    Set<Department>();
+        Set<Department>();
 
     public HrManagementDbContext(
         DbContextOptions<HrManagementDbContext> options)
@@ -29,11 +33,17 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new EmployeeConfiguration());
+
         modelBuilder.ApplyConfiguration(
             new EmploymentPeriodConfiguration());
+
         modelBuilder.ApplyConfiguration(
             new DepartmentConfiguration());
+
         modelBuilder.ApplyConfiguration(
             new PositionConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeOrganizationAssignmentConfiguration());
     }
 }
