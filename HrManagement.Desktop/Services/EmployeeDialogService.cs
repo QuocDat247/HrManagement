@@ -14,6 +14,33 @@ public sealed class EmployeeDialogService : IEmployeeDialogService
         _serviceProvider = serviceProvider;
     }
 
+    public bool ShowTransferEmployeeDialog(
+    Employee employee)
+    {
+        ArgumentNullException.ThrowIfNull(
+            employee);
+
+        TransferEmployeeWindow window =
+            _serviceProvider.GetRequiredService<
+                TransferEmployeeWindow>();
+
+        window.LoadEmployee(
+            employee);
+
+        if (System.Windows.Application
+                .Current
+                .MainWindow is not null)
+        {
+            window.Owner =
+                System.Windows.Application
+                    .Current
+                    .MainWindow;
+        }
+
+        return window.ShowDialog()
+            == true;
+    }
+
     public RehireEmployeeDialogResult?
     ShowRehireEmployeeDialog(
         Employee employee)

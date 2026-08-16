@@ -13,12 +13,15 @@ public interface IEmployeeDialogService
         Employee employee);
 
     EmployeeStatus? ShowCancelEmployeeDeactivationDialog(
-    Employee employee);
-
-    RehireEmployeeDialogResult?
-    ShowRehireEmployeeDialog(
         Employee employee);
 
+    RehireEmployeeDialogResult?
+        ShowRehireEmployeeDialog(
+            Employee employee);
+
     void ShowEmploymentHistoryDialog(
-    Employee employee);
+        Employee employee);
+
+    bool ShowTransferEmployeeDialog(
+        Employee employee);
 }

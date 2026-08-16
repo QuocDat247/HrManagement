@@ -33,6 +33,16 @@ public sealed partial class EmployeesViewModel : ObservableObject
     [ObservableProperty]
     private bool requiresProfileCompletionOnly;
 
+    private bool CanTransferEmployee()
+    {
+        return SelectedEmployee is
+        {
+            Status:
+                EmployeeStatus.Active
+                or EmployeeStatus.OnLeave
+        };
+    }
+
     private bool CanRehireEmployee()
     {
         return SelectedEmployee is
@@ -92,13 +102,24 @@ public sealed partial class EmployeesViewModel : ObservableObject
         get;
     }
 
+    public IAsyncRelayCommand
+    TransferEmployeeCommand
+    {
+        get;
+    }
+
     // constructor
     public EmployeesViewModel(
     IEmployeeService employeeService,
     IEmployeeDialogService employeeDialogService)
     {
+        TransferEmployeeCommand =
+            new AsyncRelayCommand(
+                TransferEmployeeAsync,
+                CanTransferEmployee);
 
         _employeeService = employeeService;
+
         _employeeDialogService = employeeDialogService;
 
         SearchCommand = new AsyncRelayCommand(LoadAsync);
@@ -162,6 +183,32 @@ public sealed partial class EmployeesViewModel : ObservableObject
         }
     }
 
+    private async Task TransferEmployeeAsync()
+    {
+        Employee? employee =
+            SelectedEmployee;
+
+        if (employee is null)
+        {
+            return;
+        }
+
+        bool saved =
+            _employeeDialogService
+                .ShowTransferEmployeeDialog(
+                    employee);
+
+        if (!saved)
+        {
+            return;
+        }
+
+        SelectedEmployee =
+            null;
+
+        await LoadAsync();
+    }
+
     private async Task ClearFiltersAsync()
     {
         SearchText = null;
@@ -222,6 +269,9 @@ public sealed partial class EmployeesViewModel : ObservableObject
         .NotifyCanExecuteChanged();
 
         ViewEmploymentHistoryCommand
+        .NotifyCanExecuteChanged();
+
+        TransferEmployeeCommand
         .NotifyCanExecuteChanged();
     }
 

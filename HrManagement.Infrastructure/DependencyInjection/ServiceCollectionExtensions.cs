@@ -57,6 +57,14 @@ public static class ServiceCollectionExtensions
         IEmployeeOrganizationAssignmentBackfillService,
         EfEmployeeOrganizationAssignmentBackfillService>();
 
+        services.AddScoped<
+            IEmployeeOrganizationTransferService,
+            EmployeeOrganizationTransferService>();
+
+        services.AddSingleton<
+            IEmployeeOrganizationTransferPersistence,
+            EfEmployeeOrganizationTransferPersistence>();
+
         return services;
     }
 }

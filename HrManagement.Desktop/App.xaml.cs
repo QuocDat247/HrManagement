@@ -2,6 +2,7 @@ using System.Windows;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
+using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
@@ -197,6 +198,16 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             OrganizationEmployeesWindow>();
+
+        services.AddSingleton<
+            IEmployeeOrganizationTransferPersistence,
+            EfEmployeeOrganizationTransferPersistence>();
+
+        services.AddTransient<
+            TransferEmployeeViewModel>();
+
+        services.AddTransient<
+            TransferEmployeeWindow>();
     }
 
     protected override void OnExit(ExitEventArgs e)

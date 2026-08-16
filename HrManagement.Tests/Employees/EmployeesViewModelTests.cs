@@ -295,10 +295,32 @@ public sealed class EmployeesViewModelTests
     {
 
         public Employee?
-        EmployeePassedToEmploymentHistoryDialog
+            EmployeePassedToEmploymentHistoryDialog
         {
             get;
             private set;
+        }
+
+        public bool TransferResultToReturn
+        {
+            get;
+            set;
+        }
+
+        public Employee?
+            EmployeePassedToTransferDialog
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowTransferEmployeeDialog(
+            Employee employee)
+        {
+            EmployeePassedToTransferDialog =
+                employee;
+
+            return TransferResultToReturn;
         }
 
         public void ShowEmploymentHistoryDialog(
@@ -508,8 +530,13 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEmployeeDialogService : IEmployeeDialogService
     {
+        public bool ShowTransferEmployeeDialog(
+            Employee employee)
+        {
+            return false;
+        }
         public void ShowEmploymentHistoryDialog(
-        Employee employee)
+            Employee employee)
         {
         }
 
@@ -604,6 +631,12 @@ public sealed class EmployeesViewModelTests
 
     private sealed class SuccessfulEditEmployeeDialogService : IEmployeeDialogService
     {
+        public bool ShowTransferEmployeeDialog(
+            Employee employee)
+        {
+            return false;
+        }
+
         public void ShowEmploymentHistoryDialog(
         Employee employee)
         {
@@ -771,17 +804,23 @@ public sealed class EmployeesViewModelTests
 
     private sealed class DeactivateEmployeeDialogServiceStub : IEmployeeDialogService
     {
+        public bool ShowTransferEmployeeDialog(
+            Employee employee)
+        {
+            return false;
+        }
+
         public void ShowEmploymentHistoryDialog(
-        Employee employee)
+            Employee employee)
         {
         }
 
         public RehireEmployeeDialogResult?
-        ShowRehireEmployeeDialog(
-        Employee employee)
-        {
-            return null;
-        }
+            ShowRehireEmployeeDialog(
+                Employee employee)
+                {
+                    return null;
+                }
 
         public EmployeeStatus?
         ShowCancelEmployeeDeactivationDialog(
@@ -1384,5 +1423,225 @@ public sealed class EmployeesViewModelTests
             employee,
             dialogService
                 .EmployeePassedToEmploymentHistoryDialog);
+    }
+
+    // Inactive không được transfer
+    [Fact]
+    public void TransferEmployeeCommand_WhenEmployeeIsInactive_CannotExecute()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-TRANSFER-VM-001",
+                "Nhân viên đã nghỉ",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Inactive,
+                new DateOnly(2026, 7, 31));
+
+        var service =
+            new StubEmployeeService(
+                [employee]);
+
+        var dialogService =
+            new StubEmployeeDialogService();
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        viewModel.SelectedEmployee =
+            employee;
+
+        Assert.False(
+            viewModel.TransferEmployeeCommand
+                .CanExecute(null));
+    }
+
+    // Dialog save thành công → reload
+    [Fact]
+    public async Task TransferEmployeeCommand_WhenDialogSaves_ReloadsEmployees()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid sourceDepartmentId =
+            Guid.NewGuid();
+
+        Guid sourcePositionId =
+            Guid.NewGuid();
+
+        Guid targetDepartmentId =
+            Guid.NewGuid();
+
+        Guid targetPositionId =
+            Guid.NewGuid();
+
+        var originalEmployee =
+            new Employee(
+                employeeId,
+                "EMP-TRANSFER-VM-002",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Phát triển phần mềm",
+                "Kỹ sư phần mềm",
+                EmployeeStatus.Active,
+                departmentId:
+                    sourceDepartmentId,
+                positionId:
+                    sourcePositionId);
+
+        var transferredEmployee =
+            new Employee(
+                employeeId,
+                "EMP-TRANSFER-VM-002",
+                "Nguyễn Văn An",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Nghiên cứu và phát triển",
+                "Trưởng nhóm kỹ thuật",
+                EmployeeStatus.Active,
+                departmentId:
+                    targetDepartmentId,
+                positionId:
+                    targetPositionId);
+
+        var service =
+            new ReloadingEmployeeService(
+                [originalEmployee],
+                [transferredEmployee]);
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                TransferResultToReturn =
+                    true
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedEmployee =
+            viewModel.Employees[0];
+
+        Assert.True(
+            viewModel.TransferEmployeeCommand
+                .CanExecute(null));
+
+        await viewModel.TransferEmployeeCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            2,
+            service.LoadCallCount);
+
+        Employee employee =
+            Assert.Single(
+                viewModel.Employees);
+
+        Assert.Equal(
+            targetDepartmentId,
+            employee.DepartmentId);
+
+        Assert.Equal(
+            targetPositionId,
+            employee.PositionId);
+
+        Assert.Equal(
+            "Nghiên cứu và phát triển",
+            employee.Department);
+
+        Assert.Equal(
+            "Trưởng nhóm kỹ thuật",
+            employee.Position);
+
+        Assert.Null(
+            viewModel.SelectedEmployee);
+
+        Assert.Same(
+            originalEmployee,
+            dialogService
+                .EmployeePassedToTransferDialog);
+    }
+
+    // Hủy dialog → không reload
+    [Fact]
+    public async Task TransferEmployeeCommand_WhenDialogIsCancelled_DoesNotReload()
+    {
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP-TRANSFER-VM-003",
+                "Nhân viên kiểm thử",
+                null,
+                null,
+                null,
+                new DateOnly(2024, 1, 1),
+                "Phát triển phần mềm",
+                "Kỹ sư phần mềm",
+                EmployeeStatus.OnLeave,
+                departmentId:
+                    Guid.NewGuid(),
+                positionId:
+                    Guid.NewGuid());
+
+        var service =
+            new ReloadingEmployeeService(
+                [employee],
+                []);
+
+        var dialogService =
+            new StubEmployeeDialogService
+            {
+                TransferResultToReturn =
+                    false
+            };
+
+        var viewModel =
+            new EmployeesViewModel(
+                service,
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedEmployee =
+            viewModel.Employees[0];
+
+        Assert.True(
+            viewModel.TransferEmployeeCommand
+                .CanExecute(null));
+
+        await viewModel.TransferEmployeeCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            service.LoadCallCount);
+
+        Assert.Single(
+            viewModel.Employees);
+
+        Assert.Same(
+            employee,
+            viewModel.SelectedEmployee);
+
+        Assert.Same(
+            employee,
+            dialogService
+                .EmployeePassedToTransferDialog);
     }
 }
