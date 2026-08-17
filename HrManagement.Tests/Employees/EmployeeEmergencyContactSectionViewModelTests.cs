@@ -1,5 +1,7 @@
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
+using HrManagement.Tests.TestDoubles;
 
 namespace HrManagement.Tests.Employees;
 
@@ -40,9 +42,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -106,9 +112,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                     true
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -188,9 +198,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -251,9 +265,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -339,9 +357,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                     };
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -452,9 +474,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                             "Họ tên người liên hệ là bắt buộc.")
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -533,9 +559,13 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
                         EmployeeEmergencyContactDetails>();
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeEmergencyContactSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -742,5 +772,115 @@ public sealed class EmployeeEmergencyContactSectionViewModelTests
             return Task.FromResult(
                 DeleteResult);
         }
+    }
+
+    // Emergency Contact — chọn No giữ nguyên selection/editor
+    [Fact]
+    public async Task DeleteCommand_WhenConfirmationDeclined_DoesNotDeleteOrRefresh()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid contactId =
+            Guid.NewGuid();
+
+        var existing =
+            new EmployeeEmergencyContactDetails(
+                contactId,
+                "Nguyễn Văn Bình",
+                "Cha",
+                "0901000001",
+                "binh@example.com",
+                IsPrimary: true);
+
+        var service =
+            new StubEmergencyContactService
+            {
+                ContactsToReturn =
+                    new[]
+                    {
+                    existing
+                    }
+            };
+
+        var confirmationDialogService =
+            new StubConfirmationDialogService
+            {
+                Result =
+                    false
+            };
+
+        var viewModel =
+            new EmployeeEmergencyContactSectionViewModel(
+                service,
+                confirmationDialogService);
+
+        await viewModel.LoadAsync(
+            employeeId);
+
+        await viewModel.DeleteCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            confirmationDialogService.ConfirmCallCount);
+
+        Assert.Equal(
+            "Xác nhận xóa liên hệ",
+            confirmationDialogService.LastTitle);
+
+        Assert.Contains(
+            "Nguyễn Văn Bình",
+            confirmationDialogService.LastMessage);
+
+        Assert.Equal(
+            0,
+            service.DeleteCallCount);
+
+        // Không refresh sau khi Cancel.
+        Assert.Equal(
+            1,
+            service.GetCallCount);
+
+        EmployeeEmergencyContactDetails remaining =
+            Assert.Single(
+                viewModel.Contacts);
+
+        Assert.Same(
+            existing,
+            remaining);
+
+        Assert.Same(
+            existing,
+            viewModel.SelectedContact);
+
+        Assert.Equal(
+            contactId,
+            viewModel.EditingContactId);
+
+        Assert.Equal(
+            "Nguyễn Văn Bình",
+            viewModel.FullName);
+
+        Assert.Equal(
+            "Cha",
+            viewModel.Relationship);
+
+        Assert.Equal(
+            "0901000001",
+            viewModel.PhoneNumber);
+
+        Assert.Equal(
+            "binh@example.com",
+            viewModel.Email);
+
+        Assert.True(
+            viewModel.IsPrimary);
+
+        Assert.Null(
+            viewModel.SuccessMessage);
+
+        Assert.Null(
+            viewModel.ErrorMessage);
     }
 }

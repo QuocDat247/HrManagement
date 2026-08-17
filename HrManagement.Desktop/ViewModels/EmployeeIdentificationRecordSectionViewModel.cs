@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Desktop.Services;
 using HrManagement.Domain.Employees.Profiles;
 
 namespace HrManagement.Desktop.ViewModels;
@@ -9,6 +10,9 @@ namespace HrManagement.Desktop.ViewModels;
 public sealed partial class EmployeeIdentificationRecordSectionViewModel
     : ObservableObject
 {
+    private readonly IConfirmationDialogService
+        _confirmationDialogService;
+
     private readonly IEmployeeIdentificationRecordService
         _recordService;
 
@@ -80,10 +84,13 @@ public sealed partial class EmployeeIdentificationRecordSectionViewModel
     }
 
     public EmployeeIdentificationRecordSectionViewModel(
-        IEmployeeIdentificationRecordService recordService)
+        IEmployeeIdentificationRecordService recordService, IConfirmationDialogService confirmationDialogService)
     {
         _recordService =
             recordService;
+
+        _confirmationDialogService =
+            confirmationDialogService;
 
         TypeOptions =
         [
@@ -289,8 +296,25 @@ public sealed partial class EmployeeIdentificationRecordSectionViewModel
 
     private async Task DeleteAsync()
     {
+
         if (!CanDelete()
             || !EditingRecordId.HasValue)
+        {
+            return;
+        }
+
+        string documentNumber =
+            string.IsNullOrWhiteSpace(
+                DocumentNumber)
+                ? "giấy tờ này"
+                : DocumentNumber.Trim();
+
+        bool confirmed =
+            _confirmationDialogService.Confirm(
+                "Xác nhận xóa giấy tờ",
+                $"Bạn có muốn xóa giấy tờ “{documentNumber}” không?");
+
+        if (!confirmed)
         {
             return;
         }

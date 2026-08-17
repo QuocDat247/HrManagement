@@ -1,6 +1,7 @@
 using HrManagement.Application.Employees.Profiles;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees.Profiles;
+using HrManagement.Tests.TestDoubles;
 
 namespace HrManagement.Tests.Employees;
 
@@ -51,9 +52,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -132,9 +137,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                     true
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -231,9 +240,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -317,9 +330,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                     }
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -420,9 +437,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                     };
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -556,9 +577,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                             "Số giấy tờ là bắt buộc.")
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -633,9 +658,13 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
                         EmployeeIdentificationRecordDetails>();
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeIdentificationRecordSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -849,5 +878,138 @@ public sealed class EmployeeIdentificationRecordSectionViewModelTests
             return Task.FromResult(
                 DeleteResult);
         }
+    }
+
+    // Identification — chọn No giữ nguyên giấy tờ
+    [Fact]
+    public async Task DeleteCommand_WhenConfirmationDeclined_DoesNotDeleteOrRefresh()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid recordId =
+            Guid.NewGuid();
+
+        var existing =
+            new EmployeeIdentificationRecordDetails(
+                recordId,
+                EmployeeIdentificationType.NationalId,
+                "012345678901",
+                new DateOnly(
+                    2024,
+                    1,
+                    10),
+                new DateOnly(
+                    2034,
+                    1,
+                    10),
+                "Cơ quan A",
+                "Hà Nội",
+                "Việt Nam");
+
+        var service =
+            new StubIdentificationRecordService
+            {
+                RecordsToReturn =
+                    new[]
+                    {
+                    existing
+                    }
+            };
+
+        var confirmationDialogService =
+            new StubConfirmationDialogService
+            {
+                Result =
+                    false
+            };
+
+        var viewModel =
+            new EmployeeIdentificationRecordSectionViewModel(
+                service,
+                confirmationDialogService);
+
+        await viewModel.LoadAsync(
+            employeeId);
+
+        await viewModel.DeleteCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            confirmationDialogService.ConfirmCallCount);
+
+        Assert.Equal(
+            "Xác nhận xóa giấy tờ",
+            confirmationDialogService.LastTitle);
+
+        Assert.Contains(
+            "012345678901",
+            confirmationDialogService.LastMessage);
+
+        Assert.Equal(
+            0,
+            service.DeleteCallCount);
+
+        // Chỉ có lần Get khi LoadAsync.
+        Assert.Equal(
+            1,
+            service.GetCallCount);
+
+        EmployeeIdentificationRecordDetails remaining =
+            Assert.Single(
+                viewModel.Records);
+
+        Assert.Same(
+            existing,
+            remaining);
+
+        Assert.Same(
+            existing,
+            viewModel.SelectedRecord);
+
+        Assert.Equal(
+            recordId,
+            viewModel.EditingRecordId);
+
+        Assert.Equal(
+            EmployeeIdentificationType.NationalId,
+            viewModel.SelectedType!.Value);
+
+        Assert.Equal(
+            "012345678901",
+            viewModel.DocumentNumber);
+
+        Assert.Equal(
+            new DateTime(
+                2024,
+                1,
+                10),
+            viewModel.IssueDate);
+
+        Assert.Equal(
+            new DateTime(
+                2034,
+                1,
+                10),
+            viewModel.ExpiryDate);
+
+        Assert.Equal(
+            "Cơ quan A",
+            viewModel.IssuingAuthority);
+
+        Assert.Equal(
+            "Hà Nội",
+            viewModel.PlaceOfIssue);
+
+        Assert.Equal(
+            "Việt Nam",
+            viewModel.IssuingCountry);
+
+        Assert.Null(
+            viewModel.SuccessMessage);
+
+        Assert.Null(
+            viewModel.ErrorMessage);
     }
 }

@@ -164,4 +164,71 @@ public partial class EmployeeProfileWindow
             .LoadEmployeeAsync(
                 _employee);
     }
+
+    private void ProfileSectionNavigation_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        if (sender is not Button button
+            || button.Tag is not string section)
+        {
+            return;
+        }
+
+        FrameworkElement? target =
+            section switch
+            {
+                "Personal" =>
+                    PersonalSection,
+
+                "Addresses" =>
+                    AddressesSection,
+
+                "Emergency" =>
+                    EmergencyContactsSection,
+
+                "Identification" =>
+                    IdentificationRecordsSection,
+
+                _ =>
+                    null
+            };
+
+        if (target is null)
+        {
+            return;
+        }
+
+        ScrollToProfileSection(
+            target);
+    }
+
+    // Navigation handler
+    private void ScrollToProfileSection(
+        FrameworkElement target)
+    {
+        if (!target.IsLoaded)
+        {
+            return;
+        }
+
+        GeneralTransform transform =
+            target.TransformToAncestor(
+                ProfileScrollViewer);
+
+        Point position =
+            transform.Transform(
+                new Point(
+                    0,
+                    0));
+
+        double targetOffset =
+            ProfileScrollViewer.VerticalOffset
+            + position.Y;
+
+        ProfileScrollViewer.ScrollToVerticalOffset(
+            Math.Max(
+                0,
+                targetOffset));
+    }
 }

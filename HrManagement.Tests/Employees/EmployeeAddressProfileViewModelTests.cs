@@ -2,6 +2,7 @@ using HrManagement.Application.Employees.Profiles;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
 using HrManagement.Domain.Employees.Profiles;
+using HrManagement.Tests.TestDoubles;
 
 namespace HrManagement.Tests.Employees;
 
@@ -16,11 +17,15 @@ public sealed class EmployeeAddressProfileViewModelTests
         var service =
             new StubAddressService();
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSlotViewModel(
                 service,
                 EmployeeAddressType.Current,
-                "Địa chỉ hiện tại");
+                "Địa chỉ thường trú",
+                confirmationDialogService);
 
         var address =
             new EmployeeAddressDetails(
@@ -87,11 +92,15 @@ public sealed class EmployeeAddressProfileViewModelTests
                         IsSuccessful: true)
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSlotViewModel(
                 service,
                 EmployeeAddressType.Permanent,
-                "Địa chỉ thường trú");
+                "Địa chỉ thường trú",
+                confirmationDialogService);
 
         viewModel.Load(
             employeeId,
@@ -186,11 +195,15 @@ public sealed class EmployeeAddressProfileViewModelTests
                         IsSuccessful: true)
             };
 
+        var confirmationDialogService =
+    new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSlotViewModel(
                 service,
                 EmployeeAddressType.Current,
-                "Địa chỉ hiện tại");
+                "Địa chỉ thường trú",
+                confirmationDialogService);
 
         viewModel.Load(
             employeeId,
@@ -269,11 +282,15 @@ public sealed class EmployeeAddressProfileViewModelTests
                             "Địa chỉ chi tiết là bắt buộc.")
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSlotViewModel(
                 service,
                 EmployeeAddressType.Current,
-                "Địa chỉ hiện tại");
+                "Địa chỉ thường trú",
+                confirmationDialogService);
 
         viewModel.Load(
             employeeId,
@@ -342,9 +359,13 @@ public sealed class EmployeeAddressProfileViewModelTests
                         current)
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -395,9 +416,13 @@ public sealed class EmployeeAddressProfileViewModelTests
                     true
             };
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var viewModel =
             new EmployeeAddressSectionViewModel(
-                service);
+                service,
+                confirmationDialogService);
 
         await viewModel.LoadAsync(
             employeeId);
@@ -466,23 +491,29 @@ public sealed class EmployeeAddressProfileViewModelTests
             new EmployeePersonalProfileSectionViewModel(
                 personalService);
 
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
         var addressSection =
             new EmployeeAddressSectionViewModel(
-                addressService);
+                addressService,
+                confirmationDialogService);
 
         var emergencyContactService =
             new StubEmergencyContactService();
 
         var emergencyContactSection =
             new EmployeeEmergencyContactSectionViewModel(
-                emergencyContactService);
+                emergencyContactService,
+                confirmationDialogService);
 
         var identificationService =
             new StubIdentificationRecordService();
 
         var identificationSection =
             new EmployeeIdentificationRecordSectionViewModel(
-                identificationService);
+                identificationService,
+                confirmationDialogService);
 
         var viewModel =
             new EmployeeProfileViewModel(
@@ -844,5 +875,90 @@ public sealed class EmployeeAddressProfileViewModelTests
                 new EmployeeIdentificationRecordOperationResult(
                     IsSuccessful: true));
         }
+    }
+
+    // Address — chọn No không được xóa
+    [Fact]
+    public async Task AddressSlot_DeleteCommand_WhenConfirmationDeclined_DoesNotDeleteOrChangeSlot()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var service =
+            new StubAddressService();
+
+        var confirmationDialogService =
+            new StubConfirmationDialogService
+            {
+                Result =
+                    false
+            };
+
+        var viewModel =
+            new EmployeeAddressSlotViewModel(
+                service,
+                EmployeeAddressType.Current,
+                "Địa chỉ hiện tại",
+                confirmationDialogService);
+
+        viewModel.Load(
+            employeeId,
+            new EmployeeAddressDetails(
+                Guid.NewGuid(),
+                EmployeeAddressType.Current,
+                "123 Nguyễn Trãi",
+                "Phường A",
+                "Quận B",
+                "Hà Nội",
+                "Việt Nam",
+                "100000"));
+
+        await viewModel.DeleteCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            confirmationDialogService.ConfirmCallCount);
+
+        Assert.Equal(
+            "Xác nhận xóa địa chỉ",
+            confirmationDialogService.LastTitle);
+
+        Assert.Equal(
+            0,
+            service.DeleteCallCount);
+
+        Assert.True(
+            viewModel.HasAddress);
+
+        Assert.Equal(
+            "123 Nguyễn Trãi",
+            viewModel.AddressLine);
+
+        Assert.Equal(
+            "Phường A",
+            viewModel.Ward);
+
+        Assert.Equal(
+            "Quận B",
+            viewModel.District);
+
+        Assert.Equal(
+            "Hà Nội",
+            viewModel.Province);
+
+        Assert.Equal(
+            "Việt Nam",
+            viewModel.Country);
+
+        Assert.Equal(
+            "100000",
+            viewModel.PostalCode);
+
+        Assert.Null(
+            viewModel.SuccessMessage);
+
+        Assert.Null(
+            viewModel.ErrorMessage);
     }
 }

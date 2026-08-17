@@ -242,6 +242,10 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             EmployeeIdentificationRecordSectionViewModel>();
+
+        services.AddSingleton<
+            IConfirmationDialogService,
+            ConfirmationDialogService>();
     }
 
     protected override void OnExit(ExitEventArgs e)

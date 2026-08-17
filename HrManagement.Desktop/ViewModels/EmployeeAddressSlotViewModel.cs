@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Desktop.Services;
 using HrManagement.Domain.Employees.Profiles;
 
 namespace HrManagement.Desktop.ViewModels;
@@ -8,6 +9,9 @@ namespace HrManagement.Desktop.ViewModels;
 public sealed partial class EmployeeAddressSlotViewModel
     : ObservableObject
 {
+    private readonly IConfirmationDialogService
+        _confirmationDialogService;
+
     private readonly IEmployeeAddressService
         _addressService;
 
@@ -65,12 +69,16 @@ public sealed partial class EmployeeAddressSlotViewModel
     }
 
     public EmployeeAddressSlotViewModel(
-        IEmployeeAddressService addressService,
-        EmployeeAddressType type,
-        string title)
+    IEmployeeAddressService addressService,
+    EmployeeAddressType type,
+    string title,
+    IConfirmationDialogService confirmationDialogService)
     {
         _addressService =
             addressService;
+
+        _confirmationDialogService =
+            confirmationDialogService;
 
         Type =
             type;
@@ -223,6 +231,29 @@ public sealed partial class EmployeeAddressSlotViewModel
     private async Task DeleteAsync()
     {
         if (!CanDelete())
+        {
+            return;
+        }
+
+        string confirmationMessage =
+        Type switch
+        {
+            EmployeeAddressType.Permanent =>
+                "Bạn có muốn xóa thông tin địa chỉ thường trú hiện tại không?",
+
+            EmployeeAddressType.Current =>
+                "Bạn có muốn xóa thông tin địa chỉ hiện tại không?",
+
+            _ =>
+                "Bạn có muốn xóa thông tin địa chỉ này không?"
+        };
+
+        bool confirmed =
+            _confirmationDialogService.Confirm(
+                "Xác nhận xóa địa chỉ",
+                confirmationMessage);
+
+        if (!confirmed)
         {
             return;
         }

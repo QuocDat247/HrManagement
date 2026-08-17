@@ -28,6 +28,15 @@ public sealed partial class EmployeeProfileViewModel
     private string statusText =
         string.Empty;
 
+    [ObservableProperty]
+    private bool isLoading;
+
+    [ObservableProperty]
+    private bool isLoaded;
+
+    [ObservableProperty]
+    private string? errorMessage;
+
     public EmployeeAddressSectionViewModel
     Addresses
     {
@@ -94,40 +103,79 @@ public sealed partial class EmployeeProfileViewModel
             employee.Position;
 
         StatusText =
-    employee.Status switch
-    {
-        EmployeeStatus.Active =>
-            "Đang làm việc",
+            employee.Status switch
+            {
+                EmployeeStatus.Active =>
+                    "Đang làm việc",
 
-        EmployeeStatus.OnLeave =>
-            "Tạm nghỉ",
+                EmployeeStatus.OnLeave =>
+                    "Tạm nghỉ",
 
-        EmployeeStatus.Inactive =>
-            "Đã nghỉ việc",
+                EmployeeStatus.Inactive =>
+                    "Đã nghỉ việc",
 
-        _ =>
-            employee.Status.ToString()
-    };
+                _ =>
+                    employee.Status.ToString()
+            };
 
+        IsLoading =
+            true;
 
-        await PersonalInformation
-            .LoadAsync(
-                employee.Id,
-                cancellationToken);
+        IsLoaded =
+            false;
 
-        await Addresses
-            .LoadAsync(
-                employee.Id,
-                cancellationToken);
+        ErrorMessage =
+            null;
 
-        await EmergencyContacts
-            .LoadAsync(
-                employee.Id,
-                cancellationToken);
+        try
+        {
+            Task personalTask =
+                PersonalInformation
+                    .LoadAsync(
+                        employee.Id,
+                        cancellationToken);
 
-        await IdentificationRecords
-            .LoadAsync(
-                employee.Id,
-                cancellationToken);
+            Task addressTask =
+                Addresses
+                    .LoadAsync(
+                        employee.Id,
+                        cancellationToken);
+
+            Task emergencyContactTask =
+                EmergencyContacts
+                    .LoadAsync(
+                        employee.Id,
+                        cancellationToken);
+
+            Task identificationTask =
+                IdentificationRecords
+                    .LoadAsync(
+                        employee.Id,
+                        cancellationToken);
+
+            await Task.WhenAll(
+                personalTask,
+                addressTask,
+                emergencyContactTask,
+                identificationTask);
+
+            IsLoaded =
+                true;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể tải đầy đủ hồ sơ nhân viên.";
+        }
+        finally
+        {
+            IsLoading =
+                false;
+        }
     }
 }

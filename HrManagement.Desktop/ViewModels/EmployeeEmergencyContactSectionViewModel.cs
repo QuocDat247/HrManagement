@@ -2,12 +2,16 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Desktop.Services;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class EmployeeEmergencyContactSectionViewModel
     : ObservableObject
 {
+    private readonly IConfirmationDialogService
+        _confirmationDialogService;
+
     private readonly IEmployeeEmergencyContactService
         _contactService;
 
@@ -66,10 +70,13 @@ public sealed partial class EmployeeEmergencyContactSectionViewModel
     }
 
     public EmployeeEmergencyContactSectionViewModel(
-        IEmployeeEmergencyContactService contactService)
+        IEmployeeEmergencyContactService contactService, IConfirmationDialogService confirmationDialogService)
     {
         _contactService =
             contactService;
+
+        _confirmationDialogService =
+            confirmationDialogService;
 
         NewCommand =
             new RelayCommand(
@@ -250,6 +257,22 @@ public sealed partial class EmployeeEmergencyContactSectionViewModel
     {
         if (!CanDelete()
             || !EditingContactId.HasValue)
+        {
+            return;
+        }
+
+        string contactName =
+            string.IsNullOrWhiteSpace(
+                FullName)
+                ? "liên hệ này"
+                : FullName.Trim();
+
+        bool confirmed =
+            _confirmationDialogService.Confirm(
+                "Xác nhận xóa liên hệ",
+                $"Bạn có muốn xóa liên hệ khẩn cấp “{contactName}” không?");
+
+        if (!confirmed)
         {
             return;
         }

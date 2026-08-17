@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Desktop.Services;
 using HrManagement.Domain.Employees.Profiles;
 
 namespace HrManagement.Desktop.ViewModels;
@@ -29,7 +30,8 @@ public sealed partial class EmployeeAddressSectionViewModel
     }
 
     public EmployeeAddressSectionViewModel(
-        IEmployeeAddressService addressService)
+        IEmployeeAddressService addressService,
+        IConfirmationDialogService confirmationDialogService)
     {
         _addressService =
             addressService;
@@ -38,13 +40,15 @@ public sealed partial class EmployeeAddressSectionViewModel
             new EmployeeAddressSlotViewModel(
                 addressService,
                 EmployeeAddressType.Permanent,
-                "Địa chỉ thường trú");
+                "Địa chỉ thường trú",
+                confirmationDialogService);
 
         CurrentAddress =
             new EmployeeAddressSlotViewModel(
                 addressService,
                 EmployeeAddressType.Current,
-                "Địa chỉ hiện tại");
+                "Địa chỉ hiện tại",
+                confirmationDialogService);
     }
 
     public async Task LoadAsync(
