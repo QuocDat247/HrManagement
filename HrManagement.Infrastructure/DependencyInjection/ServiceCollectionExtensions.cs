@@ -87,6 +87,14 @@ public static class ServiceCollectionExtensions
             IEmployeeEmergencyContactService,
             EmployeeEmergencyContactService>();
 
+        services.AddSingleton<
+            IEmployeeIdentificationRecordRepository,
+            EfEmployeeIdentificationRecordRepository>();
+
+        services.AddScoped<
+            IEmployeeIdentificationRecordService,
+            EmployeeIdentificationRecordService>();
+
         return services;
     }
 }

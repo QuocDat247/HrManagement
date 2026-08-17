@@ -477,11 +477,19 @@ public sealed class EmployeeAddressProfileViewModelTests
             new EmployeeEmergencyContactSectionViewModel(
                 emergencyContactService);
 
+        var identificationService =
+            new StubIdentificationRecordService();
+
+        var identificationSection =
+            new EmployeeIdentificationRecordSectionViewModel(
+                identificationService);
+
         var viewModel =
             new EmployeeProfileViewModel(
                 personalSection,
                 addressSection,
-                emergencyContactSection);
+                emergencyContactSection,
+                identificationSection);
 
         await viewModel.LoadEmployeeAsync(
             employee);
@@ -538,6 +546,13 @@ public sealed class EmployeeAddressProfileViewModelTests
 
         Assert.Empty(
             viewModel.EmergencyContacts.Contacts);
+
+        Assert.Equal(
+            1,
+            identificationService.GetCallCount);
+
+        Assert.Empty(
+            viewModel.IdentificationRecords.Records);
     }
 
     private static Employee CreateEmployee()
@@ -779,6 +794,54 @@ public sealed class EmployeeAddressProfileViewModelTests
         {
             return Task.FromResult(
                 new SaveEmployeePersonalProfileResult(
+                    IsSuccessful: true));
+        }
+    }
+
+    private sealed class StubIdentificationRecordService
+    : IEmployeeIdentificationRecordService
+    {
+        public int GetCallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task<IReadOnlyList<EmployeeIdentificationRecordDetails>>
+            GetRecordsAsync(
+                Guid employeeId,
+                CancellationToken cancellationToken = default)
+        {
+            GetCallCount++;
+
+            IReadOnlyList<EmployeeIdentificationRecordDetails> result =
+                [];
+
+            return Task.FromResult(
+                result);
+        }
+
+        public Task<EmployeeIdentificationRecordOperationResult>
+            SaveRecordAsync(
+                SaveEmployeeIdentificationRecordRequest request,
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new EmployeeIdentificationRecordOperationResult(
+                    IsSuccessful: true,
+                    RecordId:
+                        request.RecordId
+                        ?? Guid.NewGuid()));
+        }
+
+        public Task<EmployeeIdentificationRecordOperationResult>
+            DeleteRecordAsync(
+                Guid employeeId,
+                Guid recordId,
+                CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new EmployeeIdentificationRecordOperationResult(
                     IsSuccessful: true));
         }
     }

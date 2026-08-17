@@ -10,6 +10,10 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<EmployeeIdentificationRecord>
+        EmployeeIdentificationRecords =>
+            Set<EmployeeIdentificationRecord>();
+
     public DbSet<EmployeeEmergencyContact>
         EmployeeEmergencyContacts =>
             Set<EmployeeEmergencyContact>();
@@ -71,5 +75,8 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new EmployeeEmergencyContactConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeIdentificationRecordConfiguration());
     }
 }

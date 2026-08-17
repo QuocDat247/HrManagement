@@ -46,6 +46,25 @@ public partial class EmployeeProfileWindow
     object sender,
     MouseWheelEventArgs e)
     {
+        HandleNestedListMouseWheel(
+            sender,
+            e);
+    }
+
+    private void IdentificationRecordsList_PreviewMouseWheel(
+    object sender,
+    MouseWheelEventArgs e)
+    {
+        HandleNestedListMouseWheel(
+            sender,
+            e);
+    }
+
+
+    private static void HandleNestedListMouseWheel(
+    object sender,
+    MouseWheelEventArgs e)
+    {
         if (sender is not ListBox listBox)
         {
             return;
@@ -71,13 +90,9 @@ public partial class EmployeeProfileWindow
 
         if (canScrollUp || canScrollDown)
         {
-            // ListBox vẫn còn nội dung để cuộn.
-            // Cho nó xử lý MouseWheel bình thường.
             return;
         }
 
-        // ListBox đã tới biên hoặc không có gì để cuộn.
-        // Chuyển MouseWheel lên ScrollViewer cha.
         e.Handled =
             true;
 

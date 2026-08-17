@@ -45,13 +45,21 @@ public sealed partial class EmployeeProfileViewModel
     {
         get;
     }
+
+    public EmployeeIdentificationRecordSectionViewModel
+    IdentificationRecords
+    {
+        get;
+    }
     public EmployeeProfileViewModel(
-        EmployeePersonalProfileSectionViewModel
-            personalInformation,
-        EmployeeAddressSectionViewModel
-            addresses,
-        EmployeeEmergencyContactSectionViewModel
-        emergencyContacts)
+    EmployeePersonalProfileSectionViewModel
+        personalInformation,
+    EmployeeAddressSectionViewModel
+        addresses,
+    EmployeeEmergencyContactSectionViewModel
+        emergencyContacts,
+    EmployeeIdentificationRecordSectionViewModel
+        identificationRecords)
     {
         PersonalInformation =
             personalInformation;
@@ -61,6 +69,9 @@ public sealed partial class EmployeeProfileViewModel
 
         EmergencyContacts =
             emergencyContacts;
+
+        IdentificationRecords =
+            identificationRecords;
     }
 
     public async Task LoadEmployeeAsync(
@@ -110,6 +121,11 @@ public sealed partial class EmployeeProfileViewModel
                 cancellationToken);
 
         await EmergencyContacts
+            .LoadAsync(
+                employee.Id,
+                cancellationToken);
+
+        await IdentificationRecords
             .LoadAsync(
                 employee.Id,
                 cancellationToken);

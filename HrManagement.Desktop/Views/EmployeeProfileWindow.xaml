@@ -426,11 +426,11 @@
                 </Border>
 
                 <Border Margin="0,18,0,0"
-        Padding="18"
-        BorderBrush="{DynamicResource BorderBrush}"
-        BorderThickness="1"
-        CornerRadius="6"
-        DataContext="{Binding EmergencyContacts}">
+                        Padding="18"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        DataContext="{Binding EmergencyContacts}">
 
                     <StackPanel>
 
@@ -442,49 +442,49 @@
 
                             <StackPanel>
                                 <TextBlock Text="Liên hệ khẩn cấp"
-                           FontSize="18"
-                           FontWeight="SemiBold"
-                           Foreground="{DynamicResource PrimaryTextBrush}" />
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                 <TextBlock Margin="0,5,0,0"
-                           Text="Người có thể liên hệ khi xảy ra tình huống khẩn cấp."
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                           Text="Người có thể liên hệ khi xảy ra tình huống khẩn cấp."
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
                             </StackPanel>
 
                             <Button Grid.Column="1"
-                    Width="110"
-                    Height="32"
-                    Content="Thêm mới"
-                    Command="{Binding NewCommand}" />
+                                    Width="110"
+                                    Height="32"
+                                    Content="Thêm mới"
+                                    Command="{Binding NewCommand}" />
                         </Grid>
 
                         <TextBlock Margin="0,12,0,0"
-                   Text="{Binding ErrorMessage}"
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource WarningBrush}" />
+                                   Text="{Binding ErrorMessage}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource WarningBrush}" />
 
                         <TextBlock Margin="0,6,0,0"
-                   Text="{Binding SuccessMessage}"
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Text="{Binding SuccessMessage}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <!-- Contact list -->
                         <ListBox Margin="0,16,0,0"
-         MinHeight="80"
-         MaxHeight="220"
-         ItemsSource="{Binding Contacts}"
-         SelectedItem="{Binding SelectedContact,
+                                 MinHeight="80"
+                                 MaxHeight="220"
+                                 ItemsSource="{Binding Contacts}"
+                                 SelectedItem="{Binding SelectedContact,
                                 Mode=TwoWay}"
-         HorizontalContentAlignment="Stretch"
-         PreviewMouseWheel="EmergencyContactsList_PreviewMouseWheel">
+                                 HorizontalContentAlignment="Stretch"
+                                 PreviewMouseWheel="EmergencyContactsList_PreviewMouseWheel">
 
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="HorizontalContentAlignment"
-                    Value="Stretch" />
+                                            Value="Stretch" />
 
                                     <Setter Property="Padding"
-                    Value="0" />
+                                            Value="0" />
                                 </Style>
                             </ListBox.ItemContainerStyle>
 
@@ -506,32 +506,32 @@
 
                                         <!-- Tên -->
                                         <TextBlock Grid.Row="0"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="2"
-                           Text="{Binding FullName}"
-                           FontWeight="SemiBold"
-                           TextTrimming="CharacterEllipsis" />
+                                                   Grid.Column="0"
+                                                   Grid.ColumnSpan="2"
+                                                   Text="{Binding FullName}"
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
 
                                         <!-- Primary badge -->
                                         <TextBlock Grid.Row="0"
-                           Grid.Column="2"
-                           HorizontalAlignment="Right"
-                           Text="Liên hệ chính"
-                           FontWeight="SemiBold">
+                                                   Grid.Column="2"
+                                                   HorizontalAlignment="Right"
+                                                   Text="Liên hệ chính"
+                                                   FontWeight="SemiBold">
 
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
 
                                                     <Setter Property="Visibility"
-                                    Value="Collapsed" />
+                                                            Value="Collapsed" />
 
                                                     <Style.Triggers>
 
                                                         <DataTrigger Binding="{Binding IsPrimary}"
-                                             Value="True">
+                                                                     Value="True">
 
                                                             <Setter Property="Visibility"
-                                            Value="Visible" />
+                                                                    Value="Visible" />
 
                                                         </DataTrigger>
 
@@ -544,25 +544,25 @@
 
                                         <!-- Quan hệ -->
                                         <TextBlock Grid.Row="1"
-                           Grid.Column="0"
-                           Margin="0,5,0,0"
-                           Text="{Binding Relationship}"
-                           Foreground="{DynamicResource SecondaryTextBrush}"
-                           TextTrimming="CharacterEllipsis" />
+                                                   Grid.Column="0"
+                                                   Margin="0,5,0,0"
+                                                   Text="{Binding Relationship}"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
 
                                         <!-- Điện thoại -->
                                         <TextBlock Grid.Row="1"
-                           Grid.Column="1"
-                           Margin="12,5,0,0"
-                           Text="{Binding PhoneNumber}"
-                           TextTrimming="CharacterEllipsis" />
+                                                   Grid.Column="1"
+                                                   Margin="12,5,0,0"
+                                                   Text="{Binding PhoneNumber}"
+                                                   TextTrimming="CharacterEllipsis" />
 
                                         <!-- Email -->
                                         <TextBlock Grid.Row="1"
-                           Grid.Column="2"
-                           Margin="12,5,0,0"
-                           Text="{Binding Email}"
-                           TextTrimming="CharacterEllipsis" />
+                                                   Grid.Column="2"
+                                                   Margin="12,5,0,0"
+                                                   Text="{Binding Email}"
+                                                   TextTrimming="CharacterEllipsis" />
 
                                     </Grid>
 
@@ -573,16 +573,16 @@
 
                         <!-- Editor -->
                         <Border Margin="0,16,0,0"
-                Padding="14"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="5">
+                                Padding="14"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5">
 
                             <StackPanel>
 
                                 <TextBlock Text="Thông tin liên hệ"
-                           FontSize="15"
-                           FontWeight="SemiBold" />
+                                           FontSize="15"
+                                           FontWeight="SemiBold" />
 
                                 <Grid Margin="0,14,0,0">
 
@@ -609,37 +609,309 @@
                                         <TextBlock Text="Mối quan hệ" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding Relationship,
+                                                 Text="{Binding Relationship,
                                                 UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Margin="0,14,0,0">
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Số điện thoại" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding PhoneNumber,
-                                                UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding PhoneNumber,
+                                                                UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Grid.Column="2"
-                                Margin="0,14,0,0">
+                                                Grid.Column="2"
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Email" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding Email,
+                                                 Text="{Binding Email,
                                                 UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                 </Grid>
 
                                 <CheckBox Margin="0,14,0,0"
-                          Content="Đặt làm liên hệ chính"
-                          IsChecked="{Binding IsPrimary,
+                                          Content="Đặt làm liên hệ chính"
+                                          IsChecked="{Binding IsPrimary,
                                               Mode=TwoWay}" />
+
+                                <StackPanel Margin="0,16,0,0"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right">
+
+                                    <Button Width="90"
+                                            Margin="0,0,8,0"
+                                            Content="Xóa"
+                                            Command="{Binding DeleteCommand}" />
+
+                                    <Button Width="120"
+                                            Content="Lưu liên hệ"
+                                            Command="{Binding SaveCommand}" />
+
+                                </StackPanel>
+
+                            </StackPanel>
+
+                        </Border>
+
+                    </StackPanel>
+
+                </Border>
+
+                <Border Margin="0,18,0,0"
+                        Padding="18"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6"
+                        DataContext="{Binding IdentificationRecords}">
+
+                    <StackPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel>
+                                <TextBlock Text="Giấy tờ định danh"
+                                           FontSize="18"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBlock Margin="0,5,0,0"
+                                           Text="CCCD/CMND, hộ chiếu và các giấy tờ định danh khác."
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Width="110"
+                                    Height="32"
+                                    Content="Thêm mới"
+                                    Command="{Binding NewCommand}" />
+                        </Grid>
+
+                        <TextBlock Margin="0,12,0,0"
+                                   Text="{Binding ErrorMessage}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource WarningBrush}" />
+
+                        <TextBlock Margin="0,6,0,0"
+                                   Text="{Binding SuccessMessage}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        <ListBox Margin="0,16,0,0"
+                                                 MinHeight="80"
+                                                 MaxHeight="220"
+                                                 ItemsSource="{Binding Records}"
+                                                 SelectedItem="{Binding SelectedRecord,
+                                                                        Mode=TwoWay}"
+                                                 HorizontalContentAlignment="Stretch"
+                                                 PreviewMouseWheel="IdentificationRecordsList_PreviewMouseWheel">
+
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="HorizontalContentAlignment"
+                            Value="Stretch" />
+                                    <Setter Property="Padding"
+                            Value="0" />
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+
+                                    <Grid Margin="10,8">
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="1.3*" />
+                                            <ColumnDefinition Width="1.5*" />
+                                            <ColumnDefinition Width="1.5*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- Friendly type -->
+                                        <TextBlock Grid.Row="0"
+                                   Grid.Column="0"
+                                   FontWeight="SemiBold">
+
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text"
+                                            Value="Khác" />
+
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Type}"
+                                                     Value="NationalId">
+                                                            <Setter Property="Text"
+                                                    Value="CCCD/CMND" />
+                                                        </DataTrigger>
+
+                                                        <DataTrigger Binding="{Binding Type}"
+                                                     Value="Passport">
+                                                            <Setter Property="Text"
+                                                    Value="Hộ chiếu" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+
+                                        </TextBlock>
+
+                                        <TextBlock Grid.Row="0"
+                                   Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Text="{Binding DocumentNumber}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis" />
+
+                                        <StackPanel Grid.Row="1"
+                                    Grid.Column="0"
+                                    Margin="0,5,0,0">
+
+                                            <TextBlock Text="Ngày cấp"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                            <TextBlock Text="{Binding IssueDate}" />
+
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1"
+                                    Grid.Column="1"
+                                    Margin="12,5,0,0">
+
+                                            <TextBlock Text="Ngày hết hạn"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                            <TextBlock Text="{Binding ExpiryDate}" />
+
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Row="1"
+                                    Grid.Column="2"
+                                    Margin="12,5,0,0">
+
+                                            <TextBlock Text="Nơi cấp"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                            <TextBlock Text="{Binding PlaceOfIssue}"
+                                       TextTrimming="CharacterEllipsis" />
+
+                                        </StackPanel>
+
+                                    </Grid>
+
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                        </ListBox>
+
+                        <!-- Editor -->
+                        <Border Margin="0,16,0,0"
+                Padding="14"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="5">
+
+                            <StackPanel>
+
+                                <TextBlock Text="Thông tin giấy tờ"
+                           FontSize="15"
+                           FontWeight="SemiBold" />
+
+                                <Grid Margin="0,14,0,0">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+
+                                    <StackPanel>
+                                        <TextBlock Text="Loại giấy tờ" />
+
+                                        <ComboBox Margin="0,6,0,0"
+                                  ItemsSource="{Binding TypeOptions}"
+                                  SelectedItem="{Binding SelectedType,
+                                                       Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Số giấy tờ" />
+
+                                        <TextBox Margin="0,6,0,0"
+                                 Text="{Binding DocumentNumber,
+                                                UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                Margin="0,14,0,0">
+
+                                        <TextBlock Text="Ngày cấp" />
+
+                                        <DatePicker Margin="0,6,0,0"
+                                    SelectedDate="{Binding IssueDate,
+                                                           Mode=TwoWay}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="1"
+                                Grid.Column="2"
+                                Margin="0,14,0,0">
+
+                                        <TextBlock Text="Ngày hết hạn" />
+
+                                        <DatePicker Margin="0,6,0,0"
+                                    SelectedDate="{Binding ExpiryDate,
+                                                           Mode=TwoWay}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                Margin="0,14,0,0">
+
+                                        <TextBlock Text="Cơ quan cấp" />
+
+                                        <TextBox Margin="0,6,0,0"
+                                 Text="{Binding IssuingAuthority,
+                                                UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Row="2"
+                                Grid.Column="2"
+                                Margin="0,14,0,0">
+
+                                        <TextBlock Text="Nơi cấp" />
+
+                                        <TextBox Margin="0,6,0,0"
+                                 Text="{Binding PlaceOfIssue,
+                                                UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+
+                                </Grid>
+
+                                <TextBlock Margin="0,14,0,0"
+                           Text="Quốc gia cấp" />
+
+                                <TextBox Margin="0,6,0,0"
+                         Text="{Binding IssuingCountry,
+                                        UpdateSourceTrigger=PropertyChanged}" />
 
                                 <StackPanel Margin="0,16,0,0"
                             Orientation="Horizontal"
@@ -651,7 +923,7 @@
                             Command="{Binding DeleteCommand}" />
 
                                     <Button Width="120"
-                            Content="Lưu liên hệ"
+                            Content="Lưu giấy tờ"
                             Command="{Binding SaveCommand}" />
 
                                 </StackPanel>

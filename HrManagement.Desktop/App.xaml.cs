@@ -239,6 +239,9 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             EmployeeEmergencyContactSectionViewModel>();
+
+        services.AddTransient<
+            EmployeeIdentificationRecordSectionViewModel>();
     }
 
     protected override void OnExit(ExitEventArgs e)
