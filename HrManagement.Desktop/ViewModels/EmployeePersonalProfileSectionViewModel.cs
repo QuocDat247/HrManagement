@@ -41,6 +41,9 @@ public sealed partial class EmployeePersonalProfileSectionViewModel
     [ObservableProperty]
     private string? successMessage;
 
+    public event EventHandler?
+        ProfileDataChanged;
+
     public ObservableCollection<EmployeeGenderOption>
         GenderOptions
     {
@@ -211,6 +214,10 @@ public sealed partial class EmployeePersonalProfileSectionViewModel
 
             SuccessMessage =
                 "Đã lưu thông tin cá nhân.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {

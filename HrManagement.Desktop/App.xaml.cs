@@ -4,6 +4,7 @@ using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
@@ -246,6 +247,14 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             IConfirmationDialogService,
             ConfirmationDialogService>();
+
+        services.AddSingleton<
+            IEmployeeProfileCompletionPolicy,
+            EmployeeProfileCompletionPolicy>();
+
+        services.AddTransient<
+            IEmployeeProfileCompletionService,
+            EmployeeProfileCompletionService>();
     }
 
     protected override void OnExit(ExitEventArgs e)

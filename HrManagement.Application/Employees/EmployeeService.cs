@@ -471,14 +471,6 @@ public sealed class EmployeeService : IEmployeeService
                         employee.Status == filter.Status.Value);
         }
 
-        if (filter.RequiresProfileCompletionOnly)
-        {
-            filteredEmployees =
-                filteredEmployees.Where(
-                    employee =>
-                        employee.RequiresProfileCompletion);
-        }
-
         return filteredEmployees.ToList();
     }
 

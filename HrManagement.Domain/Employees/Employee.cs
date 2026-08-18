@@ -141,13 +141,4 @@ public sealed class Employee
         DepartmentId = departmentId;
         PositionId = positionId;
     }
-
-    public bool HasMissingProfileInformation =>
-    Email is null
-    || PhoneNumber is null
-    || DateOfBirth is null;
-
-    public bool RequiresProfileCompletion =>
-        Status != EmployeeStatus.Inactive
-        && HasMissingProfileInformation;
 }

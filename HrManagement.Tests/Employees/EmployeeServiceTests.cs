@@ -1460,49 +1460,52 @@ public sealed class EmployeeServiceTests
     }
 
     [Fact]
-    public async Task GetEmployeesAsync_WhenProfileCompletionFilterEnabled_ReturnsOnlyEmployeesRequiringCompletion()
+    public async Task GetEmployeesAsync_WithMixedProfileData_DoesNotApplyCompletionPolicy()
     {
-        var completeEmployee = new Employee(
-            Guid.NewGuid(),
-            "EMP001",
-            "Nguyễn Văn An",
-            "an@example.com",
-            "0901000001",
-            new DateOnly(1995, 5, 20),
-            new DateOnly(2022, 3, 1),
-            "Nhân sự",
-            "Chuyên viên",
-            EmployeeStatus.Active);
+        var completeEmployee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                "an@example.com",
+                "0901000001",
+                new DateOnly(1995, 5, 20),
+                new DateOnly(2022, 3, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
 
-        var incompleteActiveEmployee = new Employee(
-            Guid.NewGuid(),
-            "EMP002",
-            "Trần Thị Bình",
-            null,
-            "0901000002",
-            new DateOnly(1994, 7, 10),
-            new DateOnly(2023, 1, 1),
-            "Kế toán",
-            "Kế toán viên",
-            EmployeeStatus.Active);
+        var employeeMissingEmail =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP002",
+                "Trần Thị Bình",
+                null,
+                "0901000002",
+                new DateOnly(1994, 7, 10),
+                new DateOnly(2023, 1, 1),
+                "Kế toán",
+                "Kế toán viên",
+                EmployeeStatus.Active);
 
-        var incompleteInactiveEmployee = new Employee(
-            Guid.NewGuid(),
-            "EMP003",
-            "Võ Thu Hà",
-            null,
-            null,
-            null,
-            new DateOnly(2019, 6, 20),
-            "Hành chính",
-            "Chuyên viên hành chính",
-            EmployeeStatus.Inactive);
+        var employeeMissingCoreProfileData =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP003",
+                "Võ Thu Hà",
+                null,
+                null,
+                null,
+                new DateOnly(2019, 6, 20),
+                "Hành chính",
+                "Chuyên viên hành chính",
+                EmployeeStatus.Inactive);
 
         var repository =
             new InMemoryEmployeeRepository(
                 completeEmployee,
-                incompleteActiveEmployee,
-                incompleteInactiveEmployee);
+                employeeMissingEmail,
+                employeeMissingCoreProfileData);
 
         var service =
             new EmployeeService(
@@ -1515,18 +1518,29 @@ public sealed class EmployeeServiceTests
 
         IReadOnlyList<Employee> result =
             await service.GetEmployeesAsync(
-                new EmployeeFilter(
-                    RequiresProfileCompletionOnly: true));
-
-        Employee employee =
-            Assert.Single(result);
+                new EmployeeFilter());
 
         Assert.Equal(
-            incompleteActiveEmployee.Id,
-            employee.Id);
+            3,
+            result.Count);
 
-        Assert.True(
-            employee.RequiresProfileCompletion);
+        Assert.Contains(
+            result,
+            employee =>
+                employee.Id ==
+                completeEmployee.Id);
+
+        Assert.Contains(
+            result,
+            employee =>
+                employee.Id ==
+                employeeMissingEmail.Id);
+
+        Assert.Contains(
+            result,
+            employee =>
+                employee.Id ==
+                employeeMissingCoreProfileData.Id);
     }
 
     [Fact]

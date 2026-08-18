@@ -162,60 +162,75 @@ public sealed class EmployeeTests
     }
 
     [Fact]
-    public void RequiresProfileCompletion_WhenActiveAndProfileIsComplete_ReturnsFalse()
+    public void Constructor_WhenActiveEmployeeHasMissingEmail_AllowsNullEmail()
     {
-        var employee = new Employee(
-            Guid.NewGuid(),
-            "EMP001",
-            "Nguyễn Văn An",
-            "an@example.com",
-            "0901000001",
-            new DateOnly(1995, 5, 20),
-            new DateOnly(2022, 3, 1),
-            "Nhân sự",
-            "Chuyên viên",
-            EmployeeStatus.Active);
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                null,
+                "0901000001",
+                new DateOnly(1995, 5, 20),
+                new DateOnly(2022, 3, 1),
+                "Nhân sự",
+                "Chuyên viên",
+                EmployeeStatus.Active);
 
-        Assert.False(employee.HasMissingProfileInformation);
-        Assert.False(employee.RequiresProfileCompletion);
+        Assert.Null(
+            employee.Email);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            employee.Status);
     }
 
     [Fact]
-    public void RequiresProfileCompletion_WhenActiveAndProfileIsMissingInformation_ReturnsTrue()
+    public void Constructor_WhenActiveEmployeeHasMissingPhoneNumber_AllowsNullPhoneNumber()
     {
-        var employee = new Employee(
-            Guid.NewGuid(),
-            "EMP002",
-            "Trần Thị Bình",
-            null,
-            "0901000002",
-            new DateOnly(1994, 7, 10),
-            new DateOnly(2023, 1, 1),
-            "Kế toán",
-            "Kế toán viên",
-            EmployeeStatus.Active);
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP002",
+                "Trần Thị Bình",
+                "binh@example.com",
+                null,
+                new DateOnly(1994, 7, 10),
+                new DateOnly(2023, 1, 1),
+                "Kế toán",
+                "Kế toán viên",
+                EmployeeStatus.Active);
 
-        Assert.True(employee.HasMissingProfileInformation);
-        Assert.True(employee.RequiresProfileCompletion);
+        Assert.Null(
+            employee.PhoneNumber);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            employee.Status);
     }
 
     [Fact]
-    public void RequiresProfileCompletion_WhenInactiveAndProfileIsMissingInformation_ReturnsFalse()
+    public void Constructor_WhenActiveEmployeeHasMissingDateOfBirth_AllowsNullDateOfBirth()
     {
-        var employee = new Employee(
-            Guid.NewGuid(),
-            "EMP003",
-            "Võ Thu Hà",
-            null,
-            null,
-            null,
-            new DateOnly(2019, 6, 20),
-            "Hành chính",
-            "Chuyên viên hành chính",
-            EmployeeStatus.Inactive);
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP003",
+                "Võ Thu Hà",
+                "ha@example.com",
+                "0901000003",
+                null,
+                new DateOnly(2019, 6, 20),
+                "Hành chính",
+                "Chuyên viên hành chính",
+                EmployeeStatus.Active);
 
-        Assert.True(employee.HasMissingProfileInformation);
-        Assert.False(employee.RequiresProfileCompletion);
+        Assert.Null(
+            employee.DateOfBirth);
+
+        Assert.Equal(
+            EmployeeStatus.Active,
+            employee.Status);
     }
 
     [Fact]

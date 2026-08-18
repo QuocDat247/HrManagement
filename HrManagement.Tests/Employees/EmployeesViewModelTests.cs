@@ -2,6 +2,7 @@ using HrManagement.Application.Employees;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
+using HrManagement.Application.Employees.Profiles.Completion;
 
 namespace HrManagement.Tests.Employees;
 
@@ -26,7 +27,7 @@ public sealed class EmployeesViewModelTests
         ];
 
         var service = new StubEmployeeService(employees);
-        var viewModel = new EmployeesViewModel(
+        var viewModel = CreateViewModel(
             service,
             new StubEmployeeDialogService());
 
@@ -42,7 +43,7 @@ public sealed class EmployeesViewModelTests
     public async Task LoadAsync_WhenServiceFails_ClearsEmployeesAndSetsError()
     {
         var service = new FailingEmployeeService();
-        var viewModel = new EmployeesViewModel(
+        var viewModel = CreateViewModel(
             service,
             new StubEmployeeDialogService());
 
@@ -74,7 +75,7 @@ public sealed class EmployeesViewModelTests
         ];
 
         var service = new StubEmployeeService(employees);
-        var viewModel = new EmployeesViewModel(
+        var viewModel = CreateViewModel(
             service,
             new StubEmployeeDialogService());
 
@@ -95,6 +96,13 @@ public sealed class EmployeesViewModelTests
 
     private sealed class StubEmployeeService : IEmployeeService
     {
+        public EmployeeFilter?
+        LastFilter
+        {
+            get;
+            private set;
+        }
+
         public Guid? RehireEmployeeId
         {
             get;
@@ -212,7 +220,11 @@ public sealed class EmployeesViewModelTests
             EmployeeFilter? filter = null,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(_employees);
+            LastFilter =
+                filter;
+
+            return Task.FromResult(
+                _employees);
         }
 
         public Task<CreateEmployeeResult> CreateEmployeeAsync(
@@ -458,7 +470,7 @@ public sealed class EmployeesViewModelTests
             new SuccessfulEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -635,7 +647,7 @@ public sealed class EmployeesViewModelTests
         var dialogService =
             new SuccessfulEditEmployeeDialogService();
 
-        var viewModel = new EmployeesViewModel(
+        var viewModel = CreateViewModel(
             service,
             dialogService);
 
@@ -757,7 +769,7 @@ public sealed class EmployeesViewModelTests
                 terminationDate);
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -821,7 +833,7 @@ public sealed class EmployeesViewModelTests
                 terminationDate: null);
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1065,56 +1077,130 @@ public sealed class EmployeesViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_WhenProfileCompletionFilterEnabled_PassesFilterToService()
+    public async Task LoadAsync_WhenProfileCompletionFilterEnabled_FiltersUsingCompletionPolicy()
     {
-        var service =
-            new CapturingEmployeeService();
+        Employee needsCompletion =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
 
-        var dialogService =
-            new StubEmployeeDialogService();
+        Employee completeEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        var employeeService =
+            new StubEmployeeService(
+                [
+                    needsCompletion,
+                completeEmployee
+                ]);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService();
+
+        completionService.Results[
+            needsCompletion.Id] =
+                new EmployeeProfileCompletionResult(
+                    IsComplete: false,
+                    RequiresCompletion: true,
+                    MissingRequirements:
+                        new[]
+                        {
+                        EmployeeProfileRequirement
+                            .PermanentAddress
+                        });
 
         var viewModel =
-            new EmployeesViewModel(
-                service,
-                dialogService);
+            CreateViewModel(
+                employeeService,
+                new StubEmployeeDialogService(),
+                completionService);
 
-        viewModel.RequiresProfileCompletionOnly = true;
+        viewModel.RequiresProfileCompletionOnly =
+            true;
 
         await viewModel.LoadAsync();
 
-        Assert.NotNull(service.LastFilter);
+        Assert.NotNull(
+            employeeService.LastFilter);
+
+        Assert.Equal(
+            2,
+            completionService.EvaluateCallCount);
+
+        EmployeeListItemViewModel item =
+            Assert.Single(
+                viewModel.EmployeeItems);
+
+        Assert.Same(
+            needsCompletion,
+            item.Employee);
 
         Assert.True(
-            service.LastFilter.RequiresProfileCompletionOnly);
+            item.RequiresProfileCompletion);
+
+        Employee employee =
+            Assert.Single(
+                viewModel.Employees);
+
+        Assert.Same(
+            needsCompletion,
+            employee);
     }
 
     [Fact]
-    public async Task ShowProfileCompletionRequiredAsync_ResetsOtherFiltersAndLoadsProfileFilter()
+    public async Task ShowProfileCompletionRequiredAsync_ResetsOtherFiltersAndUsesCompletionPolicy()
     {
-        var service =
-            new CapturingEmployeeService();
+        Employee needsCompletion =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
 
-        var dialogService =
-            new StubEmployeeDialogService();
+        Employee completeEmployee =
+            CreateTestEmployee(
+                EmployeeStatus.OnLeave);
+
+        var employeeService =
+            new StubEmployeeService(
+                [
+                    needsCompletion,
+                completeEmployee
+                ]);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService();
+
+        completionService.Results[
+            needsCompletion.Id] =
+                new EmployeeProfileCompletionResult(
+                    IsComplete: false,
+                    RequiresCompletion: true,
+                    MissingRequirements:
+                        new[]
+                        {
+                        EmployeeProfileRequirement
+                            .EmergencyContact
+                        });
 
         var viewModel =
-            new EmployeesViewModel(
-                service,
-                dialogService);
+            CreateViewModel(
+                employeeService,
+                new StubEmployeeDialogService(),
+                completionService);
 
-        viewModel.SearchText = "EMP001";
+        viewModel.SearchText =
+            "EMP001";
 
         viewModel.SelectedStatusOption =
             viewModel.StatusOptions
-                .First(option =>
-                    option.Status == EmployeeStatus.Active);
-
-        viewModel.RequiresProfileCompletionOnly = false;
+                .First(
+                    option =>
+                        option.Status ==
+                        EmployeeStatus.Active);
 
         await viewModel
             .ShowProfileCompletionRequiredAsync();
 
-        Assert.Null(viewModel.SearchText);
+        Assert.Null(
+            viewModel.SearchText);
 
         Assert.Null(
             viewModel.SelectedStatusOption?.Status);
@@ -1122,17 +1208,26 @@ public sealed class EmployeesViewModelTests
         Assert.True(
             viewModel.RequiresProfileCompletionOnly);
 
-        Assert.NotNull(service.LastFilter);
-
-        Assert.True(
-            service.LastFilter
-                .RequiresProfileCompletionOnly);
+        Assert.NotNull(
+            employeeService.LastFilter);
 
         Assert.Null(
-            service.LastFilter.SearchText);
+            employeeService.LastFilter.SearchText);
 
         Assert.Null(
-            service.LastFilter.Status);
+            employeeService.LastFilter.Status);
+
+        Assert.Equal(
+            2,
+            completionService.EvaluateCallCount);
+
+        EmployeeListItemViewModel item =
+            Assert.Single(
+                viewModel.EmployeeItems);
+
+        Assert.Same(
+            needsCompletion,
+            item.Employee);
     }
 
     [Fact]
@@ -1146,7 +1241,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1200,7 +1295,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1247,7 +1342,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1298,7 +1393,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1348,7 +1443,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1396,7 +1491,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1430,7 +1525,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1460,7 +1555,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 employeeService,
                 dialogService);
 
@@ -1508,7 +1603,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1586,7 +1681,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1669,7 +1764,7 @@ public sealed class EmployeesViewModelTests
             };
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1714,7 +1809,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1756,7 +1851,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1787,7 +1882,7 @@ public sealed class EmployeesViewModelTests
             new StubEmployeeDialogService();
 
         var viewModel =
-            new EmployeesViewModel(
+            CreateViewModel(
                 service,
                 dialogService);
 
@@ -1800,7 +1895,7 @@ public sealed class EmployeesViewModelTests
     }
 
     [Fact]
-    public void ViewEmployeeProfileCommand_WhenEmployeeSelected_OpensCorrectProfile()
+    public async Task ViewEmployeeProfileCommand_WhenEmployeeSelected_OpensCorrectProfileAndReloads()
     {
         var employee =
             new Employee(
@@ -1809,22 +1904,17 @@ public sealed class EmployeesViewModelTests
                 "Nguyễn Minh Anh",
                 null,
                 null,
-                null,
                 new DateOnly(
                     1998,
                     5,
                     10),
+                new DateOnly(
+                    2024,
+                    2,
+                    1),
                 "Nhân sự",
                 "Chuyên viên",
-                EmployeeStatus.Inactive,
-                new DateOnly(
-                    2026,
-                    7,
-                    31),
-                departmentId:
-                    Guid.NewGuid(),
-                positionId:
-                    Guid.NewGuid());
+                EmployeeStatus.Active);
 
         var service =
             new StubEmployeeService(
@@ -1833,23 +1923,306 @@ public sealed class EmployeesViewModelTests
         var dialogService =
             new StubEmployeeDialogService();
 
-        var viewModel =
-            new EmployeesViewModel(
-                service,
-                dialogService);
+        var completionService =
+            new StubEmployeeProfileCompletionService();
 
-        viewModel.SelectedEmployee =
-            employee;
+        var viewModel =
+            CreateViewModel(
+                service,
+                dialogService,
+                completionService);
+
+        await viewModel.LoadAsync();
+
+        EmployeeListItemViewModel item =
+            Assert.Single(
+                viewModel.EmployeeItems);
+
+        viewModel.SelectedEmployeeItem =
+            item;
 
         Assert.True(
             viewModel.ViewEmployeeProfileCommand
                 .CanExecute(null));
 
-        viewModel.ViewEmployeeProfileCommand
-            .Execute(null);
+        int completionCallsBeforeDialog =
+            completionService.EvaluateCallCount;
+
+        await viewModel
+            .ViewEmployeeProfileCommand
+            .ExecuteAsync(null);
 
         Assert.Same(
             employee,
-            dialogService.EmployeePassedToProfileDialog);
+            dialogService
+                .EmployeePassedToProfileDialog);
+
+        Assert.True(
+            completionService.EvaluateCallCount
+                > completionCallsBeforeDialog);
+
+        Assert.Single(
+            viewModel.EmployeeItems);
+
+        Assert.Single(
+            viewModel.Employees);
+    }
+
+    private static EmployeesViewModel CreateViewModel(
+    IEmployeeService employeeService,
+    IEmployeeDialogService employeeDialogService,
+    IEmployeeProfileCompletionService?
+        profileCompletionService = null)
+    {
+        return new EmployeesViewModel(
+            employeeService,
+            employeeDialogService,
+            profileCompletionService
+            ?? new StubEmployeeProfileCompletionService());
+    }
+
+    private sealed class StubEmployeeProfileCompletionService
+    : IEmployeeProfileCompletionService
+    {
+        public Dictionary<Guid, EmployeeProfileCompletionResult>
+            Results
+        {
+            get;
+        } = [];
+
+        public Exception?
+            Exception
+        {
+            get;
+            set;
+        }
+
+        public int EvaluateCallCount
+        {
+            get;
+            private set;
+        }
+
+        public List<Guid>
+            EvaluatedEmployeeIds
+        {
+            get;
+        } = [];
+
+        public Task<EmployeeProfileCompletionResult>
+            EvaluateAsync(
+                Employee employee,
+                CancellationToken cancellationToken = default)
+        {
+            EvaluateCallCount++;
+
+            EvaluatedEmployeeIds.Add(
+                employee.Id);
+
+            if (Exception is not null)
+            {
+                return Task.FromException<
+                    EmployeeProfileCompletionResult>(
+                        Exception);
+            }
+
+            if (Results.TryGetValue(
+                    employee.Id,
+                    out EmployeeProfileCompletionResult?
+                        result))
+            {
+                return Task.FromResult(
+                    result);
+            }
+
+            return Task.FromResult(
+                new EmployeeProfileCompletionResult(
+                    IsComplete: true,
+                    RequiresCompletion: false,
+                    MissingRequirements:
+                        Array.Empty<
+                            EmployeeProfileRequirement>()));
+        }
+    }
+
+    // Composition + warning
+    [Fact]
+    public async Task LoadAsync_ComposesEmployeeItemFromCompletionResult()
+    {
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        var employeeService =
+            new StubEmployeeService(
+                [employee]);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService();
+
+        completionService.Results[
+            employee.Id] =
+                new EmployeeProfileCompletionResult(
+                    IsComplete: false,
+                    RequiresCompletion: true,
+                    MissingRequirements:
+                        new[]
+                        {
+                        EmployeeProfileRequirement.Gender,
+                        EmployeeProfileRequirement
+                            .PermanentAddress
+                        });
+
+        var viewModel =
+            CreateViewModel(
+                employeeService,
+                new StubEmployeeDialogService(),
+                completionService);
+
+        await viewModel.LoadAsync();
+
+        EmployeeListItemViewModel item =
+            Assert.Single(
+                viewModel.EmployeeItems);
+
+        Assert.Same(
+            employee,
+            item.Employee);
+
+        Assert.Same(
+            employee,
+            Assert.Single(
+                viewModel.Employees));
+
+        Assert.True(
+            item.RequiresProfileCompletion);
+
+        Assert.Equal(
+            "Thiếu: Giới tính, Địa chỉ thường trú",
+            item.ProfileWarningText);
+
+        Assert.Equal(
+            1,
+            completionService.EvaluateCallCount);
+    }
+
+    // DataGrid selection phải map về business employee
+    [Fact]
+    public async Task SelectedEmployeeItem_WhenChanged_UpdatesSelectedEmployee()
+    {
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        var viewModel =
+            CreateViewModel(
+                new StubEmployeeService(
+                    [employee]),
+                new StubEmployeeDialogService());
+
+        await viewModel.LoadAsync();
+
+        EmployeeListItemViewModel item =
+            Assert.Single(
+                viewModel.EmployeeItems);
+
+        viewModel.SelectedEmployeeItem =
+            item;
+
+        Assert.Same(
+            employee,
+            viewModel.SelectedEmployee);
+
+        Assert.True(
+            viewModel.EditEmployeeCommand
+                .CanExecute(null));
+
+        Assert.True(
+            viewModel.ViewEmployeeProfileCommand
+                .CanExecute(null));
+    }
+
+    // Completion failure không được tạo danh sách giả
+    [Fact]
+    public async Task LoadAsync_WhenCompletionEvaluationFails_ClearsItemsAndShowsError()
+    {
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService
+            {
+                Exception =
+                    new InvalidOperationException(
+                        "Test completion failure.")
+            };
+
+        var viewModel =
+            CreateViewModel(
+                new StubEmployeeService(
+                    [employee]),
+                new StubEmployeeDialogService(),
+                completionService);
+
+        await viewModel.LoadAsync();
+
+        Assert.Empty(
+            viewModel.EmployeeItems);
+
+        Assert.Empty(
+            viewModel.Employees);
+
+        Assert.Null(
+            viewModel.SelectedEmployeeItem);
+
+        Assert.Null(
+            viewModel.SelectedEmployee);
+
+        Assert.False(
+            viewModel.IsLoading);
+
+        Assert.Equal(
+            "Không thể tải danh sách nhân viên.",
+            viewModel.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            completionService.EvaluateCallCount);
+    }
+
+    // Khóa vocabulary mới của warning
+    [Fact]
+    public void EmployeeListItem_ProfileWarningText_UsesCompletionRequirementLabels()
+    {
+        Employee employee =
+            CreateTestEmployee(
+                EmployeeStatus.Active);
+
+        var completion =
+            new EmployeeProfileCompletionResult(
+                IsComplete: false,
+                RequiresCompletion: true,
+                MissingRequirements:
+                    new[]
+                    {
+                    EmployeeProfileRequirement.Gender,
+                    EmployeeProfileRequirement.Nationality,
+                    EmployeeProfileRequirement.PlaceOfBirth,
+                    EmployeeProfileRequirement.PermanentAddress,
+                    EmployeeProfileRequirement.EmergencyContact,
+                    EmployeeProfileRequirement.IdentificationRecord
+                    });
+
+        var item =
+            new EmployeeListItemViewModel(
+                employee,
+                completion);
+
+        Assert.Equal(
+            "Thiếu: Giới tính, Quốc tịch, Nơi sinh, "
+            + "Địa chỉ thường trú, Liên hệ khẩn cấp, "
+            + "Giấy tờ định danh",
+            item.ProfileWarningText);
     }
 }

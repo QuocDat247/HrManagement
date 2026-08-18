@@ -15,6 +15,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -33,7 +34,7 @@
 
         </StackPanel>
 
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
         Margin="0,0,0,12"
         Padding="8"
         BorderBrush="{DynamicResource BorderBrush}"
@@ -191,7 +192,92 @@
 
         </Border>
 
-        <ProgressBar Grid.Row="3"
+        <Border Grid.Row="2"
+        Margin="0,0,0,12"
+        Padding="14"
+        BorderBrush="{DynamicResource BorderBrush}"
+        BorderThickness="1"
+        CornerRadius="6"
+        Background="{DynamicResource PageBackgroundBrush}">
+
+            <StackPanel>
+
+                <TextBlock FontSize="15"
+                   FontWeight="SemiBold"
+                   Text="{Binding CompletionStatusText}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+
+                            <Setter Property="Foreground"
+                            Value="{DynamicResource PrimaryTextBrush}" />
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding RequiresProfileCompletion}"
+                                     Value="True">
+                                    <Setter Property="Foreground"
+                                    Value="{DynamicResource WarningBrush}" />
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Margin="0,6,0,0"
+                   Text="{Binding CompletionDetailsText}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource SecondaryTextBrush}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+
+                            <Setter Property="Visibility"
+                            Value="Collapsed" />
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding HasMissingProfileInformation}"
+                                     Value="True">
+                                    <Setter Property="Visibility"
+                                    Value="Visible" />
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <TextBlock Margin="0,6,0,0"
+                   Text="{Binding CompletionErrorMessage}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource WarningBrush}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+
+                            <Setter Property="Visibility"
+                            Value="Visible" />
+
+                            <Style.Triggers>
+
+                                <DataTrigger Binding="{Binding CompletionErrorMessage}"
+                                     Value="{x:Null}">
+                                    <Setter Property="Visibility"
+                                    Value="Collapsed" />
+                                </DataTrigger>
+
+                            </Style.Triggers>
+
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+            </StackPanel>
+
+        </Border>
+
+        <ProgressBar Grid.Row="4"
              Height="3"
              VerticalAlignment="Top"
              IsIndeterminate="True"
@@ -222,7 +308,7 @@
         
         <!-- Phase 16 profile workspace -->
         <ScrollViewer x:Name="ProfileScrollViewer"
-                      Grid.Row="3"
+                      Grid.Row="4"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled">
 
@@ -1260,7 +1346,7 @@
 
         </ScrollViewer>
 
-        <Button Grid.Row="4"
+        <Button Grid.Row="5"
                 Width="90"
                 Margin="0,18,0,0"
                 HorizontalAlignment="Right"

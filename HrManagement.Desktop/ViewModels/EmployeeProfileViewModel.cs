@@ -2,12 +2,32 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using HrManagement.Domain.Employees;
 using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
+using HrManagement.Application.Employees.Profiles.Completion;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class EmployeeProfileViewModel
     : ObservableObject
 {
+    private readonly IEmployeeProfileCompletionService
+        _profileCompletionService;
+
+    private Employee?
+        _employee;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsProfileComplete))]
+    [NotifyPropertyChangedFor(nameof(RequiresProfileCompletion))]
+    [NotifyPropertyChangedFor(nameof(HasMissingProfileInformation))]
+    [NotifyPropertyChangedFor(nameof(CompletionStatusText))]
+    [NotifyPropertyChangedFor(nameof(CompletionDetailsText))]
+    private EmployeeProfileCompletionResult?
+        completion;
+
+    [ObservableProperty]
+    private string?
+        completionErrorMessage;
+
     [ObservableProperty]
     private string employeeCode =
         string.Empty;
@@ -38,7 +58,7 @@ public sealed partial class EmployeeProfileViewModel
     private string? errorMessage;
 
     public EmployeeAddressSectionViewModel
-    Addresses
+        Addresses
     {
         get;
     }
@@ -50,25 +70,52 @@ public sealed partial class EmployeeProfileViewModel
     }
 
     public EmployeeEmergencyContactSectionViewModel
-    EmergencyContacts
+        EmergencyContacts
     {
         get;
     }
 
     public EmployeeIdentificationRecordSectionViewModel
-    IdentificationRecords
+        IdentificationRecords
     {
         get;
     }
+
+    public bool IsProfileComplete =>
+        Completion?.IsComplete == true;
+
+    public bool RequiresProfileCompletion =>
+        Completion?.RequiresCompletion == true;
+
+    public bool HasMissingProfileInformation =>
+        Completion is not null
+        && Completion.MissingRequirements.Count > 0;
+
+    public string CompletionStatusText =>
+        Completion is null
+            ? string.Empty
+            : EmployeeProfileCompletionPresentation
+                .BuildStatusText(
+                    Completion);
+
+    public string CompletionDetailsText =>
+        Completion is null
+            ? string.Empty
+            : EmployeeProfileCompletionPresentation
+                .BuildMissingText(
+                    Completion);
+
     public EmployeeProfileViewModel(
-    EmployeePersonalProfileSectionViewModel
-        personalInformation,
-    EmployeeAddressSectionViewModel
-        addresses,
-    EmployeeEmergencyContactSectionViewModel
-        emergencyContacts,
-    EmployeeIdentificationRecordSectionViewModel
-        identificationRecords)
+        EmployeePersonalProfileSectionViewModel
+            personalInformation,
+        EmployeeAddressSectionViewModel
+            addresses,
+        EmployeeEmergencyContactSectionViewModel
+            emergencyContacts,
+        EmployeeIdentificationRecordSectionViewModel
+            identificationRecords,
+        IEmployeeProfileCompletionService
+            profileCompletionService)
     {
         PersonalInformation =
             personalInformation;
@@ -81,14 +128,37 @@ public sealed partial class EmployeeProfileViewModel
 
         IdentificationRecords =
             identificationRecords;
+
+        _profileCompletionService =
+            profileCompletionService;
+
+        PersonalInformation.ProfileDataChanged +=
+            OnProfileDataChanged;
+
+        Addresses.ProfileDataChanged +=
+            OnProfileDataChanged;
+
+        EmergencyContacts.ProfileDataChanged +=
+            OnProfileDataChanged;
+
+        IdentificationRecords.ProfileDataChanged +=
+            OnProfileDataChanged;
     }
 
     public async Task LoadEmployeeAsync(
-    Employee employee,
-    CancellationToken cancellationToken = default)
+        Employee employee,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(
             employee);
+
+        _employee =
+            employee;
+
+        Completion =
+            null;
+        CompletionErrorMessage =
+            null;
 
         EmployeeCode =
             employee.EmployeeCode;
@@ -159,8 +229,12 @@ public sealed partial class EmployeeProfileViewModel
                 emergencyContactTask,
                 identificationTask);
 
+            await RefreshCompletionAsync(
+                cancellationToken);
+
             IsLoaded =
                 true;
+
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
@@ -177,5 +251,52 @@ public sealed partial class EmployeeProfileViewModel
             IsLoading =
                 false;
         }
+    }
+
+    public async Task RefreshCompletionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        Employee? employee =
+            _employee;
+
+        if (employee is null)
+        {
+            Completion =
+                null;
+
+            return;
+        }
+
+        CompletionErrorMessage =
+            null;
+
+        try
+        {
+            Completion =
+                await _profileCompletionService
+                    .EvaluateAsync(
+                        employee,
+                        cancellationToken);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            Completion =
+                null;
+
+            CompletionErrorMessage =
+                "Không thể đánh giá độ đầy đủ của hồ sơ.";
+        }
+    }
+
+    private async void OnProfileDataChanged(
+        object? sender,
+        EventArgs e)
+    {
+        await RefreshCompletionAsync();
     }
 }

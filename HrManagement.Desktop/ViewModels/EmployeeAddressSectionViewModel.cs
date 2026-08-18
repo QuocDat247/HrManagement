@@ -17,6 +17,9 @@ public sealed partial class EmployeeAddressSectionViewModel
     [ObservableProperty]
     private string? errorMessage;
 
+    public event EventHandler?
+        ProfileDataChanged;
+
     public EmployeeAddressSlotViewModel
         PermanentAddress
     {
@@ -49,6 +52,12 @@ public sealed partial class EmployeeAddressSectionViewModel
                 EmployeeAddressType.Current,
                 "Địa chỉ hiện tại",
                 confirmationDialogService);
+
+        PermanentAddress.ProfileDataChanged +=
+            OnAddressProfileDataChanged;
+
+        CurrentAddress.ProfileDataChanged +=
+            OnAddressProfileDataChanged;
     }
 
     public async Task LoadAsync(
@@ -102,5 +111,14 @@ public sealed partial class EmployeeAddressSectionViewModel
             IsLoading =
                 false;
         }
+    }
+
+    private void OnAddressProfileDataChanged(
+        object? sender,
+        EventArgs e)
+    {
+        ProfileDataChanged?.Invoke(
+            this,
+            EventArgs.Empty);
     }
 }

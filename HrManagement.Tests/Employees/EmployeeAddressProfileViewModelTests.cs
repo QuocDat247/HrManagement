@@ -3,6 +3,7 @@ using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Employees;
 using HrManagement.Domain.Employees.Profiles;
 using HrManagement.Tests.TestDoubles;
+using HrManagement.Application.Employees.Profiles.Completion;
 
 namespace HrManagement.Tests.Employees;
 
@@ -458,6 +459,9 @@ public sealed class EmployeeAddressProfileViewModelTests
     [Fact]
     public async Task EmployeeProfile_LoadEmployeeAsync_LoadsPersonalAddressAndEmergencyContactSections()
     {
+        var profileCompletionService =
+            new StubEmployeeProfileCompletionService();
+
         Employee employee =
             CreateEmployee();
 
@@ -520,10 +524,19 @@ public sealed class EmployeeAddressProfileViewModelTests
                 personalSection,
                 addressSection,
                 emergencyContactSection,
-                identificationSection);
+                identificationSection,
+                profileCompletionService);
 
         await viewModel.LoadEmployeeAsync(
             employee);
+
+        Assert.Equal(
+            1,
+            profileCompletionService.EvaluateCallCount);
+
+        Assert.Equal(
+            employee.Id,
+            profileCompletionService.LastEmployeeId);
 
         Assert.Equal(
             employee.EmployeeCode,
@@ -584,6 +597,34 @@ public sealed class EmployeeAddressProfileViewModelTests
 
         Assert.Empty(
             viewModel.IdentificationRecords.Records);
+
+        Assert.Equal(
+            1,
+            profileCompletionService.EvaluateCallCount);
+
+        Assert.Equal(
+            employee.Id,
+            profileCompletionService.LastEmployeeId);
+
+        Assert.NotNull(
+            viewModel.Completion);
+
+        Assert.True(
+            viewModel.IsProfileComplete);
+
+        Assert.False(
+            viewModel.RequiresProfileCompletion);
+
+        Assert.False(
+            viewModel.HasMissingProfileInformation);
+
+        Assert.Equal(
+            "Hồ sơ đã đầy đủ",
+            viewModel.CompletionStatusText);
+
+        Assert.Equal(
+            string.Empty,
+            viewModel.CompletionDetailsText);
     }
 
     private static Employee CreateEmployee()
@@ -960,5 +1001,358 @@ public sealed class EmployeeAddressProfileViewModelTests
 
         Assert.Null(
             viewModel.ErrorMessage);
+    }
+
+    private sealed class StubEmployeeProfileCompletionService
+    : IEmployeeProfileCompletionService
+    {
+        public int EvaluateCallCount
+        {
+            get;
+            private set;
+        }
+
+        public Guid?
+            LastEmployeeId
+        {
+            get;
+            private set;
+        }
+
+        public EmployeeProfileCompletionResult
+            Result
+        {
+            get;
+            set;
+        } =
+            new(
+                IsComplete: true,
+                RequiresCompletion: false,
+                MissingRequirements:
+                    Array.Empty<
+                        EmployeeProfileRequirement>());
+
+        public Task<EmployeeProfileCompletionResult>
+            EvaluateAsync(
+                Employee employee,
+                CancellationToken cancellationToken = default)
+        {
+            EvaluateCallCount++;
+
+            LastEmployeeId =
+                employee.Id;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
+    [Fact]
+    public async Task EmployeeProfile_WhenAnySectionChanges_RefreshesCompletion()
+    {
+        Employee employee =
+            CreateEmployee();
+
+        var personalService =
+            new StubPersonalProfileService();
+
+        var addressService =
+            new StubAddressService
+            {
+                AddressBook =
+                    new EmployeeAddressBookDetails(
+                        employee.Id,
+                        PermanentAddress: null,
+                        CurrentAddress: null)
+            };
+
+        var confirmationDialogService =
+            new StubConfirmationDialogService();
+
+        var emergencyContactService =
+            new StubEmergencyContactService();
+
+        var identificationService =
+            new StubIdentificationRecordService();
+
+        var personalSection =
+            new EmployeePersonalProfileSectionViewModel(
+                personalService);
+
+        var addressSection =
+            new EmployeeAddressSectionViewModel(
+                addressService,
+                confirmationDialogService);
+
+        var emergencyContactSection =
+            new EmployeeEmergencyContactSectionViewModel(
+                emergencyContactService,
+                confirmationDialogService);
+
+        var identificationSection =
+            new EmployeeIdentificationRecordSectionViewModel(
+                identificationService,
+                confirmationDialogService);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService
+            {
+                Result =
+                    new EmployeeProfileCompletionResult(
+                        IsComplete: false,
+                        RequiresCompletion: true,
+                        MissingRequirements:
+                        [
+                            EmployeeProfileRequirement.Gender,
+                        EmployeeProfileRequirement.PermanentAddress,
+                        EmployeeProfileRequirement.EmergencyContact,
+                        EmployeeProfileRequirement.IdentificationRecord
+                        ])
+            };
+
+        var viewModel =
+            new EmployeeProfileViewModel(
+                personalSection,
+                addressSection,
+                emergencyContactSection,
+                identificationSection,
+                completionService);
+
+        await viewModel.LoadEmployeeAsync(
+            employee);
+
+        Assert.Equal(
+            1,
+            completionService.EvaluateCallCount);
+
+        Assert.False(
+            viewModel.IsProfileComplete);
+
+        //
+        // Personal Information
+        //
+
+        viewModel.PersonalInformation.SelectedGender =
+            viewModel.PersonalInformation
+                .GenderOptions
+                .First();
+
+        viewModel.PersonalInformation.Nationality =
+            "Việt Nam";
+
+        viewModel.PersonalInformation.PlaceOfBirth =
+            "Hà Nội";
+
+        await viewModel.PersonalInformation
+            .SaveCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            2,
+            completionService.EvaluateCallCount);
+
+        //
+        // Permanent Address
+        //
+
+        viewModel.Addresses
+            .PermanentAddress
+            .AddressLine =
+            "123 Nguyễn Trãi";
+
+        await viewModel.Addresses
+            .PermanentAddress
+            .SaveCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            3,
+            completionService.EvaluateCallCount);
+
+        //
+        // Emergency Contact
+        //
+
+        viewModel.EmergencyContacts.FullName =
+            "Nguyễn Văn Bình";
+
+        viewModel.EmergencyContacts.Relationship =
+            "Cha";
+
+        viewModel.EmergencyContacts.PhoneNumber =
+            "0901234567";
+
+        await viewModel.EmergencyContacts
+            .SaveCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            4,
+            completionService.EvaluateCallCount);
+
+        //
+        // Identification
+        //
+
+        completionService.Result =
+            new EmployeeProfileCompletionResult(
+                IsComplete: true,
+                RequiresCompletion: false,
+                MissingRequirements:
+                    Array.Empty<EmployeeProfileRequirement>());
+
+        viewModel.IdentificationRecords.DocumentNumber =
+            "001234567890";
+
+        await viewModel.IdentificationRecords
+            .SaveCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            5,
+            completionService.EvaluateCallCount);
+
+        Assert.True(
+            viewModel.IsProfileComplete);
+
+        Assert.False(
+            viewModel.RequiresProfileCompletion);
+
+        Assert.False(
+            viewModel.HasMissingProfileInformation);
+
+        Assert.Equal(
+            "Hồ sơ đã đầy đủ",
+            viewModel.CompletionStatusText);
+
+        Assert.Equal(
+            string.Empty,
+            viewModel.CompletionDetailsText);
+    }
+
+    [Fact]
+    public async Task EmployeeProfile_WhenAddressDeleteIsDeclined_DoesNotRefreshCompletion()
+    {
+        Employee employee =
+            CreateEmployee();
+
+        var permanentAddress =
+            new EmployeeAddressDetails(
+                Guid.NewGuid(),
+                EmployeeAddressType.Permanent,
+                "123 Nguyễn Trãi",
+                null,
+                null,
+                "Hà Nội",
+                "Việt Nam",
+                null);
+
+        var personalService =
+            new StubPersonalProfileService();
+
+        var addressService =
+            new StubAddressService
+            {
+                AddressBook =
+                    new EmployeeAddressBookDetails(
+                        employee.Id,
+                        PermanentAddress:
+                            permanentAddress,
+                        CurrentAddress:
+                            null)
+            };
+
+        var confirmationDialogService =
+            new StubConfirmationDialogService
+            {
+                Result =
+                    false
+            };
+
+        var emergencyContactService =
+            new StubEmergencyContactService();
+
+        var identificationService =
+            new StubIdentificationRecordService();
+
+        var personalSection =
+            new EmployeePersonalProfileSectionViewModel(
+                personalService);
+
+        var addressSection =
+            new EmployeeAddressSectionViewModel(
+                addressService,
+                confirmationDialogService);
+
+        var emergencyContactSection =
+            new EmployeeEmergencyContactSectionViewModel(
+                emergencyContactService,
+                confirmationDialogService);
+
+        var identificationSection =
+            new EmployeeIdentificationRecordSectionViewModel(
+                identificationService,
+                confirmationDialogService);
+
+        var completionService =
+            new StubEmployeeProfileCompletionService
+            {
+                Result =
+                    new EmployeeProfileCompletionResult(
+                        IsComplete: false,
+                        RequiresCompletion: true,
+                        MissingRequirements:
+                        [
+                            EmployeeProfileRequirement.EmergencyContact
+                        ])
+            };
+
+        var viewModel =
+            new EmployeeProfileViewModel(
+                personalSection,
+                addressSection,
+                emergencyContactSection,
+                identificationSection,
+                completionService);
+
+        await viewModel.LoadEmployeeAsync(
+            employee);
+
+        Assert.Equal(
+            1,
+            completionService.EvaluateCallCount);
+
+        Assert.True(
+            viewModel.Addresses
+                .PermanentAddress
+                .HasAddress);
+
+        await viewModel.Addresses
+            .PermanentAddress
+            .DeleteCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            1,
+            confirmationDialogService.ConfirmCallCount);
+
+        Assert.Equal(
+            0,
+            addressService.DeleteCallCount);
+
+        Assert.Equal(
+            1,
+            completionService.EvaluateCallCount);
+
+        Assert.True(
+            viewModel.Addresses
+                .PermanentAddress
+                .HasAddress);
+
+        Assert.Equal(
+            "123 Nguyễn Trãi",
+            viewModel.Addresses
+                .PermanentAddress
+                .AddressLine);
     }
 }

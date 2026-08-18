@@ -3,12 +3,16 @@ using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Employees;
 using HrManagement.Desktop.Services;
 using HrManagement.Domain.Employees;
+using HrManagement.Application.Employees.Profiles.Completion;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class EmployeesViewModel : ObservableObject
 {
+    private readonly IEmployeeProfileCompletionService _profileCompletionService;
+
     private readonly IEmployeeService _employeeService;
+
     private readonly IEmployeeDialogService _employeeDialogService;
 
     [ObservableProperty]
@@ -32,6 +36,15 @@ public sealed partial class EmployeesViewModel : ObservableObject
 
     [ObservableProperty]
     private bool requiresProfileCompletionOnly;
+
+    [ObservableProperty]
+    private IReadOnlyList<EmployeeListItemViewModel>
+        employeeItems =
+            Array.Empty<EmployeeListItemViewModel>();
+
+    [ObservableProperty]
+    private EmployeeListItemViewModel?
+        selectedEmployeeItem;
 
     private bool CanTransferEmployee()
     {
@@ -70,6 +83,13 @@ public sealed partial class EmployeesViewModel : ObservableObject
         _employeeDialogService
             .ShowEmploymentHistoryDialog(
                 employee);
+    }
+
+    partial void OnSelectedEmployeeItemChanged(
+    EmployeeListItemViewModel? value)
+    {
+        SelectedEmployee =
+            value?.Employee;
     }
 
     public string Title => "Nhân viên";
@@ -115,20 +135,30 @@ public sealed partial class EmployeesViewModel : ObservableObject
         get;
     }
 
-    public IRelayCommand
+    public IAsyncRelayCommand
     ViewEmployeeProfileCommand
     {
         get;
     }
 
-    // constructor
+    // Constructor
     public EmployeesViewModel(
     IEmployeeService employeeService,
-    IEmployeeDialogService employeeDialogService)
+    IEmployeeDialogService employeeDialogService,
+    IEmployeeProfileCompletionService profileCompletionService)
     {
+        _employeeService =
+            employeeService;
+
+        _employeeDialogService =
+            employeeDialogService;
+
+        _profileCompletionService =
+            profileCompletionService;
+
         ViewEmployeeProfileCommand =
-            new RelayCommand(
-                ViewEmployeeProfile,
+            new AsyncRelayCommand(
+                ViewEmployeeProfileAsync,
                 CanViewEmployeeProfile);
 
         ViewOrganizationHistoryCommand =
@@ -184,25 +214,73 @@ public sealed partial class EmployeesViewModel : ObservableObject
     {
         try
         {
-            IsLoading = true;
-            ErrorMessage = null;
+            IsLoading =
+                true;
 
-            var filter = new EmployeeFilter(
-                SearchText: SearchText,
-                Status: SelectedStatusOption?.Status,
-                RequiresProfileCompletionOnly: RequiresProfileCompletionOnly);
+            ErrorMessage =
+                null;
+
+            SelectedEmployeeItem =
+                null;
+
+            var filter =
+                new EmployeeFilter(
+                    SearchText,
+                    SelectedStatusOption?.Status);
+
+            IReadOnlyList<Employee> loadedEmployees =
+                await _employeeService
+                    .GetEmployeesAsync(
+                        filter);
+
+            EmployeeListItemViewModel[] items =
+                await Task.WhenAll(
+                    loadedEmployees.Select(
+                        CreateEmployeeItemAsync));
+
+            IEnumerable<EmployeeListItemViewModel>
+                filteredItems =
+                    items;
+
+            if (RequiresProfileCompletionOnly)
+            {
+                filteredItems =
+                    filteredItems.Where(
+                        item =>
+                            item.RequiresProfileCompletion);
+            }
+
+            EmployeeItems =
+                filteredItems.ToArray();
 
             Employees =
-                await _employeeService.GetEmployeesAsync(filter);
+                EmployeeItems
+                    .Select(
+                        item =>
+                            item.Employee)
+                    .ToArray();
         }
         catch (Exception)
         {
-            Employees = Array.Empty<Employee>();
-            ErrorMessage = "Không thể tải danh sách nhân viên.";
+            EmployeeItems =
+                Array.Empty<EmployeeListItemViewModel>();
+
+            Employees =
+                Array.Empty<Employee>();
+
+            SelectedEmployeeItem =
+                null;
+
+            SelectedEmployee =
+                null;
+
+            ErrorMessage =
+                "Không thể tải danh sách nhân viên.";
         }
         finally
         {
-            IsLoading = false;
+            IsLoading =
+                false;
         }
     }
 
@@ -211,7 +289,7 @@ public sealed partial class EmployeesViewModel : ObservableObject
         return SelectedEmployee is not null;
     }
 
-    private void ViewEmployeeProfile()
+    private async Task ViewEmployeeProfileAsync()
     {
         Employee? employee =
             SelectedEmployee;
@@ -224,6 +302,8 @@ public sealed partial class EmployeesViewModel : ObservableObject
         _employeeDialogService
             .ShowEmployeeProfileDialog(
                 employee);
+
+        await LoadAsync();
     }
 
     private bool CanViewOrganizationHistory()
@@ -274,8 +354,14 @@ public sealed partial class EmployeesViewModel : ObservableObject
 
     private async Task ClearFiltersAsync()
     {
-        SearchText = null;
-        SelectedStatusOption = StatusOptions[0];
+        SearchText =
+            null;
+
+        SelectedStatusOption =
+            StatusOptions[0];
+
+        RequiresProfileCompletionOnly =
+            false;
 
         await LoadAsync();
     }
@@ -500,5 +586,19 @@ public sealed partial class EmployeesViewModel : ObservableObject
         SelectedEmployee = null;
 
         await LoadAsync();
+    }
+
+    private async Task<EmployeeListItemViewModel>
+    CreateEmployeeItemAsync(
+        Employee employee)
+    {
+        EmployeeProfileCompletionResult completion =
+            await _profileCompletionService
+                .EvaluateAsync(
+                    employee);
+
+        return new EmployeeListItemViewModel(
+            employee,
+            completion);
     }
 }

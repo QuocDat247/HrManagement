@@ -58,6 +58,9 @@ public sealed partial class EmployeeAddressSlotViewModel
     [ObservableProperty]
     private string? successMessage;
 
+    public event EventHandler?
+        ProfileDataChanged;
+
     public IAsyncRelayCommand SaveCommand
     {
         get;
@@ -213,6 +216,10 @@ public sealed partial class EmployeeAddressSlotViewModel
 
             SuccessMessage =
                 "Đã lưu địa chỉ.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {
@@ -293,6 +300,10 @@ public sealed partial class EmployeeAddressSlotViewModel
 
             SuccessMessage =
                 "Đã xóa địa chỉ.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {

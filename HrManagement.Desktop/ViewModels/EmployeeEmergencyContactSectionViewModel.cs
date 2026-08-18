@@ -54,6 +54,9 @@ public sealed partial class EmployeeEmergencyContactSectionViewModel
     [ObservableProperty]
     private string? successMessage;
 
+    public event EventHandler?
+        ProfileDataChanged;
+
     public IRelayCommand NewCommand
     {
         get;
@@ -238,6 +241,10 @@ public sealed partial class EmployeeEmergencyContactSectionViewModel
 
             SuccessMessage =
                 "Đã lưu liên hệ khẩn cấp.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {
@@ -317,6 +324,10 @@ public sealed partial class EmployeeEmergencyContactSectionViewModel
 
             SuccessMessage =
                 "Đã xóa liên hệ khẩn cấp.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {

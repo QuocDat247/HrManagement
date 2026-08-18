@@ -68,6 +68,9 @@ public sealed partial class EmployeeIdentificationRecordSectionViewModel
     [ObservableProperty]
     private string? successMessage;
 
+    public event EventHandler?
+        ProfileDataChanged;
+
     public IRelayCommand NewCommand
     {
         get;
@@ -279,6 +282,10 @@ public sealed partial class EmployeeIdentificationRecordSectionViewModel
 
             SuccessMessage =
                 "Đã lưu giấy tờ định danh.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {
@@ -359,6 +366,10 @@ public sealed partial class EmployeeIdentificationRecordSectionViewModel
 
             SuccessMessage =
                 "Đã xóa giấy tờ định danh.";
+
+            ProfileDataChanged?.Invoke(
+                this,
+                EventArgs.Empty);
         }
         catch (Exception)
         {
