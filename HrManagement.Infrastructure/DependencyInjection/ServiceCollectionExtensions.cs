@@ -14,6 +14,8 @@ using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Employees.Profiles;
 using HrManagement.Infrastructure.Employees.Profiles;
+using HrManagement.Application.Attendance.Schedules;
+using HrManagement.Infrastructure.Attendance.Schedules;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -94,6 +96,24 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IEmployeeIdentificationRecordService,
             EmployeeIdentificationRecordService>();
+
+        services.AddSingleton<
+            IWorkScheduleRepository,
+            EfWorkScheduleRepository>();
+
+        services.AddSingleton<
+            IEmployeeWorkScheduleAssignmentRepository,
+            EfEmployeeWorkScheduleAssignmentRepository>();
+
+        services.AddSingleton<
+            IEmployeeWorkScheduleAssignmentPersistence,
+            EfEmployeeWorkScheduleAssignmentPersistence>();
+
+        services.AddScoped<
+            IEmployeeWorkScheduleAssignmentService,
+            EmployeeWorkScheduleAssignmentService>();
+
+        services.AddSingleton<WorkScheduleSeedService>();
 
         return services;
     }

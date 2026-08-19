@@ -2,6 +2,7 @@ using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Domain.Employees;
+using HrManagement.Infrastructure.Attendance.Schedules;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrManagement.Infrastructure.Persistence;
@@ -9,6 +10,9 @@ namespace HrManagement.Infrastructure.Persistence;
 public sealed class DatabaseInitializer
 {
     // Dependency
+    private readonly WorkScheduleSeedService
+        _workScheduleSeedService;
+
     private readonly
         IEmployeeOrganizationAssignmentBackfillService
             _employeeOrganizationAssignmentBackfillService;
@@ -25,9 +29,10 @@ public sealed class DatabaseInitializer
     // Constructor
     public DatabaseInitializer(
     IDbContextFactory<HrManagementDbContext> dbContextFactory,
-    IEmploymentHistoryBackfillService employmentHistoryBackfillService, IEmployeeOrganizationBackfillService
-    employeeOrganizationBackfillService, IEmployeeOrganizationAssignmentBackfillService
-    employeeOrganizationAssignmentBackfillService)
+    IEmploymentHistoryBackfillService employmentHistoryBackfillService,
+    IEmployeeOrganizationBackfillService employeeOrganizationBackfillService,
+    IEmployeeOrganizationAssignmentBackfillService employeeOrganizationAssignmentBackfillService,
+    WorkScheduleSeedService workScheduleSeedService)
     {
         _employeeOrganizationAssignmentBackfillService =
             employeeOrganizationAssignmentBackfillService;
@@ -39,6 +44,9 @@ public sealed class DatabaseInitializer
 
         _employeeOrganizationBackfillService =
             employeeOrganizationBackfillService;
+
+        _workScheduleSeedService =
+            workScheduleSeedService;
     }
 
     public async Task InitializeAsync(
@@ -127,6 +135,14 @@ public sealed class DatabaseInitializer
                     cancellationToken);
             }
         }
+
+        await _workScheduleSeedService
+            .SeedAsync(
+                cancellationToken);
+
+        await _employmentHistoryBackfillService
+            .BackfillAsync(
+                cancellationToken);
 
         await _employmentHistoryBackfillService
             .BackfillAsync(

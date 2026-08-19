@@ -5,12 +5,23 @@ using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
 using HrManagement.Domain.Employees.OrganizationAssignments;
 using HrManagement.Domain.Employees.Profiles;
+using HrManagement.Domain.Attendance.Schedules;
 using HrManagement.Domain.Auditing;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<WorkSchedule> WorkSchedules =>
+        Set<WorkSchedule>();
+
+    public DbSet<WorkScheduleDay> WorkScheduleDays =>
+        Set<WorkScheduleDay>();
+
+    public DbSet<EmployeeWorkScheduleAssignment>
+        EmployeeWorkScheduleAssignments =>
+            Set<EmployeeWorkScheduleAssignment>();
+
     public DbSet<AuditEntry> AuditEntries =>
         Set<AuditEntry>();
 
@@ -85,5 +96,14 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new AuditEntryConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new WorkScheduleConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new WorkScheduleDayConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeWorkScheduleAssignmentConfiguration());
     }
 }
