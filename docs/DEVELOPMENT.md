@@ -146,3 +146,16 @@ Potential use cases include:
 AI features must not be tightly coupled to the core HR domain.
 
 The core HR application must remain functional without the AI module.
+
+## 11. Audit data safety
+
+### Audit data safety
+
+AuditEntries is metadata-only. Audit records may contain actor identity,
+UTC timestamp, action, entity identity and employee correlation only.
+
+Do not store passwords, document numbers, addresses, phone numbers,
+personal profile values, old/new values, JSON payloads, free-form
+descriptions or other sensitive HR data in audit records.
+
+Sensitive business values remain in their owning business tables.

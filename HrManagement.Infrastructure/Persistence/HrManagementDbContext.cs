@@ -5,11 +5,15 @@ using HrManagement.Domain.Organization.Departments;
 using HrManagement.Domain.Organization.Positions;
 using HrManagement.Domain.Employees.OrganizationAssignments;
 using HrManagement.Domain.Employees.Profiles;
+using HrManagement.Domain.Auditing;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<AuditEntry> AuditEntries =>
+        Set<AuditEntry>();
+
     public DbSet<EmployeeIdentificationRecord>
         EmployeeIdentificationRecords =>
             Set<EmployeeIdentificationRecord>();
@@ -78,5 +82,8 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new EmployeeIdentificationRecordConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new AuditEntryConfiguration());
     }
 }

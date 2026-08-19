@@ -1,0 +1,16 @@
+namespace HrManagement.Application.Auditing;
+
+public static class AuditEntityTypes
+{
+    public const string EmployeePersonalProfile =
+        "EmployeePersonalProfile";
+
+    public const string EmployeeAddress =
+        "EmployeeAddress";
+
+    public const string EmployeeEmergencyContact =
+        "EmployeeEmergencyContact";
+
+    public const string EmployeeIdentificationRecord =
+        "EmployeeIdentificationRecord";
+}

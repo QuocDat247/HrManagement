@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +11,13 @@ namespace HrManagement.Infrastructure.Authentication
     {
         private const string DemoUsername = "admin";
         private const string DemoPassword = "admin123";
+
+        private readonly IUserSession _userSession;
+
+        public FakeAuthenticationService(IUserSession userSession)
+        {
+            _userSession = userSession;
+        }
 
         public Task<AuthenticationResult> LoginAsync(
             string username,
@@ -28,13 +35,23 @@ namespace HrManagement.Infrastructure.Authentication
                     StringComparison.OrdinalIgnoreCase)
                 && password == DemoPassword;
 
-            AuthenticationResult result = isValid
-                ? new AuthenticationResult(true)
-                : new AuthenticationResult(
-                    false,
-                    "Tên đăng nhập hoặc mật khẩu không đúng.");
+            if (!isValid)
+            {
+                return Task.FromResult(
+                    new AuthenticationResult(
+                        false,
+                        "Tên đăng nhập hoặc mật khẩu không đúng."));
+            }
 
-            return Task.FromResult(result);
+            _userSession.SignIn(
+                new AuthenticatedUser(
+                    UserId: "demo-admin",
+                    Username: DemoUsername,
+                    DisplayName: "Quản trị viên"));
+
+            return Task.FromResult(
+                new AuthenticationResult(
+                    true));
         }
     }
 }

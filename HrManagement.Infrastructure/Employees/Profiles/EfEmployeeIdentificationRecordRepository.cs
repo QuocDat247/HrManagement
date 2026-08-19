@@ -1,4 +1,6 @@
+using HrManagement.Application.Auditing;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Employees.Profiles;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +13,18 @@ public sealed class EfEmployeeIdentificationRecordRepository
     private readonly IDbContextFactory<HrManagementDbContext>
         _dbContextFactory;
 
+    private readonly IAuditEntryFactory
+        _auditEntryFactory;
+
     public EfEmployeeIdentificationRecordRepository(
-        IDbContextFactory<HrManagementDbContext> dbContextFactory)
+        IDbContextFactory<HrManagementDbContext> dbContextFactory,
+        IAuditEntryFactory auditEntryFactory)
     {
         _dbContextFactory =
             dbContextFactory;
+
+        _auditEntryFactory =
+            auditEntryFactory;
     }
 
     public async Task<IReadOnlyList<EmployeeIdentificationRecord>>
@@ -67,6 +76,11 @@ public sealed class EfEmployeeIdentificationRecordRepository
                 .CreateDbContextAsync(
                     cancellationToken);
 
+        await using var transaction =
+            await dbContext.Database
+                .BeginTransactionAsync(
+                    cancellationToken);
+
         EmployeeIdentificationRecord? existing =
             await dbContext
                 .EmployeeIdentificationRecords
@@ -85,6 +99,18 @@ public sealed class EfEmployeeIdentificationRecordRepository
                 "Không thể chuyển giấy tờ định danh sang nhân viên khác.");
         }
 
+        AuditAction action =
+            existing is null
+                ? AuditAction.Created
+                : AuditAction.Updated;
+
+        AuditEntry auditEntry =
+            _auditEntryFactory.Create(
+                action,
+                AuditEntityTypes.EmployeeIdentificationRecord,
+                record.Id,
+                record.EmployeeId);
+
         if (existing is null)
         {
             await dbContext
@@ -92,51 +118,68 @@ public sealed class EfEmployeeIdentificationRecordRepository
                 .AddAsync(
                     record,
                     cancellationToken);
+        }
+        else
+        {
+            int updatedRows =
+                await dbContext
+                    .EmployeeIdentificationRecords
+                    .Where(
+                        item =>
+                            item.Id ==
+                            record.Id
+                        && item.EmployeeId ==
+                            record.EmployeeId)
+                    .ExecuteUpdateAsync(
+                        setters =>
+                            setters
+                                .SetProperty(
+                                    item =>
+                                        item.Type,
+                                    record.Type)
+                                .SetProperty(
+                                    item =>
+                                        item.DocumentNumber,
+                                    record.DocumentNumber)
+                                .SetProperty(
+                                    item =>
+                                        item.IssueDate,
+                                    record.IssueDate)
+                                .SetProperty(
+                                    item =>
+                                        item.ExpiryDate,
+                                    record.ExpiryDate)
+                                .SetProperty(
+                                    item =>
+                                        item.IssuingAuthority,
+                                    record.IssuingAuthority)
+                                .SetProperty(
+                                    item =>
+                                        item.PlaceOfIssue,
+                                    record.PlaceOfIssue)
+                                .SetProperty(
+                                    item =>
+                                        item.IssuingCountry,
+                                    record.IssuingCountry),
+                        cancellationToken);
 
-            await dbContext.SaveChangesAsync(
-                cancellationToken);
-
-            return;
+            if (updatedRows != 1)
+            {
+                throw new DbUpdateConcurrencyException(
+                    "Giấy tờ định danh đã thay đổi trong quá trình cập nhật.");
+            }
         }
 
-        await dbContext
-            .EmployeeIdentificationRecords
-            .Where(
-                item =>
-                    item.Id ==
-                    record.Id)
-            .ExecuteUpdateAsync(
-                setters =>
-                    setters
-                        .SetProperty(
-                            item =>
-                                item.Type,
-                            record.Type)
-                        .SetProperty(
-                            item =>
-                                item.DocumentNumber,
-                            record.DocumentNumber)
-                        .SetProperty(
-                            item =>
-                                item.IssueDate,
-                            record.IssueDate)
-                        .SetProperty(
-                            item =>
-                                item.ExpiryDate,
-                            record.ExpiryDate)
-                        .SetProperty(
-                            item =>
-                                item.IssuingAuthority,
-                            record.IssuingAuthority)
-                        .SetProperty(
-                            item =>
-                                item.PlaceOfIssue,
-                            record.PlaceOfIssue)
-                        .SetProperty(
-                            item =>
-                                item.IssuingCountry,
-                            record.IssuingCountry),
+        await dbContext.AuditEntries
+            .AddAsync(
+                auditEntry,
                 cancellationToken);
+
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        await transaction.CommitAsync(
+            cancellationToken);
     }
 
     public async Task DeleteAsync(
@@ -163,15 +206,64 @@ public sealed class EfEmployeeIdentificationRecordRepository
                 .CreateDbContextAsync(
                     cancellationToken);
 
-        await dbContext
-            .EmployeeIdentificationRecords
-            .Where(
-                record =>
-                    record.EmployeeId ==
-                        employeeId
-                    && record.Id ==
-                        recordId)
-            .ExecuteDeleteAsync(
+        await using var transaction =
+            await dbContext.Database
+                .BeginTransactionAsync(
+                    cancellationToken);
+
+        bool exists =
+            await dbContext
+                .EmployeeIdentificationRecords
+                .AnyAsync(
+                    record =>
+                        record.EmployeeId ==
+                            employeeId
+                        && record.Id ==
+                            recordId,
+                    cancellationToken);
+
+        if (!exists)
+        {
+            await transaction.CommitAsync(
                 cancellationToken);
+
+            return;
+        }
+
+        AuditEntry auditEntry =
+            _auditEntryFactory.Create(
+                AuditAction.Deleted,
+                AuditEntityTypes.EmployeeIdentificationRecord,
+                recordId,
+                employeeId);
+
+        int deletedRows =
+            await dbContext
+                .EmployeeIdentificationRecords
+                .Where(
+                    record =>
+                        record.EmployeeId ==
+                            employeeId
+                        && record.Id ==
+                            recordId)
+                .ExecuteDeleteAsync(
+                    cancellationToken);
+
+        if (deletedRows != 1)
+        {
+            throw new DbUpdateConcurrencyException(
+                "Giấy tờ định danh đã thay đổi trong quá trình xóa.");
+        }
+
+        await dbContext.AuditEntries
+            .AddAsync(
+                auditEntry,
+                cancellationToken);
+
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        await transaction.CommitAsync(
+            cancellationToken);
     }
 }

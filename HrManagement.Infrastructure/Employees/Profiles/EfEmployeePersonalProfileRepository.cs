@@ -1,4 +1,6 @@
+using HrManagement.Application.Auditing;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Employees.Profiles;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +13,18 @@ public sealed class EfEmployeePersonalProfileRepository
     private readonly IDbContextFactory<HrManagementDbContext>
         _dbContextFactory;
 
+    private readonly IAuditEntryFactory
+        _auditEntryFactory;
+
     public EfEmployeePersonalProfileRepository(
-        IDbContextFactory<HrManagementDbContext> dbContextFactory)
+        IDbContextFactory<HrManagementDbContext> dbContextFactory,
+        IAuditEntryFactory auditEntryFactory)
     {
         _dbContextFactory =
             dbContextFactory;
+
+        _auditEntryFactory =
+            auditEntryFactory;
     }
 
     public async Task<EmployeePersonalProfile?>
@@ -40,7 +49,8 @@ public sealed class EfEmployeePersonalProfileRepository
             .AsNoTracking()
             .SingleOrDefaultAsync(
                 profile =>
-                    profile.EmployeeId == employeeId,
+                    profile.EmployeeId ==
+                    employeeId,
                 cancellationToken);
     }
 
@@ -65,12 +75,17 @@ public sealed class EfEmployeePersonalProfileRepository
                         profile.EmployeeId,
                     cancellationToken);
 
+        AuditAction action;
+
         if (exists)
         {
             dbContext
                 .EmployeePersonalProfiles
                 .Update(
                     profile);
+
+            action =
+                AuditAction.Updated;
         }
         else
         {
@@ -79,7 +94,23 @@ public sealed class EfEmployeePersonalProfileRepository
                 .AddAsync(
                     profile,
                     cancellationToken);
+
+            action =
+                AuditAction.Created;
         }
+
+        AuditEntry auditEntry =
+            _auditEntryFactory.Create(
+                action,
+                AuditEntityTypes.EmployeePersonalProfile,
+                profile.EmployeeId,
+                profile.EmployeeId);
+
+        await dbContext
+            .AuditEntries
+            .AddAsync(
+                auditEntry,
+                cancellationToken);
 
         await dbContext.SaveChangesAsync(
             cancellationToken);

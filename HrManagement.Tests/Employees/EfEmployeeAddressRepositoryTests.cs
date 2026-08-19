@@ -8,6 +8,8 @@ using HrManagement.Domain.Employees;
 using HrManagement.Domain.Employees.Profiles;
 using HrManagement.Infrastructure.Employees.Profiles;
 using HrManagement.Infrastructure.Persistence;
+using HrManagement.Application.Auditing;
+using HrManagement.Domain.Auditing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -426,7 +428,29 @@ public sealed class EfEmployeeAddressRepositoryTests
     {
         return new EfEmployeeAddressRepository(
             new TestDbContextFactory(
-                options));
+                options),
+            new TestAuditEntryFactory());
+    }
+
+    private sealed class TestAuditEntryFactory
+    : IAuditEntryFactory
+    {
+        public AuditEntry Create(
+            AuditAction action,
+            string entityType,
+            Guid entityId,
+            Guid? employeeId = null)
+        {
+            return new AuditEntry(
+                Guid.NewGuid(),
+                DateTime.UtcNow,
+                "test-user",
+                "test",
+                action,
+                entityType,
+                entityId,
+                employeeId);
+        }
     }
 
     private static async Task AddEmployeeAsync(

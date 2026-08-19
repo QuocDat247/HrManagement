@@ -24,6 +24,7 @@ using HrManagement.Infrastructure.Organization.Assignments;
 using HrManagement.Infrastructure.Organization.Departments;
 using HrManagement.Infrastructure.Organization.Positions;
 using HrManagement.Infrastructure.Persistence;
+using HrManagement.Application.Auditing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HrManagement.Desktop;
@@ -90,6 +91,28 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             IAuthenticationService,
             FakeAuthenticationService>();
+
+        services.AddSingleton<
+            CurrentUserSession>();
+
+        services.AddSingleton<
+            IUserSession>(
+                provider =>
+                    provider.GetRequiredService<
+                        CurrentUserSession>());
+
+        services.AddSingleton<
+            ICurrentUserContext>(
+                provider =>
+                    provider.GetRequiredService<
+                        CurrentUserSession>());
+
+        services.AddSingleton<TimeProvider>(
+            TimeProvider.System);
+
+        services.AddSingleton<
+            IAuditEntryFactory,
+            AuditEntryFactory>();
 
         services.AddSingleton<
             INavigationService,
