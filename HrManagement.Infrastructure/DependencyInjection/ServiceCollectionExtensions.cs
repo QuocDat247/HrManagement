@@ -1,6 +1,4 @@
 using HrManagement.Application.Attendance.Calculations;
-using HrManagement.Domain.Attendance.Calculations;
-using HrManagement.Infrastructure.Attendance.Calculations;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
 using HrManagement.Application.Dashboard;
@@ -10,13 +8,19 @@ using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.EmploymentLifecycle;
 using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Employees.Profiles;
+using HrManagement.Application.Leave.Requests;
+using HrManagement.Application.Leave.Types;
 using HrManagement.Application.Organization.Memberships;
+using HrManagement.Domain.Attendance.Calculations;
+using HrManagement.Infrastructure.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Records;
 using HrManagement.Infrastructure.Attendance.Schedules;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Dashboard.Analytics;
 using HrManagement.Infrastructure.Employees;
 using HrManagement.Infrastructure.Employees.Profiles;
+using HrManagement.Infrastructure.Leave.Requests;
+using HrManagement.Infrastructure.Leave.Types;
 using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -163,6 +167,27 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IAttendanceRecalculationService,
             AttendanceRecalculationService>();
+
+        services.AddSingleton<
+            ILeaveTypeRepository,
+            EfLeaveTypeRepository>();
+
+        services.AddSingleton<
+            ILeaveRequestRepository,
+            EfLeaveRequestRepository>();
+
+        services.AddSingleton<
+            ILeaveRequestSubmissionPersistence,
+            EfLeaveRequestSubmissionPersistence>();
+
+        services.AddSingleton<TimeProvider>(
+            TimeProvider.System);
+
+        services.AddScoped<
+            ILeaveRequestSubmissionService,
+            LeaveRequestSubmissionService>();
+
+        services.AddSingleton<LeaveTypeSeedService>();
 
         return services;
     }

@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Leave.Types;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
 using HrManagement.Application.Organization.Assignments;
@@ -9,7 +10,9 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class DatabaseInitializer
 {
-    // Dependency
+    private readonly LeaveTypeSeedService
+        _leaveTypeSeedService;
+
     private readonly WorkScheduleSeedService
         _workScheduleSeedService;
 
@@ -32,7 +35,7 @@ public sealed class DatabaseInitializer
     IEmploymentHistoryBackfillService employmentHistoryBackfillService,
     IEmployeeOrganizationBackfillService employeeOrganizationBackfillService,
     IEmployeeOrganizationAssignmentBackfillService employeeOrganizationAssignmentBackfillService,
-    WorkScheduleSeedService workScheduleSeedService)
+    WorkScheduleSeedService workScheduleSeedService, LeaveTypeSeedService leaveTypeSeedService)
     {
         _employeeOrganizationAssignmentBackfillService =
             employeeOrganizationAssignmentBackfillService;
@@ -47,6 +50,9 @@ public sealed class DatabaseInitializer
 
         _workScheduleSeedService =
             workScheduleSeedService;
+
+        _leaveTypeSeedService =
+            leaveTypeSeedService;
     }
 
     public async Task InitializeAsync(
@@ -135,6 +141,14 @@ public sealed class DatabaseInitializer
                     cancellationToken);
             }
         }
+
+        await _workScheduleSeedService
+            .SeedAsync(
+                cancellationToken);
+
+        await _leaveTypeSeedService
+            .SeedAsync(
+                cancellationToken);
 
         await _workScheduleSeedService
             .SeedAsync(

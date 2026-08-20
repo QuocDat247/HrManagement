@@ -8,11 +8,19 @@ using HrManagement.Domain.Employees.Profiles;
 using HrManagement.Domain.Attendance.Schedules;
 using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Domain.Leave.Requests;
+using HrManagement.Domain.Leave.Types;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<LeaveType> LeaveTypes =>
+        Set<LeaveType>();
+
+    public DbSet<LeaveRequest> LeaveRequests =>
+        Set<LeaveRequest>();
+
     public DbSet<AttendanceRecord> AttendanceRecords =>
         Set<AttendanceRecord>();
 
@@ -118,5 +126,11 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new AttendanceEventConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new LeaveTypeConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new LeaveRequestConfiguration());
     }
 }
