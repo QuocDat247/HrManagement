@@ -3,6 +3,7 @@ using System;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HrManagement.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HrManagementDbContext))]
-    partial class HrManagementDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260820023508_AddAttendanceRecordsAndEvents")]
+    partial class AddAttendanceRecordsAndEvents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
