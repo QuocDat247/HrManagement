@@ -1,6 +1,7 @@
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
 using HrManagement.Domain.Employees;
+using HrManagement.Domain.Attendance.Calculations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -124,5 +125,34 @@ public sealed class AttendanceRecordConfiguration
                 record => record.WorkScheduleId)
             .OnDelete(
                 DeleteBehavior.Restrict);
+
+        builder.Property(
+        record =>
+            record.Status)
+            .HasConversion<int>()
+            .HasDefaultValue(
+                AttendanceCalculationStatus.NotCalculated)
+            .IsRequired();
+
+        builder.Property(
+                record =>
+                    record.WorkedMinutes)
+            .HasDefaultValue(
+                0)
+            .IsRequired();
+
+        builder.Property(
+                record =>
+                    record.LateMinutes)
+            .HasDefaultValue(
+                0)
+            .IsRequired();
+
+        builder.Property(
+                record =>
+                    record.EarlyLeaveMinutes)
+            .HasDefaultValue(
+                0)
+            .IsRequired();
     }
 }

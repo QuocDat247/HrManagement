@@ -1,3 +1,4 @@
+using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
 using HrManagement.Domain.Employees;
@@ -505,6 +506,199 @@ public sealed class AttendancePersistenceTests
         await Assert.ThrowsAsync<DbUpdateException>(
             () =>
                 deleteContext.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task AttendanceRecord_RoundTrip_PreservesCalculationState()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedScheduleContextAsync(
+                options);
+
+        AttendanceRecord record =
+            CreateDayRecord(
+                ids,
+                Guid.NewGuid());
+
+        IReadOnlyList<AttendanceEvent> events =
+        [
+            new AttendanceEvent(
+            Guid.NewGuid(),
+            record.Id,
+            record.EmployeeId,
+            AttendanceEventType.ClockIn,
+            new DateTime(
+                2026,
+                8,
+                20,
+                8,
+                10,
+                0,
+                DateTimeKind.Utc)),
+
+        new AttendanceEvent(
+            Guid.NewGuid(),
+            record.Id,
+            record.EmployeeId,
+            AttendanceEventType.ClockOut,
+            new DateTime(
+                2026,
+                8,
+                20,
+                16,
+                45,
+                0,
+                DateTimeKind.Utc))
+        ];
+
+        DailyAttendanceCalculation daily =
+            DailyAttendanceCalculator.Calculate(
+                record,
+                events);
+
+        AttendanceScheduleAdherence adherence =
+            AttendanceScheduleAdherenceCalculator.Calculate(
+                record,
+                daily,
+                new AttendanceScheduleWindow(
+                    new DateTime(
+                        2026,
+                        8,
+                        20,
+                        8,
+                        0,
+                        0,
+                        DateTimeKind.Utc),
+                    new DateTime(
+                        2026,
+                        8,
+                        20,
+                        17,
+                        0,
+                        0,
+                        DateTimeKind.Utc)),
+                new AttendanceAdherencePolicy());
+
+        record.ApplyCalculation(
+            daily,
+            adherence);
+
+        await using (
+            var dbContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await dbContext
+                .AttendanceRecords
+                .AddAsync(
+                    record);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        await using var verificationContext =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceRecord saved =
+            await verificationContext
+                .AttendanceRecords
+                .AsNoTracking()
+                .SingleAsync(
+                    item =>
+                        item.Id ==
+                        record.Id);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.Present,
+            saved.Status);
+
+        Assert.Equal(
+            515,
+            saved.WorkedMinutes);
+
+        Assert.Equal(
+            10,
+            saved.LateMinutes);
+
+        Assert.Equal(
+            15,
+            saved.EarlyLeaveMinutes);
+    }
+
+    [Fact]
+    public async Task AttendanceRecord_RoundTrip_DefaultsToNotCalculated()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedScheduleContextAsync(
+                options);
+
+        AttendanceRecord record =
+            CreateDayRecord(
+                ids,
+                Guid.NewGuid());
+
+        await using (
+            var dbContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await dbContext
+                .AttendanceRecords
+                .AddAsync(
+                    record);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        await using var verificationContext =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceRecord saved =
+            await verificationContext
+                .AttendanceRecords
+                .AsNoTracking()
+                .SingleAsync(
+                    item =>
+                        item.Id ==
+                        record.Id);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.NotCalculated,
+            saved.Status);
+
+        Assert.Equal(
+            0,
+            saved.WorkedMinutes);
+
+        Assert.Equal(
+            0,
+            saved.LateMinutes);
+
+        Assert.Equal(
+            0,
+            saved.EarlyLeaveMinutes);
     }
 
     private static AttendanceRecord CreateDayRecord(

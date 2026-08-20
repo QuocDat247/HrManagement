@@ -1,3 +1,6 @@
+using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Domain.Attendance.Calculations;
+using HrManagement.Infrastructure.Attendance.Calculations;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
 using HrManagement.Application.Dashboard;
@@ -145,6 +148,21 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IAttendancePunchService,
             AttendancePunchService>();
+
+        services.AddSingleton<
+            IAttendanceScheduleWindowResolver,
+            SystemAttendanceScheduleWindowResolver>();
+
+        services.AddSingleton<
+            IAttendanceCalculationPersistence,
+            EfAttendanceCalculationPersistence>();
+
+        services.AddSingleton(
+            new AttendanceAdherencePolicy());
+
+        services.AddScoped<
+            IAttendanceRecalculationService,
+            AttendanceRecalculationService>();
 
         return services;
     }

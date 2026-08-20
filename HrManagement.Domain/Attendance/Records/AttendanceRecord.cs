@@ -1,7 +1,33 @@
+using HrManagement.Domain.Attendance.Calculations;
+
 namespace HrManagement.Domain.Attendance.Records;
 
 public sealed class AttendanceRecord
 {
+    public AttendanceCalculationStatus Status
+    {
+        get;
+        private set;
+    } = AttendanceCalculationStatus.NotCalculated;
+
+    public int WorkedMinutes
+    {
+        get;
+        private set;
+    }
+
+    public int LateMinutes
+    {
+        get;
+        private set;
+    }
+
+    public int EarlyLeaveMinutes
+    {
+        get;
+        private set;
+    }
+
     public Guid Id
     {
         get;
@@ -297,5 +323,77 @@ public sealed class AttendanceRecord
                 "Giờ dự kiến phải có độ chính xác theo phút.",
                 parameterName);
         }
+    }
+
+    public void ApplyCalculation(
+    DailyAttendanceCalculation calculation,
+    AttendanceScheduleAdherence adherence)
+    {
+        ArgumentNullException.ThrowIfNull(
+            calculation);
+
+        ArgumentNullException.ThrowIfNull(
+            adherence);
+
+        if (calculation.Status ==
+            AttendanceCalculationStatus.NotCalculated)
+        {
+            throw new ArgumentException(
+                "Kết quả tính công chưa được tính.",
+                nameof(calculation));
+        }
+
+        if (!IsWorkingDay
+            && calculation.Status !=
+                AttendanceCalculationStatus.NonWorkingDay)
+        {
+            throw new InvalidOperationException(
+                "Ngày không làm việc phải có trạng thái NonWorkingDay.");
+        }
+
+        if (IsWorkingDay
+            && calculation.Status ==
+                AttendanceCalculationStatus.NonWorkingDay)
+        {
+            throw new InvalidOperationException(
+                "Ngày làm việc không thể có trạng thái NonWorkingDay.");
+        }
+
+        if (calculation.WorkedMinutes < 0)
+        {
+            throw new InvalidOperationException(
+                "Số phút làm việc không được âm.");
+        }
+
+        if (adherence.LateMinutes < 0
+            || adherence.EarlyLeaveMinutes < 0)
+        {
+            throw new InvalidOperationException(
+                "Số phút vi phạm lịch làm việc không được âm.");
+        }
+
+        if (calculation.Status is
+                AttendanceCalculationStatus.Absent
+                or AttendanceCalculationStatus.NonWorkingDay
+            && (
+                adherence.LateMinutes != 0
+                || adherence.EarlyLeaveMinutes != 0
+            ))
+        {
+            throw new InvalidOperationException(
+                "Ngày vắng mặt hoặc không làm việc không được có phút đi trễ hoặc về sớm.");
+        }
+
+        Status =
+            calculation.Status;
+
+        WorkedMinutes =
+            calculation.WorkedMinutes;
+
+        LateMinutes =
+            adherence.LateMinutes;
+
+        EarlyLeaveMinutes =
+            adherence.EarlyLeaveMinutes;
     }
 }

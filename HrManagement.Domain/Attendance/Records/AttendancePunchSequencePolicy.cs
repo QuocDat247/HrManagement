@@ -76,6 +76,16 @@ public static class AttendancePunchSequencePolicy
         }
     }
 
+    public static void EnsureValidTimeline(
+        IReadOnlyList<AttendanceEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(
+            events);
+
+        ValidateExistingTimeline(
+            events);
+    }
+
     private static void ValidateExistingTimeline(
         IReadOnlyList<AttendanceEvent> events)
     {
