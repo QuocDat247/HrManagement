@@ -32,6 +32,10 @@
             <views:PositionsView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:AttendanceLeaveWorkspaceViewModel}">
+            <views:AttendanceLeaveWorkspaceView />
+        </DataTemplate>
+
     </Window.Resources>
 
     <Grid>

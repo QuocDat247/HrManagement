@@ -6,7 +6,8 @@ public static class DailyAttendanceCalculator
 {
     public static DailyAttendanceCalculation Calculate(
         AttendanceRecord record,
-        IReadOnlyList<AttendanceEvent> events)
+        IReadOnlyList<AttendanceEvent> events,
+            bool hasApprovedLeave = false)
     {
         ArgumentNullException.ThrowIfNull(
             record);
@@ -24,10 +25,15 @@ public static class DailyAttendanceCalculator
 
         if (events.Count == 0)
         {
+            AttendanceCalculationStatus emptyDayStatus =
+                !record.IsWorkingDay
+                    ? AttendanceCalculationStatus.NonWorkingDay
+                    : hasApprovedLeave
+                        ? AttendanceCalculationStatus.ApprovedLeave
+                        : AttendanceCalculationStatus.Absent;
+
             return new DailyAttendanceCalculation(
-                record.IsWorkingDay
-                    ? AttendanceCalculationStatus.Absent
-                    : AttendanceCalculationStatus.NonWorkingDay,
+                emptyDayStatus,
                 workedMinutes: 0,
                 completedPairCount: 0,
                 firstClockInAtUtc: null,

@@ -54,7 +54,11 @@ public sealed partial class MainViewModel : ObservableObject
 
             new NavigationItem(
                 "Chức danh",
-                typeof(PositionsViewModel))
+                typeof(PositionsViewModel)),
+
+            new NavigationItem(
+                "Chấm công & Nghỉ phép",
+                typeof(AttendanceLeaveWorkspaceViewModel))
         ];
 
         NavigateCommand =

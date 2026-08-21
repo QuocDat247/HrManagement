@@ -7,6 +7,9 @@ namespace HrManagement.Application.Attendance.Calculations;
 public sealed class AttendanceRecalculationService
     : IAttendanceRecalculationService
 {
+    private readonly IApprovedLeaveAttendanceResolver
+        _approvedLeaveResolver;
+
     private readonly IAttendanceRecordRepository
         _recordRepository;
 
@@ -25,10 +28,14 @@ public sealed class AttendanceRecalculationService
     public AttendanceRecalculationService(
         IAttendanceRecordRepository recordRepository,
         IAttendanceEventRepository eventRepository,
+        IApprovedLeaveAttendanceResolver approvedLeaveResolver,
         IAttendanceScheduleWindowResolver scheduleWindowResolver,
         IAttendanceCalculationPersistence persistence,
         AttendanceAdherencePolicy adherencePolicy)
     {
+        _approvedLeaveResolver =
+            approvedLeaveResolver;
+
         _recordRepository =
             recordRepository;
 
@@ -68,6 +75,29 @@ public sealed class AttendanceRecalculationService
                 "Không tìm thấy bản ghi chấm công.");
         }
 
+        ApprovedLeaveAttendanceInput? approvedLeave;
+
+        try
+        {
+            approvedLeave =
+                await _approvedLeaveResolver
+                    .ResolveAsync(
+                        record.EmployeeId,
+                        record.EmploymentPeriodId,
+                        record.WorkDate,
+                        cancellationToken);
+        }
+        catch (ArgumentException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+
         IReadOnlyList<AttendanceEvent> events =
             await _eventRepository
                 .GetByAttendanceRecordIdAsync(
@@ -81,7 +111,9 @@ public sealed class AttendanceRecalculationService
             dailyCalculation =
                 DailyAttendanceCalculator.Calculate(
                     record,
-                    events);
+                    events,
+                    hasApprovedLeave:
+                        approvedLeave is not null);
         }
         catch (ArgumentException exception)
         {
@@ -94,13 +126,18 @@ public sealed class AttendanceRecalculationService
                 exception.Message);
         }
 
-        AttendanceScheduleWindow? scheduleWindow;
+        AttendanceScheduleWindow? scheduleWindow =
+            null;
 
         try
         {
-            scheduleWindow =
-                _scheduleWindowResolver.Resolve(
-                    record);
+            if (dailyCalculation.Status !=
+                AttendanceCalculationStatus.ApprovedLeave)
+            {
+                scheduleWindow =
+                    _scheduleWindowResolver.Resolve(
+                        record);
+            }
         }
         catch (ArgumentException exception)
         {

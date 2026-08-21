@@ -6,5 +6,6 @@ public enum AttendanceCalculationStatus
     NonWorkingDay = 1,
     Absent = 2,
     Present = 3,
-    Incomplete = 4
+    Incomplete = 4,
+    ApprovedLeave = 5
 }

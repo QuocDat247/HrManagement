@@ -145,6 +145,8 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<EditEmployeeWindow>();
 
+        services.AddTransient<AttendanceLeaveWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();

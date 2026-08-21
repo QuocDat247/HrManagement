@@ -349,9 +349,133 @@ public sealed class AttendanceRecalculationServiceTests
             test.Persistence.Record);
     }
 
+    [Fact]
+    public async Task WorkingDayWithoutPunches_WithApprovedLeave_BecomesApprovedLeave()
+    {
+        TestContext test =
+            CreateContext();
+
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        test.RecordRepository.Record =
+            record;
+
+        test.ApprovedLeaveResolver.Input =
+            new ApprovedLeaveAttendanceInput(
+                Guid.NewGuid(),
+                Guid.NewGuid());
+
+        RecalculateAttendanceResult result =
+            await test.Service.RecalculateAsync(
+                new RecalculateAttendanceRequest(
+                    record.Id));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.ApprovedLeave,
+            result.Status);
+
+        Assert.Equal(
+            0,
+            result.WorkedMinutes);
+
+        Assert.Equal(
+            0,
+            result.LateMinutes);
+
+        Assert.Equal(
+            0,
+            result.EarlyLeaveMinutes);
+
+        Assert.Equal(
+            1,
+            test.ApprovedLeaveResolver.CallCount);
+
+        Assert.Equal(
+            record.EmployeeId,
+            test.ApprovedLeaveResolver.EmployeeId);
+
+        Assert.Equal(
+            record.EmploymentPeriodId,
+            test.ApprovedLeaveResolver.EmploymentPeriodId);
+
+        Assert.Equal(
+            record.WorkDate,
+            test.ApprovedLeaveResolver.WorkDate);
+
+        Assert.Equal(
+            0,
+            test.ScheduleWindowResolver.CallCount);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.ApprovedLeave,
+            test.Persistence.Record!.Status);
+    }
+
+    [Fact]
+    public async Task ApprovedLeaveWithPunches_PreservesActualAttendance()
+    {
+        TestContext test =
+            CreateContext();
+
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        test.RecordRepository.Record =
+            record;
+
+        test.ApprovedLeaveResolver.Input =
+            new ApprovedLeaveAttendanceInput(
+                Guid.NewGuid(),
+                Guid.NewGuid());
+
+        test.EventRepository.Events =
+        [
+            Event(
+            record,
+            AttendanceEventType.ClockIn,
+            Utc(
+                8,
+                0)),
+
+        Event(
+            record,
+            AttendanceEventType.ClockOut,
+            Utc(
+                17,
+                0))
+        ];
+
+        RecalculateAttendanceResult result =
+            await test.Service.RecalculateAsync(
+                new RecalculateAttendanceRequest(
+                    record.Id));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.Present,
+            result.Status);
+
+        Assert.Equal(
+            540,
+            result.WorkedMinutes);
+
+        Assert.Equal(
+            1,
+            test.ScheduleWindowResolver.CallCount);
+    }
+
     private static TestContext CreateContext(
         AttendanceAdherencePolicy? policy = null)
     {
+        var approvedLeaveResolver =
+            new StubApprovedLeaveAttendanceResolver();
+
         var recordRepository =
             new StubAttendanceRecordRepository();
 
@@ -368,6 +492,7 @@ public sealed class AttendanceRecalculationServiceTests
             new AttendanceRecalculationService(
                 recordRepository,
                 eventRepository,
+                approvedLeaveResolver,
                 scheduleWindowResolver,
                 persistence,
                 policy ??
@@ -377,6 +502,7 @@ public sealed class AttendanceRecalculationServiceTests
             service,
             recordRepository,
             eventRepository,
+            approvedLeaveResolver,
             scheduleWindowResolver,
             persistence);
     }
@@ -451,6 +577,7 @@ public sealed class AttendanceRecalculationServiceTests
         AttendanceRecalculationService Service,
         StubAttendanceRecordRepository RecordRepository,
         StubAttendanceEventRepository EventRepository,
+        StubApprovedLeaveAttendanceResolver ApprovedLeaveResolver,
         StubAttendanceScheduleWindowResolver ScheduleWindowResolver,
         StubAttendanceCalculationPersistence Persistence);
 
@@ -619,6 +746,61 @@ public sealed class AttendanceRecalculationServiceTests
                 expectedEvents.ToList();
 
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubApprovedLeaveAttendanceResolver
+    : IApprovedLeaveAttendanceResolver
+    {
+        public ApprovedLeaveAttendanceInput? Input
+        {
+            get;
+            set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public Guid? EmployeeId
+        {
+            get;
+            private set;
+        }
+
+        public Guid? EmploymentPeriodId
+        {
+            get;
+            private set;
+        }
+
+        public DateOnly? WorkDate
+        {
+            get;
+            private set;
+        }
+
+        public Task<ApprovedLeaveAttendanceInput?> ResolveAsync(
+            Guid employeeId,
+            Guid employmentPeriodId,
+            DateOnly workDate,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            EmployeeId =
+                employeeId;
+
+            EmploymentPeriodId =
+                employmentPeriodId;
+
+            WorkDate =
+                workDate;
+
+            return Task.FromResult(
+                Input);
         }
     }
 }

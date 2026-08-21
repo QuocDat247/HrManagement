@@ -25,7 +25,8 @@ using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-
+using HrManagement.Application.Workspaces.AttendanceLeave;
+using HrManagement.Infrastructure.Workspaces.AttendanceLeave;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -164,6 +165,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(
             new AttendanceAdherencePolicy());
 
+        services.AddSingleton<
+            IApprovedLeaveAttendanceResolver,
+            EfApprovedLeaveAttendanceResolver>();
+
         services.AddScoped<
             IAttendanceRecalculationService,
             AttendanceRecalculationService>();
@@ -200,6 +205,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             ILeaveRequestStatusService,
             LeaveRequestStatusService>();
+        services.AddSingleton<
+            IAttendanceLeaveWorkspaceQueryService,
+            EfAttendanceLeaveWorkspaceQueryService>();
 
         return services;
     }

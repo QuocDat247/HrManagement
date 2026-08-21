@@ -1,0 +1,758 @@
+<UserControl x:Class="HrManagement.Desktop.Views.AttendanceLeaveWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:attendance="clr-namespace:HrManagement.Domain.Attendance.Calculations;assembly=HrManagement.Domain"
+             xmlns:leave="clr-namespace:HrManagement.Domain.Leave.Requests;assembly=HrManagement.Domain"
+             Loaded="AttendanceLeaveWorkspaceView_Loaded">
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- =====================================================
+         FILTERS
+         ===================================================== -->
+        <Border Grid.Row="0"
+        Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,12">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="130" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="90" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="0"
+                   Margin="0,0,10,5"
+                   Text="Từ ngày"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="1"
+                   Margin="0,0,10,5"
+                   Text="Đến ngày"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="2"
+                   Margin="0,0,10,5"
+                   Text="Tìm nhân viên"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="3"
+                   Margin="0,0,10,5"
+                   Text="Nhân viên"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <DatePicker Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="0,0,10,0"
+                    SelectedDate="{Binding FromDate,
+                                           Mode=TwoWay}" />
+
+                <DatePicker Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,0,10,0"
+                    SelectedDate="{Binding ToDate,
+                                           Mode=TwoWay}" />
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="2"
+                 Margin="0,0,10,0"
+                 MinHeight="30"
+                 VerticalContentAlignment="Center"
+                 ToolTip="Nhập mã hoặc tên nhân viên"
+                 Text="{Binding EmployeeSearchText,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}" />
+
+                <ComboBox Grid.Row="1"
+                  Grid.Column="3"
+                  Margin="0,0,10,0"
+                  MinHeight="30"
+                  ItemsSource="{Binding FilteredEmployeeOptions}"
+                  DisplayMemberPath="DisplayName"
+                  SelectedItem="{Binding SelectedEmployeeOption,
+                                        Mode=TwoWay}" />
+
+                <Button Grid.Row="1"
+                Grid.Column="4"
+                Margin="0,0,10,0"
+                MinHeight="30"
+                Content="Lọc / Làm mới"
+                Command="{Binding LoadCommand}" />
+
+                <Button Grid.Row="1"
+                Grid.Column="5"
+                MinHeight="30"
+                Content="Xóa lọc"
+                Command="{Binding ClearFiltersCommand}" />
+
+            </Grid>
+
+        </Border>
+
+        <!-- =====================================================
+             MESSAGES
+             ===================================================== -->
+        <StackPanel Grid.Row="1"
+                    Margin="0,0,0,10">
+
+            <TextBlock Text="{Binding OperationMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource PrimaryBrush}"
+                       FontWeight="SemiBold" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource WarningBrush}"
+                       FontWeight="SemiBold" />
+
+        </StackPanel>
+
+        <!-- =====================================================
+             WORKSPACE TABS
+             ===================================================== -->
+        <TabControl Grid.Row="2">
+
+            <!-- =================================================
+                 ATTENDANCE TAB
+                 ================================================= -->
+            <TabItem Header="Chấm công">
+
+                <Grid Margin="12">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0"
+                                Margin="0,0,0,12">
+
+                        <TextBlock Text="Dữ liệu chấm công"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,4,0,0"
+                                   Text="Kết quả tính công theo ngày và lịch làm việc đã được snapshot."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <Border Grid.Row="1"
+                Style="{DynamicResource CardBorderStyle}"
+                Margin="0,0,0,12">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="100" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                            Margin="0,0,16,0">
+
+                                <TextBlock Text="Ghi nhận chấm công"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBlock Margin="0,4,0,0"
+                               Foreground="{DynamicResource SecondaryTextBrush}">
+
+                        <Run Text="Nhân viên: " />
+                        <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+
+                                </TextBlock>
+
+                                <TextBlock Margin="0,3,0,0"
+                               Text="Chọn một nhân viên ở bộ lọc phía trên để ghi nhận vào ca hoặc ra ca."
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                        Margin="0,0,10,0"
+                        MinHeight="36"
+                        VerticalAlignment="Center"
+                        Content="Vào ca"
+                        Command="{Binding ClockInCommand}" />
+
+                            <Button Grid.Column="2"
+                        MinHeight="36"
+                        VerticalAlignment="Center"
+                        Content="Ra ca"
+                        Command="{Binding ClockOutCommand}" />
+
+                        </Grid>
+
+                    </Border>
+                    
+                    <Border Grid.Row="2"
+                            MinHeight="220"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                        <Grid>
+                            
+                        <DataGrid ItemsSource="{Binding AttendanceItems}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  HeadersVisibility="Column"
+                                  RowHeaderWidth="0"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
+                            <DataGrid.Columns>
+
+                                <DataGridTextColumn Header="Ngày"
+                                                    Width="95"
+                                                    Binding="{Binding WorkDate,
+                                                                      StringFormat={}{0:dd/MM/yyyy}}" />
+
+                                <DataGridTextColumn Header="Mã NV"
+                                                    Width="90"
+                                                    Binding="{Binding EmployeeCode}" />
+
+                                <DataGridTextColumn Header="Nhân viên"
+                                                    Width="*"
+                                                    MinWidth="150"
+                                                    Binding="{Binding EmployeeName}" />
+
+                                <DataGridCheckBoxColumn Header="Ngày làm"
+                                                        Width="75"
+                                                        Binding="{Binding IsWorkingDay}" />
+
+                                <DataGridTextColumn Header="Bắt đầu"
+                                                    Width="75"
+                                                    Binding="{Binding ExpectedStartTime}" />
+
+                                <DataGridTextColumn Header="Kết thúc"
+                                                    Width="75"
+                                                    Binding="{Binding ExpectedEndTime}" />
+
+                                <DataGridTemplateColumn Header="Trạng thái"
+                                                        Width="125">
+
+                                    <DataGridTemplateColumn.CellTemplate>
+
+                                        <DataTemplate>
+
+                                            <TextBlock VerticalAlignment="Center">
+
+                                                <TextBlock.Style>
+
+                                                    <Style TargetType="TextBlock">
+
+                                                        <Setter Property="Text"
+                Value="Chưa tính" />
+
+                                                        <Style.Triggers>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                         Value="{x:Static attendance:AttendanceCalculationStatus.NonWorkingDay}">
+                                                                <Setter Property="Text"
+                        Value="Không làm việc" />
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                         Value="{x:Static attendance:AttendanceCalculationStatus.Absent}">
+                                                                <Setter Property="Text"
+                        Value="Vắng" />
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                         Value="{x:Static attendance:AttendanceCalculationStatus.Present}">
+                                                                <Setter Property="Text"
+                        Value="Có mặt" />
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                         Value="{x:Static attendance:AttendanceCalculationStatus.Incomplete}">
+                                                                <Setter Property="Text"
+                        Value="Chưa hoàn tất" />
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                         Value="{x:Static attendance:AttendanceCalculationStatus.ApprovedLeave}">
+                                                                <Setter Property="Text"
+                        Value="Nghỉ đã duyệt" />
+                                                            </DataTrigger>
+
+                                                        </Style.Triggers>
+
+                                                    </Style>
+
+                                                </TextBlock.Style>
+
+                                            </TextBlock>
+
+                                        </DataTemplate>
+
+                                    </DataGridTemplateColumn.CellTemplate>
+
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Làm việc"
+                                                    Width="75"
+                                                    Binding="{Binding WorkedMinutes}" />
+
+                                <DataGridTextColumn Header="Đi trễ"
+                                                    Width="70"
+                                                    Binding="{Binding LateMinutes}" />
+
+                                <DataGridTextColumn Header="Về sớm"
+                                                    Width="70"
+                                                    Binding="{Binding EarlyLeaveMinutes}" />
+
+                            </DataGrid.Columns>
+
+                        </DataGrid>
+                        </Grid>
+
+                    </Border>
+
+                </Grid>
+
+            </TabItem>
+
+            <!-- =================================================
+                 LEAVE TAB
+                 ================================================= -->
+            <TabItem Header="Nghỉ phép">
+
+                <Grid Margin="12">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- =========================================
+                         NEW LEAVE REQUEST
+                         ========================================= -->
+                    <Expander Grid.Row="0"
+                              Header="Tạo đơn nghỉ phép"
+                              IsExpanded="False"
+                              Margin="0,0,0,12"
+                              MaxHeight="230">
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled">
+                            
+                        <Border Style="{DynamicResource CardBorderStyle}"
+                                Margin="0,8,0,0">
+
+                            <Grid>
+
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="145" />
+                                    <ColumnDefinition Width="145" />
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           Margin="0,0,10,5"
+                                           Text="Nhân viên"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="1"
+                                           Margin="0,0,10,5"
+                                           Text="Loại nghỉ phép"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="2"
+                                           Margin="0,0,10,5"
+                                           Text="Từ ngày"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="3"
+                                           Text="Đến ngày"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                <ComboBox Grid.Row="1"
+                                          Grid.Column="0"
+                                          Margin="0,0,10,10"
+                                          MinHeight="30"
+                                          ItemsSource="{Binding RequestEmployeeOptions}"
+                                          SelectedItem="{Binding SelectedRequestEmployee,
+                                            Mode=TwoWay}">
+
+                                    <ComboBox.ItemTemplate>
+
+                                        <DataTemplate>
+
+                                            <StackPanel Orientation="Horizontal">
+
+                                                <TextBlock Text="{Binding EmployeeCode}"
+                                                           FontWeight="SemiBold" />
+
+                                                <TextBlock Text=" - " />
+
+                                                <TextBlock Text="{Binding EmployeeName}" />
+
+                                            </StackPanel>
+
+                                        </DataTemplate>
+
+                                    </ComboBox.ItemTemplate>
+
+                                </ComboBox>
+
+                                <ComboBox Grid.Row="1"
+                                          Grid.Column="1"
+                                          Margin="0,0,10,10"
+                                          MinHeight="30"
+                                          ItemsSource="{Binding ActiveLeaveTypes}"
+                                          SelectedItem="{Binding SelectedLeaveType,
+                                            Mode=TwoWay}">
+
+                                    <ComboBox.ItemTemplate>
+
+                                        <DataTemplate>
+
+                                            <StackPanel Orientation="Horizontal">
+
+                                                <TextBlock Text="{Binding Code}"
+                                                           FontWeight="SemiBold" />
+
+                                                <TextBlock Text=" - " />
+
+                                                <TextBlock Text="{Binding Name}" />
+
+                                            </StackPanel>
+
+                                        </DataTemplate>
+
+                                    </ComboBox.ItemTemplate>
+
+                                </ComboBox>
+
+                                <DatePicker Grid.Row="1"
+                                            Grid.Column="2"
+                                            Margin="0,0,10,10"
+                                            SelectedDate="{Binding RequestStartDate,
+                                               Mode=TwoWay}" />
+
+                                <DatePicker Grid.Row="1"
+                                            Grid.Column="3"
+                                            Margin="0,0,0,10"
+                                            SelectedDate="{Binding RequestEndDate,
+                                               Mode=TwoWay}" />
+
+                                <Grid Grid.Row="2"
+                                      Grid.ColumnSpan="4">
+
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="120" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBox Grid.Column="0"
+                                             Margin="0,0,10,0"
+                                             MinHeight="56"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             VerticalScrollBarVisibility="Auto"
+                                             ToolTip="Lý do nghỉ phép"
+                                             Text="{Binding RequestReason,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <Button Grid.Column="1"
+                                            MinHeight="36"
+                                            VerticalAlignment="Bottom"
+                                            Content="Gửi đơn"
+                                            Command="{Binding SubmitLeaveRequestCommand}" />
+
+                                </Grid>
+
+                            </Grid>
+
+                        </Border>
+                        </ScrollViewer>
+
+                    </Expander>
+
+                    <!-- =========================================
+                         STATUS ACTIONS
+                         ========================================= -->
+                    <Border Grid.Row="1"
+                            Background="{DynamicResource CardBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="16,12"
+                            Margin="0,0,0,12">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="95" />
+                                <ColumnDefinition Width="95" />
+                                <ColumnDefinition Width="95" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                                        Margin="0,0,12,0">
+
+                                <TextBlock Text="Xử lý đơn được chọn"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBox Margin="0,6,0,0"
+                                         MinHeight="32"
+                                         ToolTip="Ghi chú duyệt, từ chối hoặc hủy"
+                                         Text="{Binding StatusChangeNote,
+                                                        Mode=TwoWay,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                            </StackPanel>
+
+                            <Button Grid.Column="1"
+                                    Margin="0,0,8,0"
+                                    MinHeight="34"
+                                    VerticalAlignment="Bottom"
+                                    Content="Duyệt"
+                                    Command="{Binding ApproveLeaveRequestCommand}" />
+
+                            <Button Grid.Column="2"
+                                    Margin="0,0,8,0"
+                                    MinHeight="34"
+                                    VerticalAlignment="Bottom"
+                                    Content="Từ chối"
+                                    Command="{Binding RejectLeaveRequestCommand}" />
+
+                            <Button Grid.Column="3"
+                                    MinHeight="34"
+                                    VerticalAlignment="Bottom"
+                                    Content="Hủy"
+                                    Command="{Binding CancelLeaveRequestCommand}" />
+
+                        </Grid>
+
+                    </Border>
+
+                    <!-- =========================================
+                         LEAVE REQUEST GRID
+                         ========================================= -->
+                    <Border Grid.Row="2"
+                            MinHeight="240"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8">
+
+                        <DataGrid ItemsSource="{Binding LeaveRequestItems}"
+                                  SelectedItem="{Binding SelectedLeaveRequestItem,
+                                                         Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  HeadersVisibility="Column"
+                                  RowHeaderWidth="0"
+                                  SelectionMode="Single"
+                                  SelectionUnit="FullRow"
+                                  VerticalAlignment="Stretch"
+                                  HorizontalAlignment="Stretch"
+                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.CanContentScroll="True">
+
+                            <DataGrid.Columns>
+
+                                <DataGridTextColumn Header="Mã NV"
+                                                    Width="90"
+                                                    Binding="{Binding EmployeeCode}" />
+
+                                <DataGridTextColumn Header="Nhân viên"
+                                                    Width="*"
+                                                    MinWidth="145"
+                                                    Binding="{Binding EmployeeName}" />
+
+                                <DataGridTextColumn Header="Loại nghỉ"
+                                                    Width="*"
+                                                    MinWidth="130"
+                                                    Binding="{Binding LeaveTypeName}" />
+
+                                <DataGridCheckBoxColumn Header="Có lương"
+                                                        Width="75"
+                                                        Binding="{Binding IsPaid}" />
+
+                                <DataGridTextColumn Header="Từ ngày"
+                                                    Width="90"
+                                                    Binding="{Binding StartDate,
+                                                                      StringFormat={}{0:dd/MM/yyyy}}" />
+
+                                <DataGridTextColumn Header="Đến ngày"
+                                                    Width="90"
+                                                    Binding="{Binding EndDate,
+                                                                      StringFormat={}{0:dd/MM/yyyy}}" />
+
+                                <DataGridTemplateColumn Header="Trạng thái"
+                        Width="100">
+
+                                    <DataGridTemplateColumn.CellTemplate>
+
+                                        <DataTemplate>
+
+                                            <TextBlock VerticalAlignment="Center">
+
+                                                <TextBlock.Style>
+
+                                                    <Style TargetType="TextBlock">
+
+                                                        <Setter Property="Text"
+                                Value="Chờ duyệt" />
+
+                                                        <Style.Triggers>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                                         Value="{x:Static leave:LeaveRequestStatus.Approved}">
+
+                                                                <Setter Property="Text"
+                                        Value="Đã duyệt" />
+
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                                         Value="{x:Static leave:LeaveRequestStatus.Rejected}">
+
+                                                                <Setter Property="Text"
+                                        Value="Từ chối" />
+
+                                                            </DataTrigger>
+
+                                                            <DataTrigger Binding="{Binding Status}"
+                                         Value="{x:Static leave:LeaveRequestStatus.Cancelled}">
+
+                                                                <Setter Property="Text"
+                                        Value="Đã hủy" />
+
+                                                            </DataTrigger>
+
+                                                        </Style.Triggers>
+
+                                                    </Style>
+
+                                                </TextBlock.Style>
+
+                                            </TextBlock>
+
+                                        </DataTemplate>
+
+                                    </DataGridTemplateColumn.CellTemplate>
+
+                                </DataGridTemplateColumn>
+
+                                <DataGridTextColumn Header="Gửi (UTC)"
+                                                    Width="125"
+                                                    Binding="{Binding SubmittedAtUtc,
+                                                                      StringFormat={}{0:dd/MM/yyyy HH:mm}}" />
+
+                                <DataGridTextColumn Header="Lý do"
+                                                    Width="*"
+                                                    MinWidth="160"
+                                                    Binding="{Binding Reason}" />
+
+                            </DataGrid.Columns>
+
+                        </DataGrid>
+
+                    </Border>
+
+                </Grid>
+
+            </TabItem>
+
+        </TabControl>
+
+        <!-- =====================================================
+             LOADING OVERLAY
+             ===================================================== -->
+        <Border Grid.RowSpan="3"
+                Panel.ZIndex="10"
+                Background="{DynamicResource PageBackgroundBrush}"
+                Opacity="0.88">
+
+            <Border.Style>
+
+                <Style TargetType="Border">
+
+                    <Setter Property="Visibility"
+                            Value="Collapsed" />
+
+                    <Style.Triggers>
+
+                        <DataTrigger Binding="{Binding IsLoading}"
+                                     Value="True">
+
+                            <Setter Property="Visibility"
+                                    Value="Visible" />
+
+                        </DataTrigger>
+
+                    </Style.Triggers>
+
+                </Style>
+
+            </Border.Style>
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <ProgressBar Width="220"
+                             Height="6"
+                             IsIndeterminate="True" />
+
+                <TextBlock Margin="0,12,0,0"
+                           Text="Đang tải dữ liệu..."
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontWeight="SemiBold" />
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>

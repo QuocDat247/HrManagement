@@ -440,6 +440,86 @@ public sealed class DailyAttendanceCalculatorTests
             result.WorkedMinutes);
     }
 
+    [Fact]
+    public void WorkingDayWithoutEvents_WithApprovedLeave_IsApprovedLeave()
+    {
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        DailyAttendanceCalculation result =
+            DailyAttendanceCalculator.Calculate(
+                record,
+                [],
+                hasApprovedLeave: true);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.ApprovedLeave,
+            result.Status);
+
+        Assert.Equal(
+            0,
+            result.WorkedMinutes);
+
+        Assert.Equal(
+            0,
+            result.CompletedPairCount);
+    }
+
+    [Fact]
+    public void NonWorkingDay_WithApprovedLeave_RemainsNonWorkingDay()
+    {
+        AttendanceRecord record =
+            CreateNonWorkingRecord();
+
+        DailyAttendanceCalculation result =
+            DailyAttendanceCalculator.Calculate(
+                record,
+                [],
+                hasApprovedLeave: true);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.NonWorkingDay,
+            result.Status);
+    }
+
+    [Fact]
+    public void WorkingDayWithPunches_ApprovedLeaveDoesNotHideActualWork()
+    {
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        IReadOnlyList<AttendanceEvent> events =
+        [
+            CreateEvent(
+            record,
+            AttendanceEventType.ClockIn,
+            Utc(
+                8,
+                0)),
+
+        CreateEvent(
+            record,
+            AttendanceEventType.ClockOut,
+            Utc(
+                17,
+                0))
+        ];
+
+        DailyAttendanceCalculation result =
+            DailyAttendanceCalculator.Calculate(
+                record,
+                events,
+                hasApprovedLeave: true);
+
+        Assert.Equal(
+            AttendanceCalculationStatus.Present,
+            result.Status);
+
+        Assert.Equal(
+            540,
+            result.WorkedMinutes);
+    }
+
     private static AttendanceRecord CreateWorkingRecord()
     {
         return new AttendanceRecord(
