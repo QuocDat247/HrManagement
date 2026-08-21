@@ -189,6 +189,18 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<LeaveTypeSeedService>();
 
+        services.AddSingleton<
+            ILeaveRequestStatusHistoryRepository,
+            EfLeaveRequestStatusHistoryRepository>();
+
+        services.AddSingleton<
+            ILeaveRequestStatusTransitionPersistence,
+            EfLeaveRequestStatusTransitionPersistence>();
+
+        services.AddScoped<
+            ILeaveRequestStatusService,
+            LeaveRequestStatusService>();
+
         return services;
     }
 }

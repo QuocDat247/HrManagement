@@ -152,4 +152,37 @@ public sealed class LeaveRequest
         Status =
             LeaveRequestStatus.Pending;
     }
+
+    public LeaveRequestStatusChange TransitionTo(
+    Guid statusChangeId,
+    LeaveRequestStatus targetStatus,
+    DateTime changedAtUtc,
+    string changedByUserId,
+    string changedByUsername,
+    string? note = null)
+    {
+        LeaveRequestStatus previousStatus =
+            Status;
+
+        LeaveRequestStatusTransitionPolicy
+            .EnsureCanTransition(
+                previousStatus,
+                targetStatus);
+
+        var statusChange =
+            new LeaveRequestStatusChange(
+                statusChangeId,
+                Id,
+                previousStatus,
+                targetStatus,
+                changedAtUtc,
+                changedByUserId,
+                changedByUsername,
+                note);
+
+        Status =
+            targetStatus;
+
+        return statusChange;
+    }
 }

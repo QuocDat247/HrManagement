@@ -204,4 +204,142 @@ public sealed class LeaveRequestOverlapPolicyTests
                 0,
                 DateTimeKind.Utc));
     }
+
+    [Fact]
+    public void ApprovedOverlap_IsRejected()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        LeaveRequest existing =
+            CreateRequest(
+                employeeId,
+                new DateOnly(
+                    2026,
+                    8,
+                    20),
+                new DateOnly(
+                    2026,
+                    8,
+                    22));
+
+        existing.TransitionTo(
+            Guid.NewGuid(),
+            LeaveRequestStatus.Approved,
+            new DateTime(
+                2026,
+                8,
+                19,
+                5,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-001",
+            "admin");
+
+        Assert.Throws<InvalidOperationException>(
+            () =>
+                LeaveRequestOverlapPolicy
+                    .EnsureNoOverlap(
+                        employeeId,
+                        new DateOnly(
+                            2026,
+                            8,
+                            22),
+                        new DateOnly(
+                            2026,
+                            8,
+                            24),
+                        [existing]));
+    }
+
+    [Fact]
+    public void RejectedOverlap_DoesNotBlock()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        LeaveRequest existing =
+            CreateRequest(
+                employeeId,
+                new DateOnly(
+                    2026,
+                    8,
+                    20),
+                new DateOnly(
+                    2026,
+                    8,
+                    22));
+
+        existing.TransitionTo(
+            Guid.NewGuid(),
+            LeaveRequestStatus.Rejected,
+            new DateTime(
+                2026,
+                8,
+                19,
+                5,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-001",
+            "admin");
+
+        LeaveRequestOverlapPolicy.EnsureNoOverlap(
+            employeeId,
+            new DateOnly(
+                2026,
+                8,
+                21),
+            new DateOnly(
+                2026,
+                8,
+                23),
+            [existing]);
+    }
+
+    [Fact]
+    public void CancelledOverlap_DoesNotBlock()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        LeaveRequest existing =
+            CreateRequest(
+                employeeId,
+                new DateOnly(
+                    2026,
+                    8,
+                    20),
+                new DateOnly(
+                    2026,
+                    8,
+                    22));
+
+        existing.TransitionTo(
+            Guid.NewGuid(),
+            LeaveRequestStatus.Cancelled,
+            new DateTime(
+                2026,
+                8,
+                19,
+                5,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-001",
+            "admin");
+
+        LeaveRequestOverlapPolicy.EnsureNoOverlap(
+            employeeId,
+            new DateOnly(
+                2026,
+                8,
+                21),
+            new DateOnly(
+                2026,
+                8,
+                23),
+            [existing]);
+    }
 }

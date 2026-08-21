@@ -50,6 +50,13 @@ public static class LeaveRequestOverlapPolicy
                 continue;
             }
 
+            if (existingRequest.Status is
+                LeaveRequestStatus.Rejected
+                or LeaveRequestStatus.Cancelled)
+            {
+                continue;
+            }
+
             bool overlaps =
                 startDate <=
                     existingRequest.EndDate
@@ -59,7 +66,7 @@ public static class LeaveRequestOverlapPolicy
             if (overlaps)
             {
                 throw new InvalidOperationException(
-                    "Khoảng nghỉ phép bị trùng với một đơn nghỉ phép hiện có.");
+                    "Khoảng nghỉ phép bị trùng với một đơn nghỉ phép đang có hiệu lực.");
             }
         }
     }

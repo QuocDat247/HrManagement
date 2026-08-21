@@ -127,10 +127,20 @@ public sealed class EfLeaveRequestSubmissionPersistence
                 .ToListAsync(
                     cancellationToken);
 
-        if (persistedOverlaps.Count > 0)
+        try
+        {
+            LeaveRequestOverlapPolicy
+                .EnsureNoOverlap(
+                    leaveRequest.EmployeeId,
+                    leaveRequest.StartDate,
+                    leaveRequest.EndDate,
+                    persistedOverlaps);
+        }
+        catch (InvalidOperationException exception)
         {
             throw new DbUpdateConcurrencyException(
-                "Đã xuất hiện một đơn nghỉ phép trùng khoảng ngày trước khi lưu.");
+                "Đã xuất hiện một đơn nghỉ phép đang có hiệu lực trùng khoảng ngày trước khi lưu.",
+                exception);
         }
 
         await dbContext

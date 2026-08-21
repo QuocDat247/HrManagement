@@ -15,6 +15,10 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<LeaveRequestStatusChange>
+        LeaveRequestStatusChanges =>
+            Set<LeaveRequestStatusChange>();
+
     public DbSet<LeaveType> LeaveTypes =>
         Set<LeaveType>();
 
@@ -132,5 +136,8 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new LeaveRequestConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new LeaveRequestStatusChangeConfiguration());
     }
 }

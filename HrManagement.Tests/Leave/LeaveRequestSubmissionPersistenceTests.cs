@@ -518,4 +518,190 @@ public sealed class LeaveRequestSubmissionPersistenceTests
                 CreateDbContext());
         }
     }
+
+    // Rejected không block
+    [Fact]
+    public async Task RejectedOverlap_DoesNotBlockSubmission()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedContext seed =
+            await SeedContextAsync(
+                options);
+
+        LeaveRequest existing =
+            CreateRequest(
+                seed,
+                new DateOnly(
+                    2026,
+                    8,
+                    20),
+                new DateOnly(
+                    2026,
+                    8,
+                    22));
+
+        LeaveRequestStatusChange rejection =
+            existing.TransitionTo(
+                Guid.NewGuid(),
+                LeaveRequestStatus.Rejected,
+                new DateTime(
+                    2026,
+                    8,
+                    19,
+                    5,
+                    0,
+                    0,
+                    DateTimeKind.Utc),
+                "user-001",
+                "admin");
+
+        await using (
+            var dbContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await dbContext
+                .LeaveRequests
+                .AddAsync(
+                    existing);
+
+            await dbContext
+                .LeaveRequestStatusChanges
+                .AddAsync(
+                    rejection);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        LeaveRequest candidate =
+            CreateRequest(
+                seed,
+                new DateOnly(
+                    2026,
+                    8,
+                    21),
+                new DateOnly(
+                    2026,
+                    8,
+                    23));
+
+        ILeaveRequestSubmissionPersistence persistence =
+            CreatePersistence(
+                options);
+
+        await persistence.SubmitAsync(
+            candidate);
+
+        await using var verification =
+            new HrManagementDbContext(
+                options);
+
+        Assert.Equal(
+            2,
+            await verification
+                .LeaveRequests
+                .CountAsync());
+    }
+
+    // Cancelled không block
+    [Fact]
+    public async Task CancelledOverlap_DoesNotBlockSubmission()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedContext seed =
+            await SeedContextAsync(
+                options);
+
+        LeaveRequest existing =
+            CreateRequest(
+                seed,
+                new DateOnly(
+                    2026,
+                    8,
+                    20),
+                new DateOnly(
+                    2026,
+                    8,
+                    22));
+
+        LeaveRequestStatusChange cancellation =
+            existing.TransitionTo(
+                Guid.NewGuid(),
+                LeaveRequestStatus.Cancelled,
+                new DateTime(
+                    2026,
+                    8,
+                    19,
+                    5,
+                    0,
+                    0,
+                    DateTimeKind.Utc),
+                "user-001",
+                "admin");
+
+        await using (
+            var dbContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await dbContext
+                .LeaveRequests
+                .AddAsync(
+                    existing);
+
+            await dbContext
+                .LeaveRequestStatusChanges
+                .AddAsync(
+                    cancellation);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        LeaveRequest candidate =
+            CreateRequest(
+                seed,
+                new DateOnly(
+                    2026,
+                    8,
+                    21),
+                new DateOnly(
+                    2026,
+                    8,
+                    23));
+
+        ILeaveRequestSubmissionPersistence persistence =
+            CreatePersistence(
+                options);
+
+        await persistence.SubmitAsync(
+            candidate);
+
+        await using var verification =
+            new HrManagementDbContext(
+                options);
+
+        Assert.Equal(
+            2,
+            await verification
+                .LeaveRequests
+                .CountAsync());
+    }
 }
