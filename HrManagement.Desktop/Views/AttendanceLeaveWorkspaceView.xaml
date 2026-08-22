@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -129,7 +130,9 @@
         <!-- =====================================================
              WORKSPACE TABS
              ===================================================== -->
-        <TabControl Grid.Row="2">
+        <TabControl Grid.Row="2"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch">
 
             <!-- =================================================
                  ATTENDANCE TAB
@@ -139,6 +142,7 @@
                 <Grid Margin="12">
 
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -158,77 +162,138 @@
 
                     </StackPanel>
 
-                    <Border Grid.Row="1"
-                Style="{DynamicResource CardBorderStyle}"
-                Margin="0,0,0,12">
+                    <Expander Grid.Row="1"
+          Header="Ghi nhận chấm công"
+          IsExpanded="False"
+          Margin="0,0,0,12">
 
-                        <Grid>
+                        <Border Style="{DynamicResource CardBorderStyle}"
+            Margin="0,8,0,0">
 
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="100" />
-                            </Grid.ColumnDefinitions>
+                            <Grid>
 
-                            <StackPanel Grid.Column="0"
-                            Margin="0,0,16,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="100" />
+                                </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="Ghi nhận chấm công"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                                <StackPanel Grid.Column="0"
+                        Margin="0,0,16,0">
 
-                                <TextBlock Margin="0,4,0,0"
-                               Foreground="{DynamicResource SecondaryTextBrush}">
+                                    <TextBlock Foreground="{DynamicResource SecondaryTextBrush}">
+                    <Run Text="Nhân viên: " />
+                    <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+                                    </TextBlock>
 
-                        <Run Text="Nhân viên: " />
-                        <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+                                    <TextBlock Margin="0,3,0,0"
+                           Text="Chọn một nhân viên ở bộ lọc phía trên để ghi nhận vào ca hoặc ra ca."
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                </TextBlock>
+                                </StackPanel>
 
-                                <TextBlock Margin="0,3,0,0"
-                               Text="Chọn một nhân viên ở bộ lọc phía trên để ghi nhận vào ca hoặc ra ca."
-                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                                <Button Grid.Column="1"
+                    Margin="0,0,10,0"
+                    MinHeight="36"
+                    VerticalAlignment="Center"
+                    Content="Vào ca"
+                    Command="{Binding ClockInCommand}" />
 
-                            </StackPanel>
+                                <Button Grid.Column="2"
+                    MinHeight="36"
+                    VerticalAlignment="Center"
+                    Content="Ra ca"
+                    Command="{Binding ClockOutCommand}" />
 
-                            <Button Grid.Column="1"
-                        Margin="0,0,10,0"
-                        MinHeight="36"
-                        VerticalAlignment="Center"
-                        Content="Vào ca"
-                        Command="{Binding ClockInCommand}" />
+                            </Grid>
 
-                            <Button Grid.Column="2"
-                        MinHeight="36"
-                        VerticalAlignment="Center"
-                        Content="Ra ca"
-                        Command="{Binding ClockOutCommand}" />
+                        </Border>
 
-                        </Grid>
+                    </Expander>
 
-                    </Border>
-                    
-                    <Border Grid.Row="2"
-                            MinHeight="220"
+                    <!-- DAILY ATTENDANCE GENERATION -->
+                    <Expander Grid.Row="2"
+          Header="Sinh dữ liệu chấm công"
+          IsExpanded="False"
+          Margin="0,0,0,12">
+
+                        <Border Style="{DynamicResource CardBorderStyle}"
+            Margin="0,8,0,0">
+
+                            <Grid>
+
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="150" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0"
+                        Margin="0,0,16,0">
+
+                                    <TextBlock Foreground="{DynamicResource SecondaryTextBrush}">
+                    <Run Text="Phạm vi: " />
+                    <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+                                    </TextBlock>
+
+                                    <TextBlock Margin="0,3,0,0"
+                           Text="Tạo bản ghi dự kiến từ lịch làm việc. Bản ghi đã tồn tại sẽ được bỏ qua."
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1"
+                        Margin="0,0,10,0">
+
+                                    <TextBlock Margin="0,0,0,5"
+                           Text="Ngày chấm công"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                    <DatePicker MinHeight="30"
+                            SelectedDate="{Binding GenerationDate,
+                                                   Mode=TwoWay}" />
+
+                                </StackPanel>
+
+                                <Button Grid.Column="2"
+                    MinHeight="36"
+                    VerticalAlignment="Bottom"
+                    Content="Sinh dữ liệu"
+                    Command="{Binding GenerateAttendanceCommand}"
+                    ToolTip="Sinh dữ liệu chấm công từ phân lịch làm việc của ngày đã chọn." />
+
+                            </Grid>
+
+                        </Border>
+
+                    </Expander>
+
+                    <Border Grid.Row="3"
+                            MinHeight="180"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="8">
 
                         <Grid>
-                            
-                        <DataGrid ItemsSource="{Binding AttendanceItems}"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  HeadersVisibility="Column"
-                                  RowHeaderWidth="0"
-                                  SelectionMode="Single"
-                                  SelectionUnit="FullRow"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
-                            <DataGrid.Columns>
+                            <DataGrid ItemsSource="{Binding AttendanceItems}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.CanContentScroll="True"
+                                      EnableRowVirtualization="True"
+                                      EnableColumnVirtualization="True">
+
+                                <DataGrid.Columns>
 
                                 <DataGridTextColumn Header="Ngày"
                                                     Width="95"
@@ -344,7 +409,9 @@
             <!-- =================================================
                  LEAVE TAB
                  ================================================= -->
-            <TabItem Header="Nghỉ phép">
+            <TabItem Header="Nghỉ phép"
+                     HorizontalContentAlignment="Stretch"
+                     VerticalContentAlignment="Stretch">
 
                 <Grid Margin="12">
 
@@ -571,33 +638,32 @@
 
                     </Border>
 
-                    <!-- =========================================
-                         LEAVE REQUEST GRID
-                         ========================================= -->
+                    <!-- LEAVE REQUEST GRID -->
                     <Border Grid.Row="2"
-                            MinHeight="240"
                             BorderBrush="{DynamicResource BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="8">
 
-                        <DataGrid ItemsSource="{Binding LeaveRequestItems}"
-                                  SelectedItem="{Binding SelectedLeaveRequestItem,
-                                                         Mode=TwoWay}"
-                                  AutoGenerateColumns="False"
-                                  IsReadOnly="True"
-                                  CanUserAddRows="False"
-                                  CanUserDeleteRows="False"
-                                  HeadersVisibility="Column"
-                                  RowHeaderWidth="0"
-                                  SelectionMode="Single"
-                                  SelectionUnit="FullRow"
-                                  VerticalAlignment="Stretch"
-                                  HorizontalAlignment="Stretch"
-                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  ScrollViewer.CanContentScroll="True">
+                        <Grid>
 
-                            <DataGrid.Columns>
+                            <DataGrid ItemsSource="{Binding LeaveRequestItems}"
+                                      SelectedItem="{Binding SelectedLeaveRequestItem,
+                                                             Mode=TwoWay}"
+                                      AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      CanUserAddRows="False"
+                                      CanUserDeleteRows="False"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0"
+                                      SelectionMode="Single"
+                                      SelectionUnit="FullRow"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                      ScrollViewer.CanContentScroll="True"
+                                      EnableRowVirtualization="True"
+                                      EnableColumnVirtualization="True">
+
+                                <DataGrid.Columns>
 
                                 <DataGridTextColumn Header="Mã NV"
                                                     Width="90"
@@ -696,6 +762,7 @@
                             </DataGrid.Columns>
 
                         </DataGrid>
+                        </Grid>
 
                     </Border>
 

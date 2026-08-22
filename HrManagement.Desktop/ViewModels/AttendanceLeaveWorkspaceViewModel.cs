@@ -6,6 +6,7 @@ using HrManagement.Domain.Leave.Requests;
 using HrManagement.Application.Attendance.Calculations;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Application.Attendance.Generation;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -146,6 +147,9 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
                 null,
                 "Tất cả nhân viên");
 
+    private readonly IDailyAttendanceGenerationService
+        _dailyAttendanceGenerationService;
+
     private readonly IAttendancePunchService
         _attendancePunchService;
 
@@ -241,14 +245,26 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
         filteredEmployeeOptions =
             Array.Empty<AttendanceLeaveEmployeeFilterOption>();
 
+    [ObservableProperty]
+    private DateTime? generationDate;
+
     public AttendanceLeaveWorkspaceViewModel(
     IAttendanceLeaveWorkspaceQueryService queryService,
     IAttendancePunchService attendancePunchService,
     IAttendanceRecalculationService attendanceRecalculationService,
     ILeaveRequestSubmissionService leaveRequestSubmissionService,
     ILeaveRequestStatusService leaveRequestStatusService,
+    IDailyAttendanceGenerationService dailyAttendanceGenerationService,
     TimeProvider timeProvider)
     {
+        GenerateAttendanceCommand =
+            new AsyncRelayCommand(
+                GenerateAttendanceAsync,
+                CanGenerateAttendance);
+
+        _dailyAttendanceGenerationService =
+            dailyAttendanceGenerationService;
+
         _attendancePunchService =
             attendancePunchService;
 
@@ -281,6 +297,8 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
         SetCurrentMonth();
 
         SetRequestDatesToToday();
+
+        SetGenerationDateToToday();
 
         LoadCommand =
             new AsyncRelayCommand(
@@ -359,6 +377,11 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
     }
 
     public IAsyncRelayCommand SubmitLeaveRequestCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand GenerateAttendanceCommand
     {
         get;
     }
@@ -852,5 +875,124 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
             IsLoading =
                 false;
         }
+    }
+
+    private bool CanGenerateAttendance()
+    {
+        return !IsLoading
+            && GenerationDate.HasValue;
+    }
+
+    private async Task GenerateAttendanceAsync()
+    {
+        if (!GenerationDate.HasValue)
+        {
+            ErrorMessage =
+                "Vui lòng chọn ngày sinh dữ liệu chấm công.";
+
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        OperationMessage =
+            null;
+
+        DateOnly workDate =
+            DateOnly.FromDateTime(
+                GenerationDate.Value);
+
+        Guid? employeeId =
+            SelectedEmployeeOption?
+                .EmployeeId;
+
+        try
+        {
+            IsLoading =
+                true;
+
+            GenerateDailyAttendanceResult result =
+                await _dailyAttendanceGenerationService
+                    .GenerateAsync(
+                        new GenerateDailyAttendanceRequest(
+                            workDate,
+                            employeeId));
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể sinh dữ liệu chấm công.";
+
+                return;
+            }
+
+            string message;
+
+            if (result.CreatedCount == 0
+                && result.SkippedExistingCount == 0)
+            {
+                message =
+                    "Không có phân lịch làm việc phù hợp "
+                    + "để sinh dữ liệu chấm công cho ngày đã chọn.";
+            }
+            else if (result.CreatedCount == 0)
+            {
+                message =
+                    $"Không có bản ghi mới. Đã bỏ qua "
+                    + $"{result.SkippedExistingCount} "
+                    + "bản ghi đã tồn tại.";
+            }
+            else if (result.SkippedExistingCount == 0)
+            {
+                message =
+                    $"Đã sinh {result.CreatedCount} "
+                    + "bản ghi chấm công.";
+            }
+            else
+            {
+                message =
+                    $"Đã sinh {result.CreatedCount} "
+                    + "bản ghi chấm công; bỏ qua "
+                    + $"{result.SkippedExistingCount} "
+                    + "bản ghi đã tồn tại.";
+            }
+
+            await LoadAsync();
+
+            OperationMessage =
+                message;
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể sinh dữ liệu chấm công.";
+        }
+        finally
+        {
+            IsLoading =
+                false;
+        }
+    }
+
+    private void SetGenerationDateToToday()
+    {
+        GenerationDate =
+            GetLocalToday();
+    }
+
+    partial void OnGenerationDateChanged(
+    DateTime? value)
+    {
+        GenerateAttendanceCommand?
+            .NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLoadingChanged(
+        bool value)
+    {
+        GenerateAttendanceCommand?
+            .NotifyCanExecuteChanged();
     }
 }

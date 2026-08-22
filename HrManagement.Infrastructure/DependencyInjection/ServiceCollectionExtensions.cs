@@ -1,4 +1,5 @@
 using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Application.Attendance.Generation;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
 using HrManagement.Application.Dashboard;
@@ -11,6 +12,8 @@ using HrManagement.Application.Employees.Profiles;
 using HrManagement.Application.Leave.Requests;
 using HrManagement.Application.Leave.Types;
 using HrManagement.Application.Organization.Memberships;
+using HrManagement.Application.Workspaces.AttendanceLeave;
+using HrManagement.Application.Workspaces.WorkSchedules;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Records;
@@ -23,10 +26,11 @@ using HrManagement.Infrastructure.Leave.Requests;
 using HrManagement.Infrastructure.Leave.Types;
 using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Infrastructure.Persistence;
+using HrManagement.Infrastructure.Workspaces.AttendanceLeave;
+using HrManagement.Infrastructure.Workspaces.WorkSchedules;
+using HrManagement.Infrastructure.Attendance.Generation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using HrManagement.Application.Workspaces.AttendanceLeave;
-using HrManagement.Infrastructure.Workspaces.AttendanceLeave;
 
 namespace HrManagement.Infrastructure.DependencyInjection;
 
@@ -111,6 +115,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IWorkScheduleRepository,
             EfWorkScheduleRepository>();
+
+        services.AddSingleton<
+            IWorkScheduleManagementPersistence,
+            EfWorkScheduleManagementPersistence>();
+
+        services.AddScoped<
+            IWorkScheduleManagementService,
+            WorkScheduleManagementService>();
 
         services.AddSingleton<
             IEmployeeWorkScheduleAssignmentRepository,
@@ -208,6 +220,30 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IAttendanceLeaveWorkspaceQueryService,
             EfAttendanceLeaveWorkspaceQueryService>();
+
+        services.AddSingleton<
+            IWorkScheduleWorkspaceQueryService,
+            EfWorkScheduleWorkspaceQueryService>();
+
+        services.AddSingleton<
+            IWorkScheduleDayManagementPersistence,
+            EfWorkScheduleDayManagementPersistence>();
+
+        services.AddScoped<
+            IWorkScheduleDayManagementService,
+            WorkScheduleDayManagementService>();
+
+        services.AddScoped<
+            IDailyAttendanceGenerationService,
+            DailyAttendanceGenerationService>();
+
+        services.AddSingleton<
+            IDailyAttendanceGenerationPersistence,
+            EfDailyAttendanceGenerationPersistence>();
+
+        services.AddScoped<
+            IDailyAttendanceGenerationService,
+            DailyAttendanceGenerationService>();
 
         return services;
     }

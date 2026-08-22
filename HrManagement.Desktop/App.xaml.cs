@@ -147,6 +147,8 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<AttendanceLeaveWorkspaceViewModel>();
 
+        services.AddTransient<WorkScheduleWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();
@@ -280,6 +282,10 @@ public partial class App : System.Windows.Application
         services.AddTransient<
             IEmployeeProfileCompletionService,
             EmployeeProfileCompletionService>();
+
+        services.AddSingleton<
+            IUserConfirmationService,
+            WpfUserConfirmationService>();
     }
 
     protected override void OnExit(ExitEventArgs e)

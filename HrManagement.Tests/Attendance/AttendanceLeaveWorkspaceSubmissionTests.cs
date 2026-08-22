@@ -209,6 +209,7 @@ public sealed class AttendanceLeaveWorkspaceSubmissionTests
                 new StubAttendanceRecalculationService(),
                 submissionService,
                 new TestLeaveRequestStatusService(),
+                new NoOpDailyAttendanceGenerationService(),
                 new FixedTimeProvider(
                     new DateTimeOffset(
                         2026,

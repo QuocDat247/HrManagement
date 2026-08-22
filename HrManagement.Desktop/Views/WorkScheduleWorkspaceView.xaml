@@ -1,0 +1,899 @@
+<UserControl x:Class="HrManagement.Desktop.Views.WorkScheduleWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Loaded="WorkScheduleWorkspaceView_Loaded"
+             xmlns:converters="clr-namespace:HrManagement.Desktop.Converters">
+
+    <UserControl.Resources>
+
+        <converters:DayOfWeekVietnameseConverter
+        x:Key="DayOfWeekVietnameseConverter" />
+
+    </UserControl.Resources>
+    
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- FILTER -->
+        <Border Grid.Row="0"
+                Style="{DynamicResource CardBorderStyle}"
+                Margin="0,0,0,12">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="200" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="110" />
+                    <ColumnDefinition Width="90" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="0"
+                           Margin="0,0,10,5"
+                           Text="Tìm nhân viên"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                           Grid.Column="1"
+                           Margin="0,0,10,5"
+                           Text="Nhân viên"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBox Grid.Row="1"
+                         Grid.Column="0"
+                         Margin="0,0,10,0"
+                         MinHeight="30"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Nhập mã hoặc tên nhân viên"
+                         Text="{Binding EmployeeSearchText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                <ComboBox Grid.Row="1"
+                          Grid.Column="1"
+                          Margin="0,0,10,0"
+                          MinHeight="30"
+                          ItemsSource="{Binding FilteredEmployeeOptions}"
+                          DisplayMemberPath="DisplayName"
+                          SelectedItem="{Binding SelectedEmployeeOption,
+                                                Mode=TwoWay}" />
+
+                <Button Grid.Row="1"
+                        Grid.Column="2"
+                        Margin="0,0,10,0"
+                        MinHeight="30"
+                        Content="Lọc / Làm mới"
+                        Command="{Binding LoadCommand}" />
+
+                <Button Grid.Row="1"
+                        Grid.Column="3"
+                        MinHeight="30"
+                        Content="Xóa lọc"
+                        Command="{Binding ClearFiltersCommand}" />
+
+            </Grid>
+
+        </Border>
+
+        <!-- MESSAGE -->
+        <StackPanel Grid.Row="1"
+            Margin="0,0,0,10">
+
+            <TextBlock Text="{Binding OperationMessage}"
+               TextWrapping="Wrap"
+               Foreground="{DynamicResource PrimaryBrush}"
+               FontWeight="SemiBold" />
+
+            <TextBlock Text="{Binding ErrorMessage}"
+               TextWrapping="Wrap"
+               Foreground="{DynamicResource WarningBrush}"
+               FontWeight="SemiBold" />
+
+        </StackPanel>
+
+        <!-- CONTENT -->
+        <TabControl Grid.Row="2">
+
+            <!-- ASSIGNMENTS -->
+            <TabItem Header="Phân lịch nhân viên">
+
+                <Grid Margin="12">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- ASSIGN ACTION -->
+                    <Border Grid.Row="0"
+                Style="{DynamicResource CardBorderStyle}"
+                Margin="0,0,0,12">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="150" />
+                                <ColumnDefinition Width="170" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0"
+                           Grid.ColumnSpan="4"
+                           Margin="0,0,0,12"
+                           Text="Phân lịch / Đổi lịch"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                            <!-- LABELS -->
+                            <TextBlock Grid.Row="1"
+                           Grid.Column="0"
+                           Margin="0,0,10,5"
+                           Text="Nhân viên"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <TextBlock Grid.Row="1"
+                           Grid.Column="1"
+                           Margin="0,0,10,5"
+                           Text="Lịch làm việc"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <TextBlock Grid.Row="1"
+                                       Grid.Column="2"
+                                       Margin="0,0,10,5"
+                                       Text="Hiệu lực từ"
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <!-- EMPLOYEE -->
+                            <TextBox Grid.Row="2"
+                         Grid.Column="0"
+                         Margin="0,0,10,0"
+                         MinHeight="32"
+                         IsReadOnly="True"
+                         VerticalContentAlignment="Center"
+                         Text="{Binding SelectedEmployeeOption.DisplayName}" />
+
+                            <!-- SCHEDULE -->
+                            <ComboBox Grid.Row="2"
+                          Grid.Column="1"
+                          Margin="0,0,10,0"
+                          MinHeight="32"
+                          ItemsSource="{Binding ActiveScheduleItems}"
+                          SelectedItem="{Binding SelectedAssignmentScheduleItem,
+                                                Mode=TwoWay}">
+
+                                <ComboBox.ItemTemplate>
+
+                                    <DataTemplate>
+
+                                        <TextBlock>
+
+                                <Run Text="{Binding Code}" />
+                                <Run Text=" - " />
+                                <Run Text="{Binding Name}" />
+
+                                        </TextBlock>
+
+                                    </DataTemplate>
+
+                                </ComboBox.ItemTemplate>
+
+                            </ComboBox>
+
+                            <!-- EFFECTIVE DATE -->
+                            <DatePicker Grid.Row="2"
+                                        Grid.Column="2"
+                                        Margin="0,0,10,0"
+                                        MinHeight="32"
+                                        VerticalAlignment="Top"
+                                        ToolTip="Lịch này sẽ được áp dụng từ ngày đã chọn cho đến khi được đổi lịch."
+                                        SelectedDate="{Binding AssignmentEffectiveFrom,
+                                                               Mode=TwoWay}" />
+
+                            <!-- ACTION -->
+                            <Button Grid.Row="2"
+                                    Grid.Column="3"
+                                    MinHeight="32"
+                                    VerticalAlignment="Top"
+                                    Content="Phân lịch / Đổi lịch"
+                                    Command="{Binding AssignScheduleCommand}" />
+
+                        </Grid>
+
+                    </Border>
+
+                    <!-- HISTORY HEADER -->
+                    <StackPanel Grid.Row="1"
+                    Margin="0,0,0,12">
+
+                        <TextBlock Text="Lịch sử phân lịch"
+                       FontSize="20"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,4,0,0"
+                       Text="Theo dõi lịch làm việc được áp dụng cho từng nhân viên theo thời gian."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <!-- HISTORY -->
+                    <Border Grid.Row="2"
+                MinHeight="220"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                        <Grid>
+
+                            <DataGrid ItemsSource="{Binding AssignmentItems}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          HeadersVisibility="Column"
+                          RowHeaderWidth="0"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True">
+
+                                <DataGrid.Columns>
+
+                                    <DataGridTextColumn Header="Mã NV"
+                                            Width="100"
+                                            Binding="{Binding EmployeeCode}" />
+
+                                    <DataGridTextColumn Header="Nhân viên"
+                                            Width="*"
+                                            MinWidth="160"
+                                            Binding="{Binding EmployeeName}" />
+
+                                    <DataGridTextColumn Header="Mã lịch"
+                                            Width="100"
+                                            Binding="{Binding WorkScheduleCode}" />
+
+                                    <DataGridTextColumn Header="Lịch làm việc"
+                                            Width="*"
+                                            MinWidth="160"
+                                            Binding="{Binding WorkScheduleName}" />
+
+                                    <DataGridTextColumn Header="Từ ngày"
+                                            Width="100"
+                                            Binding="{Binding EffectiveFrom,
+                                                              StringFormat={}{0:dd/MM/yyyy}}" />
+
+                                    <DataGridTextColumn Header="Đến ngày"
+                                            Width="100"
+                                            Binding="{Binding EffectiveTo,
+                                                              StringFormat={}{0:dd/MM/yyyy}}" />
+
+                                    <DataGridCheckBoxColumn Header="Đang áp dụng"
+                                                Width="100"
+                                                Binding="{Binding IsOpen}" />
+
+                                </DataGrid.Columns>
+
+                            </DataGrid>
+
+                            <!-- EMPTY STATE -->
+                            <Border Background="{DynamicResource CardBackgroundBrush}"
+                        IsHitTestVisible="False">
+
+                                <Border.Style>
+
+                                    <Style TargetType="Border">
+
+                                        <Setter Property="Visibility"
+                                    Value="Collapsed" />
+
+                                        <Style.Triggers>
+
+                                            <DataTrigger Binding="{Binding AssignmentItems.Count}"
+                                             Value="0">
+
+                                                <Setter Property="Visibility"
+                                            Value="Visible" />
+
+                                            </DataTrigger>
+
+                                        </Style.Triggers>
+
+                                    </Style>
+
+                                </Border.Style>
+
+                                <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+
+                                    <TextBlock Text="Chưa có lịch sử phân lịch."
+                                   HorizontalAlignment="Center"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                    <TextBlock Margin="0,6,0,0"
+                                   Text="Chọn một nhân viên và lịch làm việc phía trên để bắt đầu."
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                </StackPanel>
+
+                            </Border>
+
+                        </Grid>
+
+                    </Border>
+
+                </Grid>
+
+            </TabItem>
+
+            <!-- SCHEDULE DEFINITIONS -->
+            <TabItem Header="Mẫu lịch làm việc">
+
+                <Grid Margin="12">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="12" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- TEMPLATE EDITOR -->
+                    <Border Grid.Row="0"
+                Style="{DynamicResource CardBorderStyle}">
+
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="310" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- HEADER -->
+                            <TextBlock Grid.Row="0"
+                           Grid.Column="0"
+                           Grid.ColumnSpan="4"
+                           Margin="0,0,0,12"
+                           Text="Quản lý mẫu lịch làm việc"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                            <!-- LABELS -->
+                            <TextBlock Grid.Row="1"
+                           Grid.Column="0"
+                           Margin="0,0,10,5"
+                           Text="Mã lịch"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <TextBlock Grid.Row="1"
+                                       Grid.Column="1"
+                                       Margin="0,0,10,5"
+                                       Text="Tên lịch"
+                                       ToolTip="Có thể đặt theo ca và mục đích, ví dụ: Ca đêm - Quét dọn các phòng ban."
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <TextBlock Grid.Row="1"
+                           Grid.Column="2"
+                           Margin="0,0,10,5"
+                           Text="Múi giờ"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            <!-- EDITOR -->
+                            <TextBox Grid.Row="2"
+                         Grid.Column="0"
+                         Margin="0,0,10,0"
+                         MinHeight="32"
+                         VerticalContentAlignment="Center"
+                         Text="{Binding ScheduleEditorCode,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBox Grid.Row="2"
+                                     Grid.Column="1"
+                                     Margin="0,0,10,0"
+                                     MinHeight="32"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Ví dụ: Ca đêm - Quét dọn các phòng ban"
+                                     Text="{Binding ScheduleEditorName,
+                                                    Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBox Grid.Row="2"
+                                     Grid.Column="2"
+                                     Margin="0,0,10,0"
+                                     MinHeight="32"
+                                     VerticalContentAlignment="Center"
+                                     IsEnabled="{Binding IsScheduleTimeZoneEditorEnabled}"
+                                     ToolTip="Khi sao chép mẫu, múi giờ được giữ nguyên từ mẫu nguồn."
+                                     Text="{Binding ScheduleEditorTimeZoneId,
+                                                    Mode=TwoWay,
+                                                    UpdateSourceTrigger=PropertyChanged}" />
+
+                            <!-- MAIN ACTIONS -->
+                            <StackPanel Grid.Row="2"
+                                        Grid.Column="3"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Right">
+
+                                <Button Width="90"
+                                        MinHeight="32"
+                                        Margin="0,0,8,0"
+                                        Content="Tạo mới"
+                                        Command="{Binding NewScheduleCommand}" />
+
+                                <Button Width="90"
+                                        MinHeight="32"
+                                        Margin="0,0,8,0"
+                                        Content="Sao chép"
+                                        Command="{Binding CloneScheduleCommand}" />
+
+                                <Button Width="100"
+                                        MinHeight="32"
+                                        Content="Lưu mẫu"
+                                        Command="{Binding SaveScheduleCommand}" />
+
+                            </StackPanel>
+
+                            <!-- ACTIVATION ACTIONS -->
+                            <StackPanel Grid.Row="3"
+                                        Grid.Column="0"
+                                        Grid.ColumnSpan="4"
+                                        Margin="0,12,0,0"
+                                        Orientation="Horizontal">
+
+                                <Button MinWidth="120"
+                                        MinHeight="30"
+                                        Margin="0,0,8,0"
+                                        Content="Ngừng sử dụng"
+                                        Command="{Binding DeactivateScheduleCommand}" />
+
+                                <Button MinWidth="100"
+                                        MinHeight="30"
+                                        Content="Kích hoạt"
+                                        Command="{Binding ReactivateScheduleCommand}" />
+
+                                <Button Width="90"
+                                        MinHeight="32"
+                                        Margin="8,0,0,0"
+                                        Content="Xóa mẫu"
+                                        Command="{Binding DeleteScheduleCommand}"
+                                        ToolTipService.ShowOnDisabled="True"
+                                        ToolTip="Chỉ xóa được mẫu đã ngừng sử dụng và chưa từng được phân lịch hoặc dùng trong chấm công." />
+
+                                <TextBlock Margin="14,0,0,0"
+                                           VerticalAlignment="Center"
+                                           Text="Mẫu mới được tạo ở trạng thái ngừng sử dụng. Hãy cấu hình ngày làm việc trước khi kích hoạt."
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            </StackPanel>
+
+                        </Grid>
+
+                    </Border>
+
+                    <!-- LIST + DAYS -->
+                    <Grid Grid.Row="2">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="3*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- TEMPLATE LIST -->
+                        <Grid Grid.Column="0">
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0"
+                            Margin="0,0,0,8">
+
+                                <TextBlock Text="Danh sách mẫu lịch"
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                <TextBlock Margin="0,3,0,0"
+                               Text="Chọn một mẫu để xem hoặc chỉnh sửa."
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                            </StackPanel>
+
+                            <Border Grid.Row="1"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+
+                                <DataGrid ItemsSource="{Binding ScheduleItems}"
+                              SelectedItem="{Binding SelectedScheduleItem,
+                                                   Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              RowHeaderWidth="0"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.CanContentScroll="True">
+
+                                    <DataGrid.Columns>
+
+                                        <DataGridTextColumn Header="Mã"
+                                                Width="110"
+                                                Binding="{Binding Code}" />
+
+                                        <DataGridTextColumn Header="Tên lịch"
+                                                Width="*"
+                                                MinWidth="140"
+                                                Binding="{Binding Name}" />
+
+                                        <DataGridCheckBoxColumn Header="Hoạt động"
+                                                    Width="85"
+                                                    Binding="{Binding IsActive}" />
+
+                                    </DataGrid.Columns>
+
+                                </DataGrid>
+
+                            </Border>
+
+                        </Grid>
+
+                        <!-- DAY DEFINITIONS -->
+                        <ScrollViewer x:Name="WeeklyScheduleScrollViewer"
+                                      Grid.Column="2"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      PanningMode="VerticalOnly">
+
+                            <StackPanel Margin="0,0,6,0">
+
+                                <!-- HEADER -->
+                                <StackPanel Margin="0,0,0,8">
+
+                                    <TextBlock Text="Cấu hình tuần làm việc"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                    <TextBlock Margin="0,3,0,0"
+                       Text="Chọn một ngày trong bảng để cấu hình giờ làm việc."
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                </StackPanel>
+
+                                <!-- DAYS TABLE -->
+                                <Border Height="210"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+
+                                    <DataGrid ItemsSource="{Binding SelectedScheduleDays}"
+                                              SelectedItem="{Binding SelectedScheduleDayItem,
+                                                                     Mode=TwoWay}"
+                                              AutoGenerateColumns="False"
+                                              IsReadOnly="True"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              HeadersVisibility="Column"
+                                              RowHeaderWidth="0"
+                                              SelectionMode="Single"
+                                              SelectionUnit="FullRow"
+                                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                              PreviewMouseWheel="WeeklyDaysDataGrid_PreviewMouseWheel">
+
+                                        <DataGrid.Columns>
+
+                                            <DataGridTemplateColumn Header="Ngày"
+                                            Width="95">
+
+                                                <DataGridTemplateColumn.CellTemplate>
+
+                                                    <DataTemplate>
+
+                                                        <TextBlock Text="{Binding DayOfWeek,
+                                    Converter={StaticResource DayOfWeekVietnameseConverter}}" />
+
+                                                    </DataTemplate>
+
+                                                </DataGridTemplateColumn.CellTemplate>
+
+                                            </DataGridTemplateColumn>
+
+                                            <DataGridCheckBoxColumn Header="Làm việc"
+                                            Width="70"
+                                            Binding="{Binding IsWorkingDay}" />
+
+                                            <DataGridTemplateColumn Header="Bắt đầu"
+                                            Width="70">
+
+                                                <DataGridTemplateColumn.CellTemplate>
+
+                                                    <DataTemplate>
+
+                                                        <TextBlock Text="{Binding StartTime,
+                                    StringFormat={}{0:HH\\:mm}}" />
+
+                                                    </DataTemplate>
+
+                                                </DataGridTemplateColumn.CellTemplate>
+
+                                            </DataGridTemplateColumn>
+
+                                            <DataGridTemplateColumn Header="Kết thúc"
+                                            Width="70">
+
+                                                <DataGridTemplateColumn.CellTemplate>
+
+                                                    <DataTemplate>
+
+                                                        <TextBlock Text="{Binding EndTime,
+                                    StringFormat={}{0:HH\\:mm}}" />
+
+                                                    </DataTemplate>
+
+                                                </DataGridTemplateColumn.CellTemplate>
+
+                                            </DataGridTemplateColumn>
+
+                                            <DataGridTextColumn Header="Nghỉ"
+                                        Width="55"
+                                        Binding="{Binding BreakMinutes}" />
+
+                                            <DataGridTextColumn Header="Kế hoạch"
+                                        Width="70"
+                                        Binding="{Binding PlannedMinutes}" />
+
+                                        </DataGrid.Columns>
+
+                                    </DataGrid>
+
+                                </Border>
+
+                                <!-- DAY EDITOR -->
+                                <Border Margin="0,12,0,8"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="14">
+
+                                    <Border.Style>
+
+                                        <Style TargetType="Border">
+
+                                            <Setter Property="IsEnabled"
+                            Value="True" />
+
+                                            <Style.Triggers>
+
+                                                <DataTrigger Binding="{Binding SelectedScheduleDayItem}"
+                                     Value="{x:Null}">
+
+                                                    <Setter Property="IsEnabled"
+                                    Value="False" />
+
+                                                    <Setter Property="Opacity"
+                                    Value="0.65" />
+
+                                                </DataTrigger>
+
+                                            </Style.Triggers>
+
+                                        </Style>
+
+                                    </Border.Style>
+
+                                    <Grid>
+
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="105" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- TITLE -->
+                                        <StackPanel Grid.Row="0"
+                            Grid.Column="0"
+                            Grid.ColumnSpan="5"
+                            Margin="0,0,0,10"
+                            Orientation="Horizontal">
+
+                                            <TextBlock Text="Chỉnh ngày: "
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                            <TextBlock FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}"
+                               Text="{Binding SelectedScheduleDayItem.DayOfWeek,
+                                   Converter={StaticResource DayOfWeekVietnameseConverter}}" />
+
+                                        </StackPanel>
+
+                                        <!-- LABELS -->
+                                        <TextBlock Grid.Row="1"
+                           Grid.Column="0"
+                           Margin="0,0,8,4"
+                           Text="Làm việc"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        <TextBlock Grid.Row="1"
+                           Grid.Column="1"
+                           Margin="0,0,8,4"
+                           Text="Bắt đầu"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        <TextBlock Grid.Row="1"
+                           Grid.Column="2"
+                           Margin="0,0,8,4"
+                           Text="Kết thúc"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        <TextBlock Grid.Row="1"
+                           Grid.Column="3"
+                           Margin="0,0,8,4"
+                           Text="Nghỉ (phút)"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        <!-- WORKING -->
+                                        <CheckBox Grid.Row="2"
+                          Grid.Column="0"
+                          VerticalAlignment="Center"
+                          IsChecked="{Binding DayEditorIsWorkingDay,
+                                              Mode=TwoWay}" />
+
+                                        <!-- START -->
+                                        <TextBox Grid.Row="2"
+                         Grid.Column="1"
+                         Margin="0,0,8,0"
+                         MinHeight="30"
+                         VerticalContentAlignment="Center"
+                         IsEnabled="{Binding DayEditorIsWorkingDay}"
+                         ToolTip="Định dạng HH:mm, ví dụ 08:00"
+                         Text="{Binding DayEditorStartTimeText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <!-- END -->
+                                        <TextBox Grid.Row="2"
+                         Grid.Column="2"
+                         Margin="0,0,8,0"
+                         MinHeight="30"
+                         VerticalContentAlignment="Center"
+                         IsEnabled="{Binding DayEditorIsWorkingDay}"
+                         ToolTip="Định dạng HH:mm, ví dụ 17:00"
+                         Text="{Binding DayEditorEndTimeText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <!-- BREAK -->
+                                        <TextBox Grid.Row="2"
+                         Grid.Column="3"
+                         Margin="0,0,8,0"
+                         MinHeight="30"
+                         VerticalContentAlignment="Center"
+                         IsEnabled="{Binding DayEditorIsWorkingDay}"
+                         Text="{Binding DayEditorBreakMinutesText,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                        <!-- SAVE -->
+                                        <Button Grid.Row="2"
+                        Grid.Column="4"
+                        MinHeight="30"
+                        Content="Lưu ngày"
+                        Command="{Binding SaveScheduleDayCommand}" />
+
+                                    </Grid>
+
+                                </Border>
+
+                            </StackPanel>
+
+                        </ScrollViewer>
+
+                    </Grid>
+
+                </Grid>
+
+            </TabItem>
+
+        </TabControl>
+
+        <!-- LOADING -->
+        <Border Grid.RowSpan="3"
+                Panel.ZIndex="10"
+                Background="{DynamicResource PageBackgroundBrush}"
+                Opacity="0.88">
+
+            <Border.Style>
+
+                <Style TargetType="Border">
+
+                    <Setter Property="Visibility"
+                            Value="Collapsed" />
+
+                    <Style.Triggers>
+
+                        <DataTrigger Binding="{Binding IsLoading}"
+                                     Value="True">
+
+                            <Setter Property="Visibility"
+                                    Value="Visible" />
+
+                        </DataTrigger>
+
+                    </Style.Triggers>
+
+                </Style>
+
+            </Border.Style>
+
+            <StackPanel HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <ProgressBar Width="220"
+                             Height="6"
+                             IsIndeterminate="True" />
+
+                <TextBlock Margin="0,12,0,0"
+                           Text="Đang tải lịch làm việc..."
+                           Foreground="{DynamicResource PrimaryTextBrush}"
+                           FontWeight="SemiBold" />
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+
+</UserControl>

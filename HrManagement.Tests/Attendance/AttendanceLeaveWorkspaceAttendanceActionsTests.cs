@@ -1,4 +1,5 @@
 using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Application.Attendance.Generation;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Leave.Requests;
 using HrManagement.Application.Workspaces.AttendanceLeave;
@@ -212,6 +213,120 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
             test.QueryService.GetCallCount);
     }
 
+    [Fact]
+    public void GenerationDate_DefaultsToLocalToday()
+    {
+        TestContext test =
+            CreateContext();
+
+        Assert.Equal(
+            new DateTime(
+                2026,
+                8,
+                21),
+            test.ViewModel.GenerationDate);
+    }
+
+    [Fact]
+    public async Task GenerateAttendance_AllEmployeesMapsNullEmployee()
+    {
+        TestContext test =
+            CreateContext();
+
+        await test.ViewModel.LoadAsync();
+
+        test.ViewModel.GenerationDate =
+            new DateTime(
+                2026,
+                8,
+                21);
+
+        await test.ViewModel
+            .GenerateAttendanceCommand
+            .ExecuteAsync(null);
+
+        GenerateDailyAttendanceRequest request =
+            Assert.IsType<GenerateDailyAttendanceRequest>(
+                test.GenerationService.Request);
+
+        Assert.Equal(
+            new DateOnly(
+                2026,
+                8,
+                21),
+            request.WorkDate);
+
+        Assert.Null(
+            request.EmployeeId);
+
+        Assert.Equal(
+            "Đã sinh 1 bản ghi chấm công.",
+            test.ViewModel.OperationMessage);
+
+        Assert.Equal(
+            2,
+            test.QueryService.GetCallCount);
+    }
+
+    [Fact]
+    public async Task GenerateAttendance_SelectedEmployeeMapsEmployeeId()
+    {
+        TestContext test =
+            CreateContext();
+
+        await test.ViewModel.LoadAsync();
+
+        test.ViewModel.SelectedEmployeeOption =
+            test.ViewModel
+                .EmployeeOptions
+                .Single(
+                    option =>
+                        option.EmployeeId ==
+                        test.EmployeeId);
+
+        await test.ViewModel
+            .GenerateAttendanceCommand
+            .ExecuteAsync(null);
+
+        GenerateDailyAttendanceRequest request =
+            Assert.IsType<GenerateDailyAttendanceRequest>(
+                test.GenerationService.Request);
+
+        Assert.Equal(
+            test.EmployeeId,
+            request.EmployeeId);
+    }
+
+    [Fact]
+    public async Task GenerateAttendance_BusinessFailureShowsError()
+    {
+        TestContext test =
+            CreateContext();
+
+        await test.ViewModel.LoadAsync();
+
+        test.GenerationService.Result =
+            new GenerateDailyAttendanceResult(
+                false,
+                ErrorMessage:
+                    "Không tìm thấy phân lịch làm việc phù hợp.");
+
+        await test.ViewModel
+            .GenerateAttendanceCommand
+            .ExecuteAsync(null);
+
+        Assert.Equal(
+            "Không tìm thấy phân lịch làm việc phù hợp.",
+            test.ViewModel.ErrorMessage);
+
+        Assert.Null(
+            test.ViewModel.OperationMessage);
+
+        Assert.Equal(
+            1,
+            test.QueryService.GetCallCount);
+    }
+
     private static readonly DateTime FixedUtc =
         new(
             2026,
@@ -266,6 +381,9 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
                 ]
             };
 
+        var generationService =
+            new TestDailyAttendanceGenerationService();
+
         var punchService =
             new TestAttendancePunchService();
 
@@ -279,6 +397,7 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
                 recalculationService,
                 new TestLeaveSubmissionService(),
                 new TestLeaveStatusService(),
+                generationService,
                 new FixedTimeProvider(
                     new DateTimeOffset(
                         FixedUtc)));
@@ -288,6 +407,7 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
             queryService,
             punchService,
             recalculationService,
+            generationService,
             employeeId);
     }
 
@@ -296,6 +416,7 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
         TestWorkspaceQueryService QueryService,
         TestAttendancePunchService PunchService,
         TestAttendanceRecalculationService RecalculationService,
+        TestDailyAttendanceGenerationService GenerationService,
         Guid EmployeeId);
 
     private sealed class TestWorkspaceQueryService
@@ -474,5 +595,36 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
 
         public override TimeZoneInfo LocalTimeZone =>
             TimeZoneInfo.Utc;
+    }
+
+    private sealed class TestDailyAttendanceGenerationService
+    : IDailyAttendanceGenerationService
+    {
+        public GenerateDailyAttendanceRequest? Request
+        {
+            get;
+            private set;
+        }
+
+        public GenerateDailyAttendanceResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                true,
+                CreatedCount:
+                    1);
+
+        public Task<GenerateDailyAttendanceResult> GenerateAsync(
+            GenerateDailyAttendanceRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Request =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
     }
 }

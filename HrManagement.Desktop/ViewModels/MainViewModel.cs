@@ -57,6 +57,10 @@ public sealed partial class MainViewModel : ObservableObject
                 typeof(PositionsViewModel)),
 
             new NavigationItem(
+                "Lịch làm việc",
+                typeof(WorkScheduleWorkspaceViewModel)),
+
+            new NavigationItem(
                 "Chấm công & Nghỉ phép",
                 typeof(AttendanceLeaveWorkspaceViewModel))
         ];

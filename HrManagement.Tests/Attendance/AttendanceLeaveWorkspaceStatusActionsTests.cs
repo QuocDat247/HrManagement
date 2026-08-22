@@ -271,6 +271,7 @@ public sealed class AttendanceLeaveWorkspaceStatusActionsTests
                 new StubAttendanceRecalculationService(),
                 new StatusActionLeaveSubmissionService(),
                 statusService,
+                new NoOpDailyAttendanceGenerationService(),
                 new StatusActionTimeProvider(
                     new DateTimeOffset(
                         2026,

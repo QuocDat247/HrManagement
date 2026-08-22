@@ -290,6 +290,7 @@ public sealed class AttendanceLeaveWorkspaceViewModelTests
             new StubAttendanceRecalculationService(),
             new StubLeaveRequestSubmissionService(),
             new TestLeaveRequestStatusService(),
+            new NoOpDailyAttendanceGenerationService(),
             new FixedTimeProvider(
                 new DateTimeOffset(
                     2026,
