@@ -1,3 +1,4 @@
+using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Application.Attendance.Schedules;
 using HrManagement.Domain.Attendance.Schedules;
 
@@ -12,8 +13,8 @@ public sealed class AttendancePunchContextResolver
     private readonly IWorkScheduleRepository
         _workScheduleRepository;
 
-    private readonly IWorkScheduleDayRepository
-        _workScheduleDayRepository;
+    private readonly IWorkExpectationResolver
+        _workExpectationResolver;
 
     private readonly IAttendanceTimeZoneConverter
         _timeZoneConverter;
@@ -21,7 +22,7 @@ public sealed class AttendancePunchContextResolver
     public AttendancePunchContextResolver(
         IEmployeeWorkScheduleAssignmentRepository assignmentRepository,
         IWorkScheduleRepository workScheduleRepository,
-        IWorkScheduleDayRepository workScheduleDayRepository,
+        IWorkExpectationResolver workExpectationResolver,
         IAttendanceTimeZoneConverter timeZoneConverter)
     {
         _assignmentRepository =
@@ -30,8 +31,8 @@ public sealed class AttendancePunchContextResolver
         _workScheduleRepository =
             workScheduleRepository;
 
-        _workScheduleDayRepository =
-            workScheduleDayRepository;
+        _workExpectationResolver =
+            workExpectationResolver;
 
         _timeZoneConverter =
             timeZoneConverter;
@@ -80,114 +81,127 @@ public sealed class AttendancePunchContextResolver
         var sameDayCandidates =
             new List<Candidate>();
 
-        bool missingDayDefinition =
+        bool missingExpectation =
             false;
 
-        foreach (EmployeeWorkScheduleAssignment assignment
-                 in assignments)
+        try
         {
-            WorkSchedule? schedule =
-                await _workScheduleRepository
-                    .GetByIdAsync(
-                        assignment.WorkScheduleId,
-                        cancellationToken);
-
-            if (schedule is null)
+            foreach (EmployeeWorkScheduleAssignment assignment
+                     in assignments)
             {
-                return Failure(
-                    "Không tìm thấy lịch làm việc của phân lịch.");
-            }
+                WorkSchedule? schedule =
+                    await _workScheduleRepository
+                        .GetByIdAsync(
+                            assignment.WorkScheduleId,
+                            cancellationToken);
 
-            DateTime localOccurredAt;
+                if (schedule is null)
+                {
+                    return Failure(
+                        "Không tìm thấy lịch làm việc của phân lịch.");
+                }
 
-            try
-            {
-                localOccurredAt =
-                    _timeZoneConverter
-                        .ConvertFromUtc(
-                            occurredAtUtc,
-                            schedule.TimeZoneId);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                return Failure(
-                    "Không tìm thấy múi giờ của lịch làm việc.");
-            }
-            catch (InvalidTimeZoneException)
-            {
-                return Failure(
-                    "Múi giờ của lịch làm việc không hợp lệ.");
-            }
+                DateTime localOccurredAt;
 
-            DateOnly localDate =
-                DateOnly.FromDateTime(
-                    localOccurredAt);
+                try
+                {
+                    localOccurredAt =
+                        _timeZoneConverter
+                            .ConvertFromUtc(
+                                occurredAtUtc,
+                                schedule.TimeZoneId);
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    return Failure(
+                        "Không tìm thấy múi giờ của lịch làm việc.");
+                }
+                catch (InvalidTimeZoneException)
+                {
+                    return Failure(
+                        "Múi giờ của lịch làm việc không hợp lệ.");
+                }
 
-            TimeOnly localTime =
-                TimeOnly.FromDateTime(
-                    localOccurredAt);
+                DateOnly localDate =
+                    DateOnly.FromDateTime(
+                        localOccurredAt);
 
-            DateOnly previousDate =
-                localDate.AddDays(
-                    -1);
+                TimeOnly localTime =
+                    TimeOnly.FromDateTime(
+                        localOccurredAt);
 
-            IReadOnlyList<WorkScheduleDay> scheduleDays =
-                await _workScheduleDayRepository
-                    .GetByWorkScheduleIdAsync(
-                        schedule.Id,
-                        cancellationToken);
+                DateOnly previousDate =
+                    localDate.AddDays(
+                        -1);
 
-            WorkScheduleDay? previousDay =
-                FindDay(
-                    scheduleDays,
-                    previousDate.DayOfWeek);
+                if (Covers(
+                        assignment,
+                        previousDate))
+                {
+                    ResolvedWorkExpectation? previousExpectation =
+                        await _workExpectationResolver
+                            .ResolveAsync(
+                                schedule.Id,
+                                previousDate,
+                                cancellationToken);
 
-            if (Covers(
-                    assignment,
-                    previousDate)
-                && previousDay is not null
-                && previousDay.IsWorkingDay
-                && previousDay.IsOvernight
-                && previousDay.EndTime.HasValue
-                && localTime <=
-                    previousDay.EndTime.Value)
-            {
-                overnightCandidates.Add(
+                    if (previousExpectation is not null
+                        && previousExpectation.IsWorkingDay
+                        && previousExpectation.IsOvernight
+                        && previousExpectation.EndTime.HasValue
+                        && localTime <=
+                            previousExpectation.EndTime.Value)
+                    {
+                        overnightCandidates.Add(
+                            new Candidate(
+                                assignment,
+                                schedule,
+                                previousExpectation,
+                                previousDate));
+
+                        continue;
+                    }
+                }
+
+                if (!Covers(
+                        assignment,
+                        localDate))
+                {
+                    continue;
+                }
+
+                ResolvedWorkExpectation? currentExpectation =
+                    await _workExpectationResolver
+                        .ResolveAsync(
+                            schedule.Id,
+                            localDate,
+                            cancellationToken);
+
+                if (currentExpectation is null)
+                {
+                    missingExpectation =
+                        true;
+
+                    continue;
+                }
+
+                sameDayCandidates.Add(
                     new Candidate(
                         assignment,
                         schedule,
-                        previousDay,
-                        previousDate));
-
-                continue;
+                        currentExpectation,
+                        localDate));
             }
-
-            if (!Covers(
-                    assignment,
-                    localDate))
-            {
-                continue;
-            }
-
-            WorkScheduleDay? currentDay =
-                FindDay(
-                    scheduleDays,
-                    localDate.DayOfWeek);
-
-            if (currentDay is null)
-            {
-                missingDayDefinition =
-                    true;
-
-                continue;
-            }
-
-            sameDayCandidates.Add(
-                new Candidate(
-                    assignment,
-                    schedule,
-                    currentDay,
-                    localDate));
+        }
+        catch (ArgumentException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Failure(
+                exception.Message);
         }
 
         if (overnightCandidates.Count > 1)
@@ -214,24 +228,14 @@ public sealed class AttendancePunchContextResolver
                 sameDayCandidates[0]);
         }
 
-        if (missingDayDefinition)
+        if (missingExpectation)
         {
             return Failure(
-                "Lịch làm việc chưa có cấu hình cho ngày chấm công.");
+                "Lịch làm việc chưa có cấu hình kỳ vọng cho ngày chấm công.");
         }
 
         return Failure(
             "Không tìm thấy phân lịch làm việc phù hợp với thời điểm chấm công.");
-    }
-
-    private static WorkScheduleDay? FindDay(
-        IReadOnlyList<WorkScheduleDay> days,
-        DayOfWeek dayOfWeek)
-    {
-        return days.SingleOrDefault(
-            day =>
-                day.DayOfWeek ==
-                dayOfWeek);
     }
 
     private static bool Covers(
@@ -253,8 +257,8 @@ public sealed class AttendancePunchContextResolver
         Success(
             Candidate candidate)
     {
-        WorkScheduleDay day =
-            candidate.Day;
+        ResolvedWorkExpectation expectation =
+            candidate.Expectation;
 
         return new AttendancePunchContextResolutionResult(
             IsSuccessful: true,
@@ -266,10 +270,13 @@ public sealed class AttendancePunchContextResolver
                     candidate.Schedule.Id,
                     candidate.WorkDate,
                     candidate.Schedule.TimeZoneId,
-                    day.IsWorkingDay,
-                    day.StartTime,
-                    day.EndTime,
-                    day.BreakMinutes));
+                    expectation.IsWorkingDay,
+                    expectation.StartTime,
+                    expectation.EndTime,
+                    expectation.BreakMinutes,
+                    expectation.Source,
+                    expectation.SourceId,
+                    expectation.SourceName));
     }
 
     private static AttendancePunchContextResolutionResult
@@ -285,6 +292,6 @@ public sealed class AttendancePunchContextResolver
     private sealed record Candidate(
         EmployeeWorkScheduleAssignment Assignment,
         WorkSchedule Schedule,
-        WorkScheduleDay Day,
+        ResolvedWorkExpectation Expectation,
         DateOnly WorkDate);
 }

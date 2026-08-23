@@ -1,5 +1,7 @@
+using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
+using HrManagement.Domain.Attendance.Expectations;
 using HrManagement.Domain.Attendance.Schedules;
 
 namespace HrManagement.Tests.Attendance;
@@ -10,8 +12,24 @@ public sealed class AttendancePunchContextResolverTests
     public async Task DayShift_ResolvesSameLocalWorkDate()
     {
         TestContext test =
-            CreateSingleScheduleContext(
-                CreateOfficeDays());
+            CreateSingleScheduleContext();
+
+        DateOnly workDate =
+            new(
+                2026,
+                8,
+                20);
+
+        test.ExpectationResolver.Set(
+            WorkingExpectation(
+                test.ScheduleId,
+                workDate,
+                new TimeOnly(
+                    8,
+                    0),
+                new TimeOnly(
+                    17,
+                    0)));
 
         AttendancePunchContextResolutionResult result =
             await test.Resolver.ResolveAsync(
@@ -51,8 +69,24 @@ public sealed class AttendancePunchContextResolverTests
     public async Task OvernightShift_AfterMidnight_ResolvesPreviousWorkDate()
     {
         TestContext test =
-            CreateSingleScheduleContext(
-                CreateNightDays());
+            CreateSingleScheduleContext();
+
+        DateOnly previousWorkDate =
+            new(
+                2026,
+                8,
+                20);
+
+        test.ExpectationResolver.Set(
+            WorkingExpectation(
+                test.ScheduleId,
+                previousWorkDate,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0)));
 
         AttendancePunchContextResolutionResult result =
             await test.Resolver.ResolveAsync(
@@ -83,8 +117,24 @@ public sealed class AttendancePunchContextResolverTests
     public async Task OvernightShift_AtExpectedEnd_StillResolvesPreviousWorkDate()
     {
         TestContext test =
-            CreateSingleScheduleContext(
-                CreateNightDays());
+            CreateSingleScheduleContext();
+
+        DateOnly previousWorkDate =
+            new(
+                2026,
+                8,
+                20);
+
+        test.ExpectationResolver.Set(
+            WorkingExpectation(
+                test.ScheduleId,
+                previousWorkDate,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0)));
 
         AttendancePunchContextResolutionResult result =
             await test.Resolver.ResolveAsync(
@@ -111,8 +161,41 @@ public sealed class AttendancePunchContextResolverTests
     public async Task OvernightShift_AfterExpectedEnd_ResolvesCurrentDate()
     {
         TestContext test =
-            CreateSingleScheduleContext(
-                CreateNightDays());
+            CreateSingleScheduleContext();
+
+        DateOnly previousWorkDate =
+            new(
+                2026,
+                8,
+                20);
+
+        DateOnly currentWorkDate =
+            new(
+                2026,
+                8,
+                21);
+
+        test.ExpectationResolver.Set(
+            WorkingExpectation(
+                test.ScheduleId,
+                previousWorkDate,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0)));
+
+        test.ExpectationResolver.Set(
+            WorkingExpectation(
+                test.ScheduleId,
+                currentWorkDate,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0)));
 
         AttendancePunchContextResolutionResult result =
             await test.Resolver.ResolveAsync(
@@ -196,29 +279,70 @@ public sealed class AttendancePunchContextResolverTests
                 "Ca ngày",
                 "TEST");
 
+        DateOnly previousWorkDate =
+         new(
+             2026,
+             8,
+             20);
+
+        DateOnly currentWorkDate =
+            new(
+                2026,
+                8,
+                21);
+
+        var expectationResolver =
+            new StubExpectationResolver();
+
+        expectationResolver.Set(
+            new ResolvedWorkExpectation(
+                oldScheduleId,
+                previousWorkDate,
+                true,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0),
+                60,
+                420,
+                true,
+                WorkExpectationSource.WeeklySchedule,
+                Guid.NewGuid(),
+                null));
+
+        expectationResolver.Set(
+            new ResolvedWorkExpectation(
+                newScheduleId,
+                currentWorkDate,
+                true,
+                new TimeOnly(
+                    8,
+                    0),
+                new TimeOnly(
+                    17,
+                    0),
+                60,
+                480,
+                false,
+                WorkExpectationSource.WeeklySchedule,
+                Guid.NewGuid(),
+                null));
+
         var resolver =
             new AttendancePunchContextResolver(
                 new StubAssignmentRepository(
                     [
                         oldAssignment,
-                        newAssignment
+                newAssignment
                     ]),
                 new StubScheduleRepository(
                     [
                         oldSchedule,
-                        newSchedule
+                newSchedule
                     ]),
-                new StubScheduleDayRepository(
-                    new Dictionary<Guid, IReadOnlyList<WorkScheduleDay>>
-                    {
-                        [oldScheduleId] =
-                            CreateNightDays(
-                                oldScheduleId),
-
-                        [newScheduleId] =
-                            CreateOfficeDays(
-                                newScheduleId)
-                    }),
+                expectationResolver,
                 new PlusSevenTimeZoneConverter());
 
         AttendancePunchContextResolutionResult result =
@@ -254,8 +378,19 @@ public sealed class AttendancePunchContextResolverTests
     public async Task NonWorkingDay_ResolvesZeroExpectationContext()
     {
         TestContext test =
-            CreateSingleScheduleContext(
-                CreateOfficeDays());
+            CreateSingleScheduleContext();
+
+        DateOnly workDate =
+            new(
+                2026,
+                8,
+                22);
+
+        test.ExpectationResolver.Set(
+            NonWorkingExpectation(
+                test.ScheduleId,
+                workDate,
+                WorkExpectationSource.WeeklySchedule));
 
         AttendancePunchContextResolutionResult result =
             await test.Resolver.ResolveAsync(
@@ -284,8 +419,240 @@ public sealed class AttendancePunchContextResolverTests
             result.Context.ExpectedBreakMinutes);
     }
 
-    private static TestContext CreateSingleScheduleContext(
-        IReadOnlyList<WorkScheduleDay> days)
+    [Fact]
+    public async Task Holiday_ResolvesNonWorkingContextWithProvenance()
+    {
+        TestContext test =
+            CreateSingleScheduleContext();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
+
+        Guid holidayId =
+            Guid.NewGuid();
+
+        test.ExpectationResolver.Set(
+            new ResolvedWorkExpectation(
+                test.ScheduleId,
+                workDate,
+                false,
+                null,
+                null,
+                0,
+                0,
+                false,
+                WorkExpectationSource.Holiday,
+                holidayId,
+                "Quốc khánh"));
+
+        AttendancePunchContextResolutionResult result =
+            await test.Resolver.ResolveAsync(
+                test.EmployeeId,
+                Utc(
+                    2026,
+                    9,
+                    2,
+                    1,
+                    0));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.NotNull(
+            result.Context);
+
+        Assert.False(
+            result.Context!.IsWorkingDay);
+
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            result.Context.ExpectationSource);
+
+        Assert.Equal(
+            holidayId,
+            result.Context.ExpectationSourceId);
+
+        Assert.Equal(
+            "Quốc khánh",
+            result.Context.ExpectationSourceName);
+    }
+
+    [Fact]
+    public async Task OvernightDateOverride_AfterMidnight_UsesPreviousWorkDate()
+    {
+        TestContext test =
+            CreateSingleScheduleContext();
+
+        DateOnly previousDate =
+            new(
+                2026,
+                9,
+                2);
+
+        DateOnly currentDate =
+            previousDate.AddDays(
+                1);
+
+        Guid overrideId =
+            Guid.NewGuid();
+
+        test.ExpectationResolver.Set(
+            new ResolvedWorkExpectation(
+                test.ScheduleId,
+                previousDate,
+                true,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0),
+                30,
+                450,
+                true,
+                WorkExpectationSource.DateOverride,
+                overrideId,
+                "Trực ngày lễ"));
+
+        test.ExpectationResolver.Set(
+            NonWorkingExpectation(
+                test.ScheduleId,
+                currentDate,
+                WorkExpectationSource.Holiday,
+                "Nghỉ lễ"));
+
+        AttendancePunchContextResolutionResult result =
+            await test.Resolver.ResolveAsync(
+                test.EmployeeId,
+                Utc(
+                    2026,
+                    9,
+                    2,
+                    18,
+                    30));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            previousDate,
+            result.Context!.WorkDate);
+
+        Assert.Equal(
+            WorkExpectationSource.DateOverride,
+            result.Context.ExpectationSource);
+
+        Assert.Equal(
+            overrideId,
+            result.Context.ExpectationSourceId);
+
+        Assert.True(
+            result.Context.ExpectedStartTime >
+            result.Context.ExpectedEndTime);
+    }
+
+    [Fact]
+    public async Task PreviousDateHoliday_DoesNotCreateOvernightCandidate()
+    {
+        TestContext test =
+            CreateSingleScheduleContext();
+
+        DateOnly previousDate =
+            new(
+                2026,
+                9,
+                2);
+
+        DateOnly currentDate =
+            previousDate.AddDays(
+                1);
+
+        test.ExpectationResolver.Set(
+            NonWorkingExpectation(
+                test.ScheduleId,
+                previousDate,
+                WorkExpectationSource.Holiday,
+                "Quốc khánh"));
+
+        Guid currentWeeklySourceId =
+            Guid.NewGuid();
+
+        test.ExpectationResolver.Set(
+            new ResolvedWorkExpectation(
+                test.ScheduleId,
+                currentDate,
+                true,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0),
+                60,
+                420,
+                true,
+                WorkExpectationSource.WeeklySchedule,
+                currentWeeklySourceId,
+                null));
+
+        AttendancePunchContextResolutionResult result =
+            await test.Resolver.ResolveAsync(
+                test.EmployeeId,
+                Utc(
+                    2026,
+                    9,
+                    2,
+                    18,
+                    30));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            currentDate,
+            result.Context!.WorkDate);
+
+        Assert.Equal(
+            WorkExpectationSource.WeeklySchedule,
+            result.Context.ExpectationSource);
+
+        Assert.Equal(
+            currentWeeklySourceId,
+            result.Context.ExpectationSourceId);
+    }
+
+    [Fact]
+    public async Task ExpectationResolverConsistencyError_ReturnsFailure()
+    {
+        TestContext test =
+            CreateSingleScheduleContext();
+
+        test.ExpectationResolver.ExceptionToThrow =
+            new InvalidOperationException(
+                "Nguồn kỳ vọng không nhất quán.");
+
+        AttendancePunchContextResolutionResult result =
+            await test.Resolver.ResolveAsync(
+                test.EmployeeId,
+                Utc(
+                    2026,
+                    9,
+                    2,
+                    1,
+                    0));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Nguồn kỳ vọng không nhất quán.",
+            result.ErrorMessage);
+    }
+
+    private static TestContext CreateSingleScheduleContext()
     {
         Guid employeeId =
             Guid.NewGuid();
@@ -294,7 +661,7 @@ public sealed class AttendancePunchContextResolverTests
             Guid.NewGuid();
 
         Guid scheduleId =
-            days[0].WorkScheduleId;
+            Guid.NewGuid();
 
         Guid assignmentId =
             Guid.NewGuid();
@@ -317,25 +684,32 @@ public sealed class AttendancePunchContextResolverTests
                     1,
                     1));
 
+        var expectationResolver =
+            new StubExpectationResolver();
+
         var resolver =
             new AttendancePunchContextResolver(
                 new StubAssignmentRepository(
                     [assignment]),
                 new StubScheduleRepository(
                     [schedule]),
-                new StubScheduleDayRepository(
-                    new Dictionary<Guid, IReadOnlyList<WorkScheduleDay>>
-                    {
-                        [scheduleId] =
-                            days
-                    }),
+                expectationResolver,
                 new PlusSevenTimeZoneConverter());
 
         return new TestContext(
             employeeId,
             assignmentId,
-            resolver);
+            scheduleId,
+            resolver,
+            expectationResolver);
     }
+
+    private sealed record TestContext(
+    Guid EmployeeId,
+    Guid AssignmentId,
+    Guid ScheduleId,
+    AttendancePunchContextResolver Resolver,
+    StubExpectationResolver ExpectationResolver);
 
     private static IReadOnlyList<WorkScheduleDay>
         CreateOfficeDays(
@@ -438,11 +812,6 @@ public sealed class AttendancePunchContextResolverTests
             DateTimeKind.Utc);
     }
 
-    private sealed record TestContext(
-        Guid EmployeeId,
-        Guid AssignmentId,
-        AttendancePunchContextResolver Resolver);
-
     private sealed class StubAssignmentRepository
         : IEmployeeWorkScheduleAssignmentRepository
     {
@@ -504,38 +873,162 @@ public sealed class AttendancePunchContextResolverTests
         }
     }
 
-    private sealed class StubScheduleDayRepository
-        : IWorkScheduleDayRepository
+    private sealed class StubExpectationResolver
+    : IWorkExpectationResolver
     {
-        private readonly IReadOnlyDictionary<
-            Guid,
-            IReadOnlyList<WorkScheduleDay>>
-            _days;
+        private readonly Dictionary<
+            (Guid WorkScheduleId, DateOnly WorkDate),
+            ResolvedWorkExpectation>
+            _expectations =
+                new();
 
-        public StubScheduleDayRepository(
-            IReadOnlyDictionary<
-                Guid,
-                IReadOnlyList<WorkScheduleDay>> days)
+        public Exception? ExceptionToThrow
         {
-            _days =
-                days;
+            get;
+            set;
         }
 
-        public Task<IReadOnlyList<WorkScheduleDay>>
-            GetByWorkScheduleIdAsync(
-                Guid workScheduleId,
+        public int ResolveCallCount
+        {
+            get;
+            private set;
+        }
+
+        public void Set(
+            ResolvedWorkExpectation expectation)
+        {
+            _expectations[
+                (
+                    expectation.WorkScheduleId,
+                    expectation.WorkDate
+                )] =
+                    expectation;
+        }
+
+        public Task<ResolvedWorkExpectation?> ResolveAsync(
+            Guid workScheduleId,
+            DateOnly workDate,
+            CancellationToken cancellationToken = default)
+        {
+            ResolveCallCount++;
+
+            if (ExceptionToThrow is not null)
+            {
+                throw ExceptionToThrow;
+            }
+
+            _expectations.TryGetValue(
+                (
+                    workScheduleId,
+                    workDate
+                ),
+                out ResolvedWorkExpectation? expectation);
+
+            return Task.FromResult(
+                expectation);
+        }
+
+        public Task<IReadOnlyDictionary<Guid, ResolvedWorkExpectation>>
+            ResolveManyAsync(
+                IReadOnlyCollection<Guid> workScheduleIds,
+                DateOnly workDate,
                 CancellationToken cancellationToken = default)
         {
-            IReadOnlyList<WorkScheduleDay> result =
-                _days.TryGetValue(
-                    workScheduleId,
-                    out IReadOnlyList<WorkScheduleDay>? days)
-                    ? days
-                    : [];
+            IReadOnlyDictionary<Guid, ResolvedWorkExpectation> result =
+                workScheduleIds
+                    .Distinct()
+                    .Select(
+                        workScheduleId =>
+                        {
+                            _expectations.TryGetValue(
+                                (
+                                    workScheduleId,
+                                    workDate
+                                ),
+                                out ResolvedWorkExpectation? expectation);
+
+                            return new
+                            {
+                                WorkScheduleId =
+                                    workScheduleId,
+                                Expectation =
+                                    expectation
+                            };
+                        })
+                    .Where(
+                        item =>
+                            item.Expectation is not null)
+                    .ToDictionary(
+                        item =>
+                            item.WorkScheduleId,
+                        item =>
+                            item.Expectation!);
 
             return Task.FromResult(
                 result);
         }
+    }
+
+    private static ResolvedWorkExpectation WorkingExpectation(
+    Guid scheduleId,
+    DateOnly workDate,
+    TimeOnly startTime,
+    TimeOnly endTime,
+    WorkExpectationSource source =
+        WorkExpectationSource.WeeklySchedule,
+    Guid? sourceId = null,
+    string? sourceName = null)
+    {
+        int startMinutes =
+            startTime.Hour * 60
+            + startTime.Minute;
+
+        int endMinutes =
+            endTime.Hour * 60
+            + endTime.Minute;
+
+        int shiftMinutes =
+            endMinutes
+            - startMinutes;
+
+        if (shiftMinutes < 0)
+        {
+            shiftMinutes +=
+                24 * 60;
+        }
+
+        return new ResolvedWorkExpectation(
+            scheduleId,
+            workDate,
+            true,
+            startTime,
+            endTime,
+            60,
+            shiftMinutes - 60,
+            endTime < startTime,
+            source,
+            sourceId ?? Guid.NewGuid(),
+            sourceName);
+    }
+
+    private static ResolvedWorkExpectation NonWorkingExpectation(
+        Guid scheduleId,
+        DateOnly workDate,
+        WorkExpectationSource source,
+        string? sourceName = null)
+    {
+        return new ResolvedWorkExpectation(
+            scheduleId,
+            workDate,
+            false,
+            null,
+            null,
+            0,
+            0,
+            false,
+            source,
+            Guid.NewGuid(),
+            sourceName);
     }
 
     private sealed class PlusSevenTimeZoneConverter

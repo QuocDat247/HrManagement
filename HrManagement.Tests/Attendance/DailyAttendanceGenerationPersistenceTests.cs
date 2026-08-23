@@ -1,3 +1,7 @@
+using HrManagement.Application.Attendance.Expectations;
+using HrManagement.Domain.Attendance.Calendars;
+using HrManagement.Domain.Attendance.Expectations;
+using HrManagement.Infrastructure.Attendance.Expectations;
 using HrManagement.Application.Attendance.Generation;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
@@ -12,7 +16,7 @@ namespace HrManagement.Tests.Attendance;
 public sealed class DailyAttendanceGenerationPersistenceTests
 {
     [Fact]
-    public async Task GetCandidatesAsync_ReturnsEffectiveScheduleSnapshot()
+    public async Task GetCandidatesAsync_ReturnsEffectiveAssignmentContext()
     {
         DateOnly workDate =
             new(
@@ -58,25 +62,6 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         Assert.Equal(
             "SE Asia Standard Time",
             candidate.TimeZoneId);
-
-        Assert.True(
-            candidate.IsWorkingDay);
-
-        Assert.Equal(
-            new TimeOnly(
-                8,
-                0),
-            candidate.ExpectedStartTime);
-
-        Assert.Equal(
-            new TimeOnly(
-                17,
-                0),
-            candidate.ExpectedEndTime);
-
-        Assert.Equal(
-            60,
-            candidate.ExpectedBreakMinutes);
     }
 
     [Fact]
@@ -194,9 +179,15 @@ public sealed class DailyAttendanceGenerationPersistenceTests
                 database,
                 workDate);
 
+        var expectationResolver =
+            new WorkExpectationResolver(
+                new EfWorkExpectationResolutionPersistence(
+                    database.Factory));
+
         var service =
             new DailyAttendanceGenerationService(
-                database.Persistence);
+                database.Persistence,
+                expectationResolver);
 
         GenerateDailyAttendanceResult first =
             await service.GenerateAsync(
@@ -296,7 +287,7 @@ public sealed class DailyAttendanceGenerationPersistenceTests
     }
 
     [Fact]
-    public async Task GetCandidatesAsync_ReturnsNonWorkingDayCandidate()
+    public async Task GetCandidatesAsync_DoesNotRequireWeeklyDayDefinition()
     {
         DateOnly workDate =
             new(
@@ -311,7 +302,7 @@ public sealed class DailyAttendanceGenerationPersistenceTests
             await SeedAssignmentAsync(
                 database,
                 workDate,
-                isWorkingDay:
+                createScheduleDay:
                     false);
 
         IReadOnlyList<DailyAttendanceGenerationCandidate>
@@ -325,19 +316,339 @@ public sealed class DailyAttendanceGenerationPersistenceTests
             Assert.Single(
                 candidates);
 
+        Assert.Equal(
+            seed.EmployeeId,
+            candidate.EmployeeId);
+
+        Assert.Equal(
+            seed.ScheduleId,
+            candidate.WorkScheduleId);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithHoliday_PersistsHolidaySnapshot()
+    {
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
+
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await SeedAssignmentAsync(
+                database,
+                workDate);
+
+        var holiday =
+            new HolidayCalendarDay(
+                Guid.NewGuid(),
+                workDate,
+                "Quốc khánh");
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory.CreateDbContextAsync())
+        {
+            dbContext.HolidayCalendarDays.Add(
+                holiday);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var resolver =
+            new WorkExpectationResolver(
+                new EfWorkExpectationResolutionPersistence(
+                    database.Factory));
+
+        var service =
+            new DailyAttendanceGenerationService(
+                database.Persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate,
+                    seed.EmployeeId));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        await using HrManagementDbContext verificationContext =
+            await database.Factory.CreateDbContextAsync();
+
+        AttendanceRecord record =
+            Assert.Single(
+                await verificationContext
+                    .AttendanceRecords
+                    .AsNoTracking()
+                    .ToArrayAsync());
+
         Assert.False(
-            candidate.IsWorkingDay);
+            record.IsWorkingDay);
 
-        Assert.Null(
-            candidate.ExpectedStartTime);
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            record.ExpectationSource);
 
-        Assert.Null(
-            candidate.ExpectedEndTime);
+        Assert.Equal(
+            holiday.Id,
+            record.ExpectationSourceId);
+
+        Assert.Equal(
+            "Quốc khánh",
+            record.ExpectationSourceName);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WithDateOverride_PersistsOverrideBeforeHoliday()
+    {
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
+
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await SeedAssignmentAsync(
+                database,
+                workDate);
+
+        var holiday =
+            new HolidayCalendarDay(
+                Guid.NewGuid(),
+                workDate,
+                "Quốc khánh");
+
+        var dateOverride =
+            new WorkScheduleDateOverride(
+                Guid.NewGuid(),
+                seed.ScheduleId,
+                workDate,
+                true,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0),
+                30,
+                "Trực ngày lễ");
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory.CreateDbContextAsync())
+        {
+            dbContext.HolidayCalendarDays.Add(
+                holiday);
+
+            dbContext.WorkScheduleDateOverrides.Add(
+                dateOverride);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var resolver =
+            new WorkExpectationResolver(
+                new EfWorkExpectationResolutionPersistence(
+                    database.Factory));
+
+        var service =
+            new DailyAttendanceGenerationService(
+                database.Persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate,
+                    seed.EmployeeId));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        await using HrManagementDbContext verificationContext =
+            await database.Factory.CreateDbContextAsync();
+
+        AttendanceRecord record =
+            Assert.Single(
+                await verificationContext
+                    .AttendanceRecords
+                    .AsNoTracking()
+                    .ToArrayAsync());
+
+        Assert.True(
+            record.IsWorkingDay);
+
+        Assert.True(
+            record.IsOvernight);
+
+        Assert.Equal(
+            450,
+            record.ExpectedPlannedMinutes);
+
+        Assert.Equal(
+            WorkExpectationSource.DateOverride,
+            record.ExpectationSource);
+
+        Assert.Equal(
+            dateOverride.Id,
+            record.ExpectationSourceId);
+
+        Assert.Equal(
+            "Trực ngày lễ",
+            record.ExpectationSourceName);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_AfterExpectationConfigurationChanges_PreservesExistingSnapshot()
+    {
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
+
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await SeedAssignmentAsync(
+                database,
+                workDate);
+
+        var holiday =
+            new HolidayCalendarDay(
+                Guid.NewGuid(),
+                workDate,
+                "Quốc khánh");
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory.CreateDbContextAsync())
+        {
+            dbContext.HolidayCalendarDays.Add(
+                holiday);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var resolver =
+            new WorkExpectationResolver(
+                new EfWorkExpectationResolutionPersistence(
+                    database.Factory));
+
+        var service =
+            new DailyAttendanceGenerationService(
+                database.Persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult first =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate,
+                    seed.EmployeeId));
+
+        Assert.True(
+            first.IsSuccessful);
+
+        Assert.Equal(
+            1,
+            first.CreatedCount);
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory.CreateDbContextAsync())
+        {
+            HolidayCalendarDay persistedHoliday =
+                await dbContext.HolidayCalendarDays
+                    .SingleAsync(
+                        item =>
+                            item.Id ==
+                            holiday.Id);
+
+            persistedHoliday.Deactivate();
+
+            var dateOverride =
+                new WorkScheduleDateOverride(
+                    Guid.NewGuid(),
+                    seed.ScheduleId,
+                    workDate,
+                    true,
+                    new TimeOnly(
+                        22,
+                        0),
+                    new TimeOnly(
+                        6,
+                        0),
+                    30,
+                    "Trực thay thế");
+
+            dbContext.WorkScheduleDateOverrides.Add(
+                dateOverride);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        GenerateDailyAttendanceResult second =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate,
+                    seed.EmployeeId));
+
+        Assert.True(
+            second.IsSuccessful);
 
         Assert.Equal(
             0,
-            candidate.ExpectedBreakMinutes);
+            second.CreatedCount);
+
+        Assert.Equal(
+            1,
+            second.SkippedExistingCount);
+
+        await using HrManagementDbContext verificationContext =
+            await database.Factory.CreateDbContextAsync();
+
+        AttendanceRecord record =
+            Assert.Single(
+                await verificationContext
+                    .AttendanceRecords
+                    .AsNoTracking()
+                    .ToArrayAsync());
+
+        Assert.False(
+            record.IsWorkingDay);
+
+        Assert.Null(
+            record.ExpectedStartTime);
+
+        Assert.Null(
+            record.ExpectedEndTime);
+
+        Assert.Equal(
+            0,
+            record.ExpectedPlannedMinutes);
+
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            record.ExpectationSource);
+
+        Assert.Equal(
+            holiday.Id,
+            record.ExpectationSourceId);
+
+        Assert.Equal(
+            "Quốc khánh",
+            record.ExpectationSourceName);
     }
+
     private static async Task<SeedResult>
         SeedAssignmentAsync(
             TestDatabase database,
@@ -347,7 +658,8 @@ public sealed class DailyAttendanceGenerationPersistenceTests
             DateOnly? assignmentEffectiveTo = null,
             DateOnly? employmentStartDate = null,
             DateOnly? employmentEndDate = null,
-            bool isWorkingDay = true)
+            bool isWorkingDay = true,
+            bool createScheduleDay = true)
     {
         Guid employeeId =
             Guid.NewGuid();
@@ -397,25 +709,27 @@ public sealed class DailyAttendanceGenerationPersistenceTests
                 "SE Asia Standard Time",
                 scheduleIsActive);
 
-        WorkScheduleDay scheduleDay =
-            isWorkingDay
-                ? new WorkScheduleDay(
-                    Guid.NewGuid(),
-                    scheduleId,
-                    workDate.DayOfWeek,
-                    true,
-                    new TimeOnly(
-                        8,
-                        0),
-                    new TimeOnly(
-                        17,
-                        0),
-                    60)
-                : new WorkScheduleDay(
-                    Guid.NewGuid(),
-                    scheduleId,
-                    workDate.DayOfWeek,
-                    false);
+        WorkScheduleDay? scheduleDay =
+            !createScheduleDay
+                ? null
+                : isWorkingDay
+                    ? new WorkScheduleDay(
+                        Guid.NewGuid(),
+                        scheduleId,
+                        workDate.DayOfWeek,
+                        true,
+                        new TimeOnly(
+                            8,
+                            0),
+                        new TimeOnly(
+                            17,
+                            0),
+                        60)
+                    : new WorkScheduleDay(
+                        Guid.NewGuid(),
+                        scheduleId,
+                        workDate.DayOfWeek,
+                        false);
 
         var assignment =
             new EmployeeWorkScheduleAssignment(
@@ -441,8 +755,11 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         dbContext.WorkSchedules.Add(
             schedule);
 
-        dbContext.WorkScheduleDays.Add(
-            scheduleDay);
+        if (scheduleDay is not null)
+        {
+            dbContext.WorkScheduleDays.Add(
+                scheduleDay);
+        }
 
         dbContext.EmployeeWorkScheduleAssignments.Add(
             assignment);

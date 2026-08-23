@@ -5,8 +5,4 @@ public sealed record DailyAttendanceGenerationCandidate(
     Guid EmploymentPeriodId,
     Guid WorkScheduleAssignmentId,
     Guid WorkScheduleId,
-    string TimeZoneId,
-    bool IsWorkingDay,
-    TimeOnly? ExpectedStartTime,
-    TimeOnly? ExpectedEndTime,
-    int ExpectedBreakMinutes);
+    string TimeZoneId);

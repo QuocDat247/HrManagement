@@ -1,7 +1,12 @@
+using HrManagement.Application.Workspaces.HolidayExceptions;
+using HrManagement.Infrastructure.Workspaces.HolidayExceptions;
 using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Application.Attendance.Calendars;
+using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Application.Attendance.Generation;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
+using HrManagement.Application.Attendance.Schedules.Overrides;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Dashboard.Analytics;
 using HrManagement.Application.Employees;
@@ -16,8 +21,12 @@ using HrManagement.Application.Workspaces.AttendanceLeave;
 using HrManagement.Application.Workspaces.WorkSchedules;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Calculations;
+using HrManagement.Infrastructure.Attendance.Calendars;
+using HrManagement.Infrastructure.Attendance.Expectations;
+using HrManagement.Infrastructure.Attendance.Generation;
 using HrManagement.Infrastructure.Attendance.Records;
 using HrManagement.Infrastructure.Attendance.Schedules;
+using HrManagement.Infrastructure.Attendance.Schedules.Overrides;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Dashboard.Analytics;
 using HrManagement.Infrastructure.Employees;
@@ -28,7 +37,6 @@ using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Infrastructure.Persistence;
 using HrManagement.Infrastructure.Workspaces.AttendanceLeave;
 using HrManagement.Infrastructure.Workspaces.WorkSchedules;
-using HrManagement.Infrastructure.Attendance.Generation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -113,8 +121,24 @@ public static class ServiceCollectionExtensions
             EmployeeIdentificationRecordService>();
 
         services.AddSingleton<
+            IHolidayCalendarManagementPersistence,
+            EfHolidayCalendarManagementPersistence>();
+
+        services.AddScoped<
+            IHolidayCalendarManagementService,
+            HolidayCalendarManagementService>();
+
+        services.AddSingleton<
             IWorkScheduleRepository,
             EfWorkScheduleRepository>();
+
+        services.AddSingleton<
+            IWorkScheduleDateOverrideManagementPersistence,
+            EfWorkScheduleDateOverrideManagementPersistence>();
+
+        services.AddScoped<
+            IWorkScheduleDateOverrideManagementService,
+            WorkScheduleDateOverrideManagementService>();
 
         services.AddSingleton<
             IWorkScheduleManagementPersistence,
@@ -186,6 +210,14 @@ public static class ServiceCollectionExtensions
             AttendanceRecalculationService>();
 
         services.AddSingleton<
+            IWorkExpectationResolutionPersistence,
+            EfWorkExpectationResolutionPersistence>();
+
+        services.AddScoped<
+            IWorkExpectationResolver,
+            WorkExpectationResolver>();
+
+        services.AddSingleton<
             ILeaveTypeRepository,
             EfLeaveTypeRepository>();
 
@@ -244,6 +276,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IDailyAttendanceGenerationService,
             DailyAttendanceGenerationService>();
+
+        services.AddSingleton<
+            IHolidayExceptionWorkspaceQueryService,
+            EfHolidayExceptionWorkspaceQueryService>();
 
         return services;
     }

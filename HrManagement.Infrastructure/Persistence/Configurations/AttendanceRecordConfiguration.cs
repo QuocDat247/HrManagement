@@ -1,3 +1,4 @@
+using HrManagement.Domain.Attendance.Expectations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
 using HrManagement.Domain.Employees;
@@ -61,6 +62,24 @@ public sealed class AttendanceRecordConfiguration
         builder.Property(
                 record => record.ExpectedBreakMinutes)
             .IsRequired();
+
+        builder.Property(
+            record =>
+                record.ExpectationSource)
+            .HasConversion<int>()
+            .HasDefaultValue(
+                WorkExpectationSource.WeeklySchedule)
+            .IsRequired();
+
+        builder.Property(
+            record =>
+                record.ExpectationSourceId);
+
+        builder.Property(
+                record =>
+                    record.ExpectationSourceName)
+            .HasMaxLength(
+                500);
 
         builder.Ignore(
             record => record.ExpectedPlannedMinutes);

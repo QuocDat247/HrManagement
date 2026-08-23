@@ -19,18 +19,15 @@ public sealed class EfDailyAttendanceGenerationPersistence
     }
 
     public async Task<IReadOnlyList<
-    DailyAttendanceGenerationCandidate>>
-    GetCandidatesAsync(
-        DateOnly workDate,
-        Guid? employeeId = null,
-        CancellationToken cancellationToken = default)
+DailyAttendanceGenerationCandidate>>
+GetCandidatesAsync(
+    DateOnly workDate,
+    Guid? employeeId = null,
+    CancellationToken cancellationToken = default)
     {
         await using HrManagementDbContext dbContext =
             await _dbContextFactory.CreateDbContextAsync(
                 cancellationToken);
-
-        DayOfWeek dayOfWeek =
-            workDate.DayOfWeek;
 
         var query =
             from assignment in
@@ -49,17 +46,8 @@ public sealed class EfDailyAttendanceGenerationPersistence
                 on assignment.WorkScheduleId
                 equals schedule.Id
 
-            join scheduleDay in
-                dbContext.WorkScheduleDays
-                    .AsNoTracking()
-                on assignment.WorkScheduleId
-                equals scheduleDay.WorkScheduleId
-
             where
-                scheduleDay.DayOfWeek ==
-                    dayOfWeek
-
-                && assignment.EffectiveFrom <=
+                assignment.EffectiveFrom <=
                     workDate
 
                 && (
@@ -95,19 +83,7 @@ public sealed class EfDailyAttendanceGenerationPersistence
                     schedule.Id,
 
                 TimeZoneId =
-                    schedule.TimeZoneId,
-
-                IsWorkingDay =
-                    scheduleDay.IsWorkingDay,
-
-                ExpectedStartTime =
-                    scheduleDay.StartTime,
-
-                ExpectedEndTime =
-                    scheduleDay.EndTime,
-
-                ExpectedBreakMinutes =
-                    scheduleDay.BreakMinutes
+                    schedule.TimeZoneId
             };
 
         if (employeeId.HasValue)
@@ -137,11 +113,7 @@ public sealed class EfDailyAttendanceGenerationPersistence
                         row.EmploymentPeriodId,
                         row.WorkScheduleAssignmentId,
                         row.WorkScheduleId,
-                        row.TimeZoneId,
-                        row.IsWorkingDay,
-                        row.ExpectedStartTime,
-                        row.ExpectedEndTime,
-                        row.ExpectedBreakMinutes))
+                        row.TimeZoneId))
             .ToArray();
     }
 

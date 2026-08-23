@@ -10,11 +10,16 @@ using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Leave.Requests;
 using HrManagement.Domain.Leave.Types;
+using HrManagement.Domain.Attendance.Calendars;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<WorkScheduleDateOverride>
+        WorkScheduleDateOverrides =>
+            Set<WorkScheduleDateOverride>();
+
     public DbSet<LeaveRequestStatusChange>
         LeaveRequestStatusChanges =>
             Set<LeaveRequestStatusChange>();
@@ -24,6 +29,9 @@ public sealed class HrManagementDbContext : DbContext
 
     public DbSet<LeaveRequest> LeaveRequests =>
         Set<LeaveRequest>();
+
+    public DbSet<HolidayCalendarDay> HolidayCalendarDays =>
+    Set<HolidayCalendarDay>();
 
     public DbSet<AttendanceRecord> AttendanceRecords =>
         Set<AttendanceRecord>();
@@ -117,10 +125,16 @@ public sealed class HrManagementDbContext : DbContext
             new AuditEntryConfiguration());
 
         modelBuilder.ApplyConfiguration(
+            new HolidayCalendarDayConfiguration());
+
+        modelBuilder.ApplyConfiguration(
             new WorkScheduleConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new WorkScheduleDayConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new WorkScheduleDateOverrideConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new EmployeeWorkScheduleAssignmentConfiguration());

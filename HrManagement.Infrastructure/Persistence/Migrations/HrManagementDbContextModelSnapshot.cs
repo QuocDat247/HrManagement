@@ -17,6 +17,33 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.29");
 
+            modelBuilder.Entity("HrManagement.Domain.Attendance.Calendars.HolidayCalendarDay", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique()
+                        .HasDatabaseName("UX_HolidayCalendarDays_Date");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("HolidayCalendarDays", (string)null);
+                });
+
             modelBuilder.Entity("HrManagement.Domain.Attendance.Records.AttendanceEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -62,6 +89,18 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("EmploymentPeriodId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ExpectationSource")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
+                    b.Property<Guid?>("ExpectationSourceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpectationSourceName")
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ExpectedBreakMinutes")
@@ -197,6 +236,45 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                     b.HasIndex("IsActive");
 
                     b.ToTable("WorkSchedules", (string)null);
+                });
+
+            modelBuilder.Entity("HrManagement.Domain.Attendance.Schedules.WorkScheduleDateOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("BreakMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsWorkingDay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("WorkDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("WorkScheduleId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkDate")
+                        .HasDatabaseName("IX_WorkScheduleDateOverrides_WorkDate");
+
+                    b.HasIndex("WorkScheduleId", "WorkDate")
+                        .IsUnique()
+                        .HasDatabaseName("UX_WorkScheduleDateOverrides_Schedule_Date");
+
+                    b.ToTable("WorkScheduleDateOverrides", (string)null);
                 });
 
             modelBuilder.Entity("HrManagement.Domain.Attendance.Schedules.WorkScheduleDay", b =>
@@ -818,6 +896,15 @@ namespace HrManagement.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("WorkScheduleId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HrManagement.Domain.Attendance.Schedules.WorkScheduleDateOverride", b =>
+                {
+                    b.HasOne("HrManagement.Domain.Attendance.Schedules.WorkSchedule", null)
+                        .WithMany()
+                        .HasForeignKey("WorkScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

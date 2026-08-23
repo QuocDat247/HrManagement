@@ -1,5 +1,6 @@
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Domain.Attendance.Expectations;
 
 namespace HrManagement.Tests.Attendance;
 
@@ -440,6 +441,188 @@ public sealed class AttendancePunchServiceTests
             test.Persistence.NewEvent);
     }
 
+    [Fact]
+    public async Task FirstClockIn_CapturesExpectationProvenance()
+    {
+        TestContext test =
+            CreateContext();
+
+        Guid holidayId =
+            Guid.NewGuid();
+
+        test.ContextResolver.Result =
+            new AttendancePunchContextResolutionResult(
+                IsSuccessful: true,
+                Context:
+                    new AttendancePunchContext(
+                        test.EmployeeId,
+                        test.EmploymentPeriodId,
+                        test.AssignmentId,
+                        test.ScheduleId,
+                        new DateOnly(
+                            2026,
+                            9,
+                            2),
+                        "SE Asia Standard Time",
+                        false,
+                        null,
+                        null,
+                        0,
+                        WorkExpectationSource.Holiday,
+                        holidayId,
+                        "Quốc khánh"));
+
+        RecordAttendancePunchResult result =
+            await test.Service.RecordAsync(
+                new RecordAttendancePunchRequest(
+                    test.EmployeeId,
+                    AttendanceEventType.ClockIn,
+                    Utc(
+                        2026,
+                        9,
+                        2,
+                        1,
+                        0)));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        AttendanceRecord record =
+            Assert.IsType<AttendanceRecord>(
+                test.Persistence.NewRecord);
+
+        Assert.False(
+            record.IsWorkingDay);
+
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            record.ExpectationSource);
+
+        Assert.Equal(
+            holidayId,
+            record.ExpectationSourceId);
+
+        Assert.Equal(
+            "Quốc khánh",
+            record.ExpectationSourceName);
+    }
+
+    [Fact]
+    public async Task ClockIn_WhenExistingRecordHasOlderExpectationSnapshot_ReusesRecordWithoutRewritingIt()
+    {
+        TestContext test =
+            CreateContext();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
+
+        Guid holidayId =
+            Guid.NewGuid();
+
+        var existingRecord =
+            new AttendanceRecord(
+                Guid.NewGuid(),
+                test.EmployeeId,
+                test.EmploymentPeriodId,
+                test.AssignmentId,
+                test.ScheduleId,
+                workDate,
+                "SE Asia Standard Time",
+                false,
+                expectationSource:
+                    WorkExpectationSource.Holiday,
+                expectationSourceId:
+                    holidayId,
+                expectationSourceName:
+                    "Quốc khánh");
+
+        test.RecordRepository.ByEmployeeAndDate =
+            existingRecord;
+
+        Guid newOverrideId =
+            Guid.NewGuid();
+
+        test.ContextResolver.Result =
+            new AttendancePunchContextResolutionResult(
+                IsSuccessful: true,
+                Context:
+                    new AttendancePunchContext(
+                        test.EmployeeId,
+                        test.EmploymentPeriodId,
+                        test.AssignmentId,
+                        test.ScheduleId,
+                        workDate,
+                        "SE Asia Standard Time",
+                        true,
+                        new TimeOnly(
+                            22,
+                            0),
+                        new TimeOnly(
+                            6,
+                            0),
+                        30,
+                        WorkExpectationSource.DateOverride,
+                        newOverrideId,
+                        "Trực thay thế"));
+
+        RecordAttendancePunchResult result =
+            await test.Service.RecordAsync(
+                new RecordAttendancePunchRequest(
+                    test.EmployeeId,
+                    AttendanceEventType.ClockIn,
+                    Utc(
+                        2026,
+                        9,
+                        2,
+                        15,
+                        0)));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            existingRecord.Id,
+            result.AttendanceRecordId);
+
+        Assert.Equal(
+            workDate,
+            result.WorkDate);
+
+        Assert.Null(
+            test.Persistence.NewRecord);
+
+        Assert.NotNull(
+            test.Persistence.NewEvent);
+
+        Assert.Equal(
+            existingRecord.Id,
+            test.Persistence.NewEvent!.AttendanceRecordId);
+
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            existingRecord.ExpectationSource);
+
+        Assert.Equal(
+            holidayId,
+            existingRecord.ExpectationSourceId);
+
+        Assert.Equal(
+            "Quốc khánh",
+            existingRecord.ExpectationSourceName);
+
+        Assert.False(
+            existingRecord.IsWorkingDay);
+
+        Assert.Null(
+            existingRecord.ExpectedStartTime);
+
+        Assert.Null(
+            existingRecord.ExpectedEndTime);
+    }
+
     private static TestContext CreateContext()
     {
         Guid employeeId =
@@ -482,7 +665,10 @@ public sealed class AttendancePunchServiceTests
                             new TimeOnly(
                                 17,
                                 0),
-                            60)));
+                                60,
+                            WorkExpectationSource.WeeklySchedule,
+                                Guid.NewGuid(),
+                                null)));
 
         var persistence =
             new StubAttendancePunchPersistence();

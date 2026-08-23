@@ -227,7 +227,10 @@ public sealed class AttendancePunchService
                 context.IsWorkingDay,
                 context.ExpectedStartTime,
                 context.ExpectedEndTime,
-                context.ExpectedBreakMinutes);
+                context.ExpectedBreakMinutes,
+                context.ExpectationSource,
+                context.ExpectationSourceId,
+                context.ExpectationSourceName);
 
         try
         {

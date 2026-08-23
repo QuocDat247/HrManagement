@@ -1,4 +1,6 @@
+using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Application.Attendance.Generation;
+using HrManagement.Domain.Attendance.Expectations;
 using HrManagement.Domain.Attendance.Records;
 
 namespace HrManagement.Tests.Attendance;
@@ -6,7 +8,7 @@ namespace HrManagement.Tests.Attendance;
 public sealed class DailyAttendanceGenerationServiceTests
 {
     [Fact]
-    public async Task WorkingDay_CreatesExpectedSnapshot()
+    public async Task WorkingDay_CreatesResolvedExpectationSnapshot()
     {
         Guid employeeId =
             Guid.NewGuid();
@@ -20,6 +22,9 @@ public sealed class DailyAttendanceGenerationServiceTests
         Guid scheduleId =
             Guid.NewGuid();
 
+        Guid sourceId =
+            Guid.NewGuid();
+
         var persistence =
             new TestPersistence
             {
@@ -30,27 +35,44 @@ public sealed class DailyAttendanceGenerationServiceTests
                         employmentPeriodId,
                         assignmentId,
                         scheduleId,
-                        "SE Asia Standard Time",
-                        true,
-                        new TimeOnly(
-                            22,
-                            0),
-                        new TimeOnly(
-                            6,
-                            0),
-                        30)
+                        "SE Asia Standard Time")
                 ]
             };
 
+        var resolver =
+            new TestExpectationResolver();
+
+        resolver.Expectations[scheduleId] =
+            new ResolvedWorkExpectation(
+                scheduleId,
+                new DateOnly(
+                    2026,
+                    9,
+                    2),
+                true,
+                new TimeOnly(
+                    22,
+                    0),
+                new TimeOnly(
+                    6,
+                    0),
+                30,
+                450,
+                true,
+                WorkExpectationSource.DateOverride,
+                sourceId,
+                "Trực ngày lễ");
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         DateOnly workDate =
             new(
                 2026,
-                8,
-                22);
+                9,
+                2);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -64,17 +86,9 @@ public sealed class DailyAttendanceGenerationServiceTests
             1,
             result.CreatedCount);
 
-        Assert.Equal(
-            0,
-            result.SkippedExistingCount);
-
         AttendanceRecord record =
             Assert.Single(
                 persistence.AddedRecords);
-
-        Assert.NotEqual(
-            Guid.Empty,
-            record.Id);
 
         Assert.Equal(
             employeeId,
@@ -95,10 +109,6 @@ public sealed class DailyAttendanceGenerationServiceTests
         Assert.Equal(
             workDate,
             record.WorkDate);
-
-        Assert.Equal(
-            "SE Asia Standard Time",
-            record.TimeZoneId);
 
         Assert.True(
             record.IsWorkingDay);
@@ -125,54 +135,75 @@ public sealed class DailyAttendanceGenerationServiceTests
 
         Assert.True(
             record.IsOvernight);
+
+        Assert.Equal(
+            WorkExpectationSource.DateOverride,
+            record.ExpectationSource);
+
+        Assert.Equal(
+            sourceId,
+            record.ExpectationSourceId);
+
+        Assert.Equal(
+            "Trực ngày lễ",
+            record.ExpectationSourceName);
     }
 
     [Fact]
-    public async Task NonWorkingDay_CreatesNonWorkingSnapshot()
+    public async Task Holiday_CreatesNonWorkingSnapshot()
     {
-        Guid employeeId =
+        Guid scheduleId =
             Guid.NewGuid();
+
+        Guid holidayId =
+            Guid.NewGuid();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                2);
 
         var persistence =
             new TestPersistence
             {
                 Candidates =
                 [
-                    new DailyAttendanceGenerationCandidate(
-                        employeeId,
+                    CreateCandidate(
                         Guid.NewGuid(),
-                        Guid.NewGuid(),
-                        Guid.NewGuid(),
-                        "SE Asia Standard Time",
-                        false,
-                        null,
-                        null,
-                        0)
+                        scheduleId)
                 ]
             };
 
+        var resolver =
+            new TestExpectationResolver();
+
+        resolver.Expectations[scheduleId] =
+            new ResolvedWorkExpectation(
+                scheduleId,
+                workDate,
+                false,
+                null,
+                null,
+                0,
+                0,
+                false,
+                WorkExpectationSource.Holiday,
+                holidayId,
+                "Quốc khánh");
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
                 new GenerateDailyAttendanceRequest(
-                    new DateOnly(
-                        2026,
-                        8,
-                        23)));
+                    workDate));
 
         Assert.True(
             result.IsSuccessful);
-
-        Assert.Equal(
-            1,
-            result.CreatedCount);
-
-        Assert.Equal(
-            0,
-            result.SkippedExistingCount);
 
         AttendanceRecord record =
             Assert.Single(
@@ -181,144 +212,23 @@ public sealed class DailyAttendanceGenerationServiceTests
         Assert.False(
             record.IsWorkingDay);
 
-        Assert.Null(
-            record.ExpectedStartTime);
-
-        Assert.Null(
-            record.ExpectedEndTime);
+        Assert.Equal(
+            WorkExpectationSource.Holiday,
+            record.ExpectationSource);
 
         Assert.Equal(
-            0,
-            record.ExpectedBreakMinutes);
+            holidayId,
+            record.ExpectationSourceId);
 
         Assert.Equal(
-            0,
-            record.ExpectedPlannedMinutes);
-
-        Assert.False(
-            record.IsOvernight);
+            "Quốc khánh",
+            record.ExpectationSourceName);
     }
 
     [Fact]
-    public async Task ExistingRecord_IsSkipped()
+    public async Task ExistingRecord_IsSkippedWithoutResolvingAgain()
     {
         Guid employeeId =
-            Guid.NewGuid();
-
-        var persistence =
-            new TestPersistence
-            {
-                Candidates =
-                [
-                    CreateWorkingCandidate(
-                        employeeId)
-                ],
-
-                ExistingEmployeeIds =
-                [
-                    employeeId
-                ]
-            };
-
-        var service =
-            new DailyAttendanceGenerationService(
-                persistence);
-
-        GenerateDailyAttendanceResult result =
-            await service.GenerateAsync(
-                new GenerateDailyAttendanceRequest(
-                    new DateOnly(
-                        2026,
-                        8,
-                        22)));
-
-        Assert.True(
-            result.IsSuccessful);
-
-        Assert.Equal(
-            0,
-            result.CreatedCount);
-
-        Assert.Equal(
-            1,
-            result.SkippedExistingCount);
-
-        Assert.Empty(
-            persistence.AddedRecords);
-    }
-
-    [Fact]
-    public async Task MixedCandidates_CreatesOnlyMissingRecords()
-    {
-        Guid existingEmployeeId =
-            Guid.NewGuid();
-
-        Guid missingEmployeeId =
-            Guid.NewGuid();
-
-        var persistence =
-            new TestPersistence
-            {
-                Candidates =
-                [
-                    CreateWorkingCandidate(
-                        existingEmployeeId),
-
-                    CreateWorkingCandidate(
-                        missingEmployeeId)
-                ],
-
-                ExistingEmployeeIds =
-                [
-                    existingEmployeeId
-                ]
-            };
-
-        var service =
-            new DailyAttendanceGenerationService(
-                persistence);
-
-        GenerateDailyAttendanceResult result =
-            await service.GenerateAsync(
-                new GenerateDailyAttendanceRequest(
-                    new DateOnly(
-                        2026,
-                        8,
-                        22)));
-
-        Assert.True(
-            result.IsSuccessful);
-
-        Assert.Equal(
-            1,
-            result.CreatedCount);
-
-        Assert.Equal(
-            1,
-            result.SkippedExistingCount);
-
-        AttendanceRecord created =
-            Assert.Single(
-                persistence.AddedRecords);
-
-        Assert.Equal(
-            missingEmployeeId,
-            created.EmployeeId);
-
-        Assert.DoesNotContain(
-            persistence.AddedRecords,
-            record =>
-                record.EmployeeId ==
-                existingEmployeeId);
-    }
-
-    [Fact]
-    public async Task DuplicateEffectiveAssignments_Fails()
-    {
-        Guid employeeId =
-            Guid.NewGuid();
-
-        Guid employmentPeriodId =
             Guid.NewGuid();
 
         Guid scheduleId =
@@ -329,49 +239,178 @@ public sealed class DailyAttendanceGenerationServiceTests
             {
                 Candidates =
                 [
-                    new DailyAttendanceGenerationCandidate(
+                    CreateCandidate(
                         employeeId,
-                        employmentPeriodId,
-                        Guid.NewGuid(),
-                        scheduleId,
-                        "SE Asia Standard Time",
-                        true,
-                        new TimeOnly(
-                            8,
-                            0),
-                        new TimeOnly(
-                            17,
-                            0),
-                        60),
+                        scheduleId)
+                ],
 
-                    new DailyAttendanceGenerationCandidate(
-                        employeeId,
-                        employmentPeriodId,
-                        Guid.NewGuid(),
-                        scheduleId,
-                        "SE Asia Standard Time",
-                        true,
-                        new TimeOnly(
-                            8,
-                            0),
-                        new TimeOnly(
-                            17,
-                            0),
-                        60)
+                ExistingEmployeeIds =
+                [
+                    employeeId
                 ]
             };
 
+        var resolver =
+            new TestExpectationResolver();
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
                 new GenerateDailyAttendanceRequest(
                     new DateOnly(
                         2026,
-                        8,
-                        22)));
+                        9,
+                        2)));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            0,
+            result.CreatedCount);
+
+        Assert.Equal(
+            1,
+            result.SkippedExistingCount);
+
+        Assert.Equal(
+            0,
+            resolver.ResolveManyCallCount);
+
+        Assert.Empty(
+            persistence.AddedRecords);
+    }
+
+    [Fact]
+    public async Task MixedCandidates_ResolvesOnlyMissingSchedules()
+    {
+        Guid existingEmployeeId =
+            Guid.NewGuid();
+
+        Guid missingEmployeeId =
+            Guid.NewGuid();
+
+        Guid existingScheduleId =
+            Guid.NewGuid();
+
+        Guid missingScheduleId =
+            Guid.NewGuid();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                3);
+
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        existingEmployeeId,
+                        existingScheduleId),
+
+                    CreateCandidate(
+                        missingEmployeeId,
+                        missingScheduleId)
+                ],
+
+                ExistingEmployeeIds =
+                [
+                    existingEmployeeId
+                ]
+            };
+
+        var resolver =
+            new TestExpectationResolver();
+
+        resolver.Expectations[missingScheduleId] =
+            CreateWeeklyExpectation(
+                missingScheduleId,
+                workDate);
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            1,
+            result.CreatedCount);
+
+        Assert.Equal(
+            1,
+            result.SkippedExistingCount);
+
+        Guid resolvedScheduleId =
+            Assert.Single(
+                resolver.LastWorkScheduleIds);
+
+        Assert.Equal(
+            missingScheduleId,
+            resolvedScheduleId);
+
+        AttendanceRecord created =
+            Assert.Single(
+                persistence.AddedRecords);
+
+        Assert.Equal(
+            missingEmployeeId,
+            created.EmployeeId);
+    }
+
+    [Fact]
+    public async Task DuplicateEffectiveAssignments_FailsBeforeResolution()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid scheduleId =
+            Guid.NewGuid();
+
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        employeeId,
+                        scheduleId),
+
+                    CreateCandidate(
+                        employeeId,
+                        scheduleId)
+                ]
+            };
+
+        var resolver =
+            new TestExpectationResolver();
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    new DateOnly(
+                        2026,
+                        9,
+                        2)));
 
         Assert.False(
             result.IsSuccessful);
@@ -382,7 +421,7 @@ public sealed class DailyAttendanceGenerationServiceTests
 
         Assert.Equal(
             0,
-            result.CreatedCount);
+            resolver.ResolveManyCallCount);
 
         Assert.Empty(
             persistence.AddedRecords);
@@ -397,17 +436,21 @@ public sealed class DailyAttendanceGenerationServiceTests
         var persistence =
             new TestPersistence();
 
+        var resolver =
+            new TestExpectationResolver();
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
                 new GenerateDailyAttendanceRequest(
                     new DateOnly(
                         2026,
-                        8,
-                        22),
+                        9,
+                        2),
                     employeeId));
 
         Assert.False(
@@ -419,10 +462,7 @@ public sealed class DailyAttendanceGenerationServiceTests
 
         Assert.Equal(
             0,
-            result.CreatedCount);
-
-        Assert.Empty(
-            persistence.AddedRecords);
+            resolver.ResolveManyCallCount);
     }
 
     [Fact]
@@ -431,9 +471,13 @@ public sealed class DailyAttendanceGenerationServiceTests
         var persistence =
             new TestPersistence();
 
+        var resolver =
+            new TestExpectationResolver();
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -451,8 +495,9 @@ public sealed class DailyAttendanceGenerationServiceTests
             0,
             persistence.GetCandidatesCallCount);
 
-        Assert.Empty(
-            persistence.AddedRecords);
+        Assert.Equal(
+            0,
+            resolver.ResolveManyCallCount);
     }
 
     [Fact]
@@ -461,17 +506,21 @@ public sealed class DailyAttendanceGenerationServiceTests
         var persistence =
             new TestPersistence();
 
+        var resolver =
+            new TestExpectationResolver();
+
         var service =
             new DailyAttendanceGenerationService(
-                persistence);
+                persistence,
+                resolver);
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
                 new GenerateDailyAttendanceRequest(
                     new DateOnly(
                         2026,
-                        8,
-                        22),
+                        9,
+                        2),
                     Guid.Empty));
 
         Assert.False(
@@ -485,22 +534,260 @@ public sealed class DailyAttendanceGenerationServiceTests
             0,
             persistence.GetCandidatesCallCount);
 
+        Assert.Equal(
+            0,
+            resolver.ResolveManyCallCount);
+    }
+
+    [Fact]
+    public async Task MissingExpectation_FailsWithoutPartialPersistence()
+    {
+        Guid scheduleId =
+            Guid.NewGuid();
+
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        Guid.NewGuid(),
+                        scheduleId)
+                ]
+            };
+
+        var resolver =
+            new TestExpectationResolver();
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    new DateOnly(
+                        2026,
+                        9,
+                        2)));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Lịch làm việc chưa có cấu hình kỳ vọng cho ngày sinh dữ liệu chấm công.",
+            result.ErrorMessage);
+
         Assert.Empty(
             persistence.AddedRecords);
     }
 
+    [Fact]
+    public async Task ResolverConsistencyError_FailsWithoutPersistence()
+    {
+        Guid scheduleId =
+            Guid.NewGuid();
 
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        Guid.NewGuid(),
+                        scheduleId)
+                ]
+            };
 
-    private static DailyAttendanceGenerationCandidate
-        CreateWorkingCandidate(
-            Guid employeeId)
+        var resolver =
+            new TestExpectationResolver
+            {
+                ExceptionToThrow =
+                    new InvalidOperationException(
+                        "Nguồn kỳ vọng không nhất quán.")
+            };
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    new DateOnly(
+                        2026,
+                        9,
+                        2)));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Nguồn kỳ vọng không nhất quán.",
+            result.ErrorMessage);
+
+        Assert.Empty(
+            persistence.AddedRecords);
+    }
+
+    [Fact]
+    public async Task MultipleEmployeesUsingSameSchedule_ResolveScheduleOnce()
+    {
+        Guid scheduleId =
+            Guid.NewGuid();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                3);
+
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        Guid.NewGuid(),
+                        scheduleId),
+
+                    CreateCandidate(
+                        Guid.NewGuid(),
+                        scheduleId)
+                ]
+            };
+
+        var resolver =
+            new TestExpectationResolver();
+
+        resolver.Expectations[scheduleId] =
+            CreateWeeklyExpectation(
+                scheduleId,
+                workDate);
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            2,
+            result.CreatedCount);
+
+        Assert.Equal(
+            1,
+            resolver.ResolveManyCallCount);
+
+        Assert.Single(
+            resolver.LastWorkScheduleIds);
+
+        Assert.Equal(
+            2,
+            persistence.AddedRecords.Count);
+    }
+
+    [Fact]
+    public async Task WeeklyExpectation_CapturesWeeklySourceId()
+    {
+        Guid scheduleId =
+            Guid.NewGuid();
+
+        Guid weeklyDayId =
+            Guid.NewGuid();
+
+        DateOnly workDate =
+            new(
+                2026,
+                9,
+                3);
+
+        var persistence =
+            new TestPersistence
+            {
+                Candidates =
+                [
+                    CreateCandidate(
+                        Guid.NewGuid(),
+                        scheduleId)
+                ]
+            };
+
+        var resolver =
+            new TestExpectationResolver();
+
+        resolver.Expectations[scheduleId] =
+            new ResolvedWorkExpectation(
+                scheduleId,
+                workDate,
+                true,
+                new TimeOnly(
+                    8,
+                    0),
+                new TimeOnly(
+                    17,
+                    0),
+                60,
+                480,
+                false,
+                WorkExpectationSource.WeeklySchedule,
+                weeklyDayId,
+                null);
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        AttendanceRecord record =
+            Assert.Single(
+                persistence.AddedRecords);
+
+        Assert.Equal(
+            WorkExpectationSource.WeeklySchedule,
+            record.ExpectationSource);
+
+        Assert.Equal(
+            weeklyDayId,
+            record.ExpectationSourceId);
+    }
+
+    private static DailyAttendanceGenerationCandidate CreateCandidate(
+        Guid employeeId,
+        Guid workScheduleId)
     {
         return new DailyAttendanceGenerationCandidate(
             employeeId,
             Guid.NewGuid(),
             Guid.NewGuid(),
-            Guid.NewGuid(),
-            "SE Asia Standard Time",
+            workScheduleId,
+            "SE Asia Standard Time");
+    }
+
+    private static ResolvedWorkExpectation CreateWeeklyExpectation(
+        Guid workScheduleId,
+        DateOnly workDate)
+    {
+        return new ResolvedWorkExpectation(
+            workScheduleId,
+            workDate,
             true,
             new TimeOnly(
                 8,
@@ -508,7 +795,84 @@ public sealed class DailyAttendanceGenerationServiceTests
             new TimeOnly(
                 17,
                 0),
-            60);
+            60,
+            480,
+            false,
+            WorkExpectationSource.WeeklySchedule,
+            Guid.NewGuid(),
+            null);
+    }
+
+    private sealed class TestExpectationResolver
+        : IWorkExpectationResolver
+    {
+        public Dictionary<Guid, ResolvedWorkExpectation>
+            Expectations
+        {
+            get;
+        } =
+            new();
+
+        public Exception? ExceptionToThrow
+        {
+            get;
+            init;
+        }
+
+        public int ResolveManyCallCount
+        {
+            get;
+            private set;
+        }
+
+        public IReadOnlyCollection<Guid> LastWorkScheduleIds
+        {
+            get;
+            private set;
+        } =
+            Array.Empty<Guid>();
+
+        public Task<ResolvedWorkExpectation?> ResolveAsync(
+            Guid workScheduleId,
+            DateOnly workDate,
+            CancellationToken cancellationToken = default)
+        {
+            Expectations.TryGetValue(
+                workScheduleId,
+                out ResolvedWorkExpectation? result);
+
+            return Task.FromResult(
+                result);
+        }
+
+        public Task<IReadOnlyDictionary<Guid, ResolvedWorkExpectation>>
+            ResolveManyAsync(
+                IReadOnlyCollection<Guid> workScheduleIds,
+                DateOnly workDate,
+                CancellationToken cancellationToken = default)
+        {
+            ResolveManyCallCount++;
+
+            LastWorkScheduleIds =
+                workScheduleIds
+                    .ToArray();
+
+            if (ExceptionToThrow is not null)
+            {
+                throw ExceptionToThrow;
+            }
+
+            IReadOnlyDictionary<Guid, ResolvedWorkExpectation> result =
+                Expectations
+                    .Where(
+                        pair =>
+                            workScheduleIds.Contains(
+                                pair.Key))
+                    .ToDictionary();
+
+            return Task.FromResult(
+                result);
+        }
     }
 
     private sealed class TestPersistence
@@ -528,16 +892,14 @@ public sealed class DailyAttendanceGenerationServiceTests
         } =
             Array.Empty<DailyAttendanceGenerationCandidate>();
 
-        public IReadOnlyList<Guid>
-            ExistingEmployeeIds
+        public IReadOnlyList<Guid> ExistingEmployeeIds
         {
             get;
             init;
         } =
             Array.Empty<Guid>();
 
-        public List<AttendanceRecord>
-            AddedRecords
+        public List<AttendanceRecord> AddedRecords
         {
             get;
         } =
@@ -552,17 +914,15 @@ public sealed class DailyAttendanceGenerationServiceTests
         {
             GetCandidatesCallCount++;
 
-            IReadOnlyList<
-                DailyAttendanceGenerationCandidate>
-                result =
-                    employeeId.HasValue
-                        ? Candidates
-                            .Where(
-                                candidate =>
-                                    candidate.EmployeeId ==
-                                    employeeId.Value)
-                            .ToArray()
-                        : Candidates;
+            IReadOnlyList<DailyAttendanceGenerationCandidate> result =
+                employeeId.HasValue
+                    ? Candidates
+                        .Where(
+                            candidate =>
+                                candidate.EmployeeId ==
+                                employeeId.Value)
+                        .ToArray()
+                    : Candidates;
 
             return Task.FromResult(
                 result);

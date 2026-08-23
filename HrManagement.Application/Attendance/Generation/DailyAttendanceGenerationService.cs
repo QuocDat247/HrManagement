@@ -1,3 +1,4 @@
+using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Domain.Attendance.Records;
 
 namespace HrManagement.Application.Attendance.Generation;
@@ -8,11 +9,18 @@ public sealed class DailyAttendanceGenerationService
     private readonly IDailyAttendanceGenerationPersistence
         _persistence;
 
+    private readonly IWorkExpectationResolver
+        _expectationResolver;
+
     public DailyAttendanceGenerationService(
-        IDailyAttendanceGenerationPersistence persistence)
+        IDailyAttendanceGenerationPersistence persistence,
+        IWorkExpectationResolver expectationResolver)
     {
         _persistence =
             persistence;
+
+        _expectationResolver =
+            expectationResolver;
     }
 
     public async Task<GenerateDailyAttendanceResult> GenerateAsync(
@@ -29,7 +37,8 @@ public sealed class DailyAttendanceGenerationService
         }
 
         if (request.EmployeeId.HasValue
-            && request.EmployeeId.Value == Guid.Empty)
+            && request.EmployeeId.Value ==
+                Guid.Empty)
         {
             return Failure(
                 "Nhân viên không hợp lệ.");
@@ -86,22 +95,88 @@ public sealed class DailyAttendanceGenerationService
                         employeeIds,
                         cancellationToken);
 
-        var existingSet =
-            existingEmployeeIds.ToHashSet();
+        HashSet<Guid> existingSet =
+            existingEmployeeIds
+                .ToHashSet();
+
+        DailyAttendanceGenerationCandidate[] pendingCandidates =
+            candidates
+                .Where(
+                    candidate =>
+                        !existingSet.Contains(
+                            candidate.EmployeeId))
+                .ToArray();
+
+        if (pendingCandidates.Length == 0)
+        {
+            return new GenerateDailyAttendanceResult(
+                true,
+                CreatedCount:
+                    0,
+                SkippedExistingCount:
+                    candidates.Count);
+        }
+
+        Guid[] workScheduleIds =
+            pendingCandidates
+                .Select(
+                    candidate =>
+                        candidate.WorkScheduleId)
+                .Distinct()
+                .ToArray();
+
+        IReadOnlyDictionary<Guid, ResolvedWorkExpectation>
+            expectations;
+
+        try
+        {
+            expectations =
+                await _expectationResolver
+                    .ResolveManyAsync(
+                        workScheduleIds,
+                        request.WorkDate,
+                        cancellationToken);
+        }
+        catch (ArgumentException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+
+        Guid? unresolvedScheduleId =
+            workScheduleIds
+                .Where(
+                    workScheduleId =>
+                        !expectations.ContainsKey(
+                            workScheduleId))
+                .Select(
+                    workScheduleId =>
+                        (Guid?)workScheduleId)
+                .FirstOrDefault();
+
+        if (unresolvedScheduleId.HasValue)
+        {
+            return Failure(
+                "Lịch làm việc chưa có cấu hình kỳ vọng cho ngày sinh dữ liệu chấm công.");
+        }
 
         var records =
-            new List<AttendanceRecord>();
+            new List<AttendanceRecord>(
+                pendingCandidates.Length);
 
         try
         {
             foreach (DailyAttendanceGenerationCandidate candidate
-                     in candidates)
+                     in pendingCandidates)
             {
-                if (existingSet.Contains(
-                        candidate.EmployeeId))
-                {
-                    continue;
-                }
+                ResolvedWorkExpectation expectation =
+                    expectations[
+                        candidate.WorkScheduleId];
 
                 records.Add(
                     new AttendanceRecord(
@@ -112,10 +187,13 @@ public sealed class DailyAttendanceGenerationService
                         candidate.WorkScheduleId,
                         request.WorkDate,
                         candidate.TimeZoneId,
-                        candidate.IsWorkingDay,
-                        candidate.ExpectedStartTime,
-                        candidate.ExpectedEndTime,
-                        candidate.ExpectedBreakMinutes));
+                        expectation.IsWorkingDay,
+                        expectation.StartTime,
+                        expectation.EndTime,
+                        expectation.BreakMinutes,
+                        expectation.Source,
+                        expectation.SourceId,
+                        expectation.SourceName));
             }
         }
         catch (ArgumentException exception)
@@ -124,13 +202,10 @@ public sealed class DailyAttendanceGenerationService
                 exception.Message);
         }
 
-        if (records.Count > 0)
-        {
-            await _persistence
-                .AddRangeAsync(
-                    records,
-                    cancellationToken);
-        }
+        await _persistence
+            .AddRangeAsync(
+                records,
+                cancellationToken);
 
         return new GenerateDailyAttendanceResult(
             true,

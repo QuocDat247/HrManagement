@@ -149,6 +149,8 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<WorkScheduleWorkspaceViewModel>();
 
+        services.AddTransient<HolidayExceptionWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();

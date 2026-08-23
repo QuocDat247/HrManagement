@@ -61,8 +61,13 @@ public sealed partial class MainViewModel : ObservableObject
                 typeof(WorkScheduleWorkspaceViewModel)),
 
             new NavigationItem(
+                "Ngày lễ & Ngoại lệ",
+                typeof(HolidayExceptionWorkspaceViewModel)),
+
+            new NavigationItem(
                 "Chấm công & Nghỉ phép",
                 typeof(AttendanceLeaveWorkspaceViewModel))
+
         ];
 
         NavigateCommand =

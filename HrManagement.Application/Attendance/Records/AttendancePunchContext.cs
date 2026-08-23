@@ -1,3 +1,5 @@
+using HrManagement.Domain.Attendance.Expectations;
+
 namespace HrManagement.Application.Attendance.Records;
 
 public sealed record AttendancePunchContext(
@@ -10,4 +12,7 @@ public sealed record AttendancePunchContext(
     bool IsWorkingDay,
     TimeOnly? ExpectedStartTime,
     TimeOnly? ExpectedEndTime,
-    int ExpectedBreakMinutes);
+    int ExpectedBreakMinutes,
+    WorkExpectationSource ExpectationSource,
+    Guid ExpectationSourceId,
+    string? ExpectationSourceName);

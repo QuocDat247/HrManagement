@@ -1,4 +1,5 @@
 using HrManagement.Domain.Attendance.Calculations;
+using HrManagement.Domain.Attendance.Expectations;
 
 namespace HrManagement.Domain.Attendance.Records;
 
@@ -88,6 +89,21 @@ public sealed class AttendanceRecord
         get;
     }
 
+    public WorkExpectationSource ExpectationSource
+    {
+        get;
+    }
+
+    public Guid? ExpectationSourceId
+    {
+        get;
+    }
+
+    public string? ExpectationSourceName
+    {
+        get;
+    }
+
     public bool IsOvernight =>
         IsWorkingDay
         && ExpectedStartTime.HasValue
@@ -106,7 +122,11 @@ public sealed class AttendanceRecord
         bool isWorkingDay,
         TimeOnly? expectedStartTime = null,
         TimeOnly? expectedEndTime = null,
-        int expectedBreakMinutes = 0)
+        int expectedBreakMinutes = 0,
+        WorkExpectationSource expectationSource =
+        WorkExpectationSource.WeeklySchedule,
+            Guid? expectationSourceId = null,
+            string? expectationSourceName = null)
     {
         if (id == Guid.Empty)
         {
@@ -157,6 +177,49 @@ public sealed class AttendanceRecord
                 "Múi giờ chấm công không được để trống.",
                 nameof(timeZoneId));
         }
+
+        if (!Enum.IsDefined(
+        expectationSource))
+        {
+            throw new ArgumentException(
+                "Nguồn lịch làm việc dự kiến không hợp lệ.",
+                nameof(expectationSource));
+        }
+
+        if (expectationSourceId.HasValue
+            && expectationSourceId.Value ==
+                Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã nguồn lịch làm việc dự kiến không hợp lệ.",
+                nameof(expectationSourceId));
+        }
+
+        if (expectationSource is
+                WorkExpectationSource.Holiday
+                or WorkExpectationSource.DateOverride
+            && !expectationSourceId.HasValue)
+        {
+            throw new ArgumentException(
+                "Nguồn ngày lễ hoặc ngoại lệ lịch phải có mã nguồn.",
+                nameof(expectationSourceId));
+        }
+
+        if (expectationSource ==
+                WorkExpectationSource.Holiday
+            && string.IsNullOrWhiteSpace(
+                expectationSourceName))
+        {
+            throw new ArgumentException(
+                "Nguồn ngày lễ phải có tên.",
+                nameof(expectationSourceName));
+        }
+
+        string? normalizedExpectationSourceName =
+            string.IsNullOrWhiteSpace(
+                expectationSourceName)
+                ? null
+                : expectationSourceName.Trim();
 
         if (expectedBreakMinutes < 0)
         {
@@ -210,6 +273,15 @@ public sealed class AttendanceRecord
 
             ExpectedPlannedMinutes =
                 0;
+
+            ExpectationSource =
+                expectationSource;
+
+            ExpectationSourceId =
+                expectationSourceId;
+
+            ExpectationSourceName =
+                normalizedExpectationSourceName;
 
             return;
         }
@@ -285,6 +357,15 @@ public sealed class AttendanceRecord
         ExpectedPlannedMinutes =
             shiftMinutes
             - expectedBreakMinutes;
+
+        ExpectationSource =
+            expectationSource;
+
+        ExpectationSourceId =
+            expectationSourceId;
+
+        ExpectationSourceName =
+            normalizedExpectationSourceName;
     }
 
     private static int CalculateShiftMinutes(
