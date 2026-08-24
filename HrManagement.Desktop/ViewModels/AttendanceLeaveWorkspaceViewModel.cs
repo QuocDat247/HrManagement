@@ -1,4 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Globalization;
+using HrManagement.Application.Attendance.Corrections;
+using HrManagement.Domain.Attendance.Corrections;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Leave.Requests;
 using HrManagement.Application.Workspaces.AttendanceLeave;
@@ -156,6 +159,12 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
     private readonly IAttendanceRecalculationService
         _attendanceRecalculationService;
 
+    private readonly IAttendanceCorrectionService
+        _attendanceCorrectionService;
+
+    private readonly IAttendanceCorrectionWorkspaceQueryService
+        _attendanceCorrectionWorkspaceQueryService;
+
     private readonly ILeaveRequestStatusService
         _leaveRequestStatusService;
 
@@ -248,14 +257,59 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
     [ObservableProperty]
     private DateTime? generationDate;
 
+    [ObservableProperty]
+    private AttendanceWorkspaceItem?
+        selectedAttendanceItem;
+
+    [ObservableProperty]
+    private AttendanceCorrectionWorkspaceSnapshot?
+        correctionWorkspace;
+
+    [ObservableProperty]
+    private IReadOnlyList<AttendanceCorrectionWorkspaceEventItem>
+        correctionEventItems =
+            Array.Empty<AttendanceCorrectionWorkspaceEventItem>();
+
+    [ObservableProperty]
+    private IReadOnlyList<AttendanceCorrectionWorkspaceHistoryItem>
+        correctionHistoryItems =
+            Array.Empty<AttendanceCorrectionWorkspaceHistoryItem>();
+
+    [ObservableProperty]
+    private AttendanceCorrectionWorkspaceEventItem?
+        selectedCorrectionEvent;
+
+    [ObservableProperty]
+    private AttendanceEventType correctionEventType =
+        AttendanceEventType.ClockIn;
+
+    [ObservableProperty]
+    private DateTime? correctionDate;
+
+    [ObservableProperty]
+    private string? correctionTimeText;
+
+    [ObservableProperty]
+    private string? correctionReason;
+
+    [ObservableProperty]
+    private bool isCorrectionLoading;
+
+    public IReadOnlyList<AttendanceEventType>
+        CorrectionEventTypes
+        { get; } =
+            Enum.GetValues<AttendanceEventType>();
+
     public AttendanceLeaveWorkspaceViewModel(
-    IAttendanceLeaveWorkspaceQueryService queryService,
-    IAttendancePunchService attendancePunchService,
-    IAttendanceRecalculationService attendanceRecalculationService,
-    ILeaveRequestSubmissionService leaveRequestSubmissionService,
-    ILeaveRequestStatusService leaveRequestStatusService,
-    IDailyAttendanceGenerationService dailyAttendanceGenerationService,
-    TimeProvider timeProvider)
+        IAttendanceLeaveWorkspaceQueryService queryService,
+        IAttendancePunchService attendancePunchService,
+        IAttendanceRecalculationService attendanceRecalculationService,
+        ILeaveRequestSubmissionService leaveRequestSubmissionService,
+        ILeaveRequestStatusService leaveRequestStatusService,
+        IDailyAttendanceGenerationService dailyAttendanceGenerationService,
+        IAttendanceCorrectionService attendanceCorrectionService,
+        IAttendanceCorrectionWorkspaceQueryService attendanceCorrectionWorkspaceQueryService,
+        TimeProvider timeProvider)
     {
         GenerateAttendanceCommand =
             new AsyncRelayCommand(
@@ -270,6 +324,12 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
 
         _attendanceRecalculationService =
             attendanceRecalculationService;
+
+        _attendanceCorrectionService =
+            attendanceCorrectionService;
+
+        _attendanceCorrectionWorkspaceQueryService =
+            attendanceCorrectionWorkspaceQueryService;
 
         _queryService =
             queryService;
@@ -336,6 +396,22 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
             new AsyncRelayCommand(
                 ClockOutAsync,
                 CanRecordAttendancePunch);
+
+        LoadCorrectionWorkspaceCommand =
+            new AsyncRelayCommand(
+        LoadCorrectionWorkspaceAsync);
+
+        AddAttendanceCorrectionCommand =
+            new AsyncRelayCommand(
+                AddAttendanceCorrectionAsync);
+
+        ChangeAttendanceCorrectionCommand =
+            new AsyncRelayCommand(
+                ChangeAttendanceCorrectionAsync);
+
+        VoidAttendanceCorrectionCommand =
+            new AsyncRelayCommand(
+                VoidAttendanceCorrectionAsync);
     }
 
     public string Title =>
@@ -386,6 +462,26 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand LoadCorrectionWorkspaceCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand AddAttendanceCorrectionCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ChangeAttendanceCorrectionCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand VoidAttendanceCorrectionCommand
+    {
+        get;
+    }
+
     public async Task LoadAsync()
     {
         if (!FromDate.HasValue)
@@ -428,6 +524,10 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
 
             ErrorMessage =
                 null;
+
+            Guid? previouslySelectedAttendanceRecordId =
+                SelectedAttendanceItem?
+                    .AttendanceRecordId;
 
             Guid? previouslySelectedLeaveRequestId =
                 SelectedLeaveRequestItem?
@@ -516,6 +616,14 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
 
             AttendanceItems =
                 snapshot.Attendance;
+
+            SelectedAttendanceItem =
+                previouslySelectedAttendanceRecordId.HasValue
+                    ? AttendanceItems.FirstOrDefault(
+                        item =>
+                            item.AttendanceRecordId ==
+                            previouslySelectedAttendanceRecordId.Value)
+                    : null;
 
             LeaveRequestItems =
                 snapshot.LeaveRequests;
@@ -749,6 +857,69 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
         }
     }
 
+    partial void OnSelectedAttendanceItemChanged(
+        AttendanceWorkspaceItem? value)
+    {
+        SelectedCorrectionEvent =
+            null;
+
+        CorrectionWorkspace =
+            null;
+
+        CorrectionEventItems =
+            Array.Empty<AttendanceCorrectionWorkspaceEventItem>();
+
+        CorrectionHistoryItems =
+            Array.Empty<AttendanceCorrectionWorkspaceHistoryItem>();
+
+        CorrectionReason =
+            null;
+
+        CorrectionTimeText =
+            null;
+
+        if (value is null)
+        {
+            CorrectionDate =
+                null;
+
+            return;
+        }
+
+        CorrectionDate =
+            value.WorkDate
+                .ToDateTime(
+                    TimeOnly.MinValue);
+
+        if (!IsLoading)
+        {
+            LoadCorrectionWorkspaceCommand
+                .Execute(
+                    null);
+        }
+    }
+
+    partial void OnSelectedCorrectionEventChanged(
+        AttendanceCorrectionWorkspaceEventItem? value)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        CorrectionEventType =
+            value.EventType;
+
+        CorrectionDate =
+            value.OccurredAtLocal.Date;
+
+        CorrectionTimeText =
+            value.OccurredAtLocal
+                .ToString(
+                    "HH:mm",
+                    CultureInfo.InvariantCulture);
+    }
+
     partial void OnSelectedEmployeeOptionChanged(
     AttendanceLeaveEmployeeFilterOption? value)
     {
@@ -974,6 +1145,373 @@ public sealed partial class AttendanceLeaveWorkspaceViewModel
             IsLoading =
                 false;
         }
+    }
+
+    private async Task LoadCorrectionWorkspaceAsync()
+    {
+        AttendanceWorkspaceItem? selected =
+            SelectedAttendanceItem;
+
+        if (selected is null)
+        {
+            CorrectionWorkspace =
+                null;
+
+            CorrectionEventItems =
+                Array.Empty<AttendanceCorrectionWorkspaceEventItem>();
+
+            CorrectionHistoryItems =
+                Array.Empty<AttendanceCorrectionWorkspaceHistoryItem>();
+
+            return;
+        }
+
+        Guid? previouslySelectedEventId =
+            SelectedCorrectionEvent?
+                .EventId;
+
+        try
+        {
+            IsCorrectionLoading =
+                true;
+
+            AttendanceCorrectionWorkspaceSnapshot? snapshot =
+                await _attendanceCorrectionWorkspaceQueryService
+                    .GetAsync(
+                        selected.AttendanceRecordId);
+
+            if (snapshot is null)
+            {
+                CorrectionWorkspace =
+                    null;
+
+                CorrectionEventItems =
+                    Array.Empty<AttendanceCorrectionWorkspaceEventItem>();
+
+                CorrectionHistoryItems =
+                    Array.Empty<AttendanceCorrectionWorkspaceHistoryItem>();
+
+                ErrorMessage =
+                    "Không tìm thấy bản ghi chấm công cần điều chỉnh.";
+
+                return;
+            }
+
+            CorrectionWorkspace =
+                snapshot;
+
+            CorrectionEventItems =
+                snapshot.EffectiveEvents;
+
+            CorrectionHistoryItems =
+                snapshot.Corrections;
+
+            SelectedCorrectionEvent =
+                previouslySelectedEventId.HasValue
+                    ? CorrectionEventItems.FirstOrDefault(
+                        item =>
+                            item.EventId ==
+                            previouslySelectedEventId.Value)
+                    : null;
+        }
+        catch (Exception)
+        {
+            CorrectionWorkspace =
+                null;
+
+            CorrectionEventItems =
+                Array.Empty<AttendanceCorrectionWorkspaceEventItem>();
+
+            CorrectionHistoryItems =
+                Array.Empty<AttendanceCorrectionWorkspaceHistoryItem>();
+
+            ErrorMessage =
+                "Không thể tải dữ liệu điều chỉnh chấm công.";
+        }
+        finally
+        {
+            IsCorrectionLoading =
+                false;
+        }
+    }
+
+    private Task AddAttendanceCorrectionAsync()
+    {
+        return ApplyAttendanceCorrectionAsync(
+            AttendanceCorrectionKind.AddEvent);
+    }
+
+    private Task ChangeAttendanceCorrectionAsync()
+    {
+        return ApplyAttendanceCorrectionAsync(
+            AttendanceCorrectionKind.ChangeEvent);
+    }
+
+    private Task VoidAttendanceCorrectionAsync()
+    {
+        return ApplyAttendanceCorrectionAsync(
+            AttendanceCorrectionKind.VoidEvent);
+    }
+
+    private async Task ApplyAttendanceCorrectionAsync(
+        AttendanceCorrectionKind kind)
+    {
+        AttendanceWorkspaceItem? attendance =
+            SelectedAttendanceItem;
+
+        if (attendance is null)
+        {
+            ErrorMessage =
+                "Vui lòng chọn một bản ghi chấm công.";
+
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(
+                CorrectionReason))
+        {
+            ErrorMessage =
+                "Vui lòng nhập lý do điều chỉnh.";
+
+            return;
+        }
+
+        Guid? affectedEventId =
+            kind ==
+                AttendanceCorrectionKind.AddEvent
+                ? null
+                : SelectedCorrectionEvent?
+                    .EventId;
+
+        if (kind !=
+                AttendanceCorrectionKind.AddEvent
+            && !affectedEventId.HasValue)
+        {
+            ErrorMessage =
+                "Vui lòng chọn sự kiện chấm công cần điều chỉnh.";
+
+            return;
+        }
+
+        AttendanceEventType? afterEventType =
+            null;
+
+        DateTime? afterOccurredAtUtc =
+            null;
+
+        if (kind !=
+            AttendanceCorrectionKind.VoidEvent)
+        {
+            if (!TryGetCorrectionOccurredAtUtc(
+                    out DateTime occurredAtUtc,
+                    out string? validationError))
+            {
+                ErrorMessage =
+                    validationError;
+
+                return;
+            }
+
+            afterEventType =
+                CorrectionEventType;
+
+            afterOccurredAtUtc =
+                occurredAtUtc;
+        }
+
+        ErrorMessage =
+            null;
+
+        OperationMessage =
+            null;
+
+        try
+        {
+            IsCorrectionLoading =
+                true;
+
+            ApplyAttendanceCorrectionResult result =
+                await _attendanceCorrectionService
+                    .ApplyAsync(
+                        new ApplyAttendanceCorrectionRequest(
+                            attendance.AttendanceRecordId,
+                            kind,
+                            affectedEventId,
+                            afterEventType,
+                            afterOccurredAtUtc,
+                            CorrectionReason.Trim()));
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể áp dụng điều chỉnh chấm công.";
+
+                return;
+            }
+
+            RecalculateAttendanceResult recalculation =
+                await _attendanceRecalculationService
+                    .RecalculateAsync(
+                        new RecalculateAttendanceRequest(
+                            attendance.AttendanceRecordId));
+
+            string successMessage =
+                kind switch
+                {
+                    AttendanceCorrectionKind.AddEvent =>
+                        "Đã bổ sung sự kiện chấm công.",
+
+                    AttendanceCorrectionKind.ChangeEvent =>
+                        "Đã sửa sự kiện chấm công.",
+
+                    AttendanceCorrectionKind.VoidEvent =>
+                        "Đã hủy hiệu lực sự kiện chấm công.",
+
+                    _ =>
+                        "Đã điều chỉnh chấm công."
+                };
+
+            CorrectionReason =
+                null;
+
+            await LoadAsync();
+
+            await LoadCorrectionWorkspaceAsync();
+
+            OperationMessage =
+                successMessage;
+
+            if (!recalculation.IsSuccessful)
+            {
+                ErrorMessage =
+                    "Điều chỉnh đã được lưu nhưng chưa thể tính lại chấm công: "
+                    + (
+                        recalculation.ErrorMessage
+                        ?? "Không xác định được lỗi.");
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể áp dụng điều chỉnh chấm công.";
+        }
+        finally
+        {
+            IsCorrectionLoading =
+                false;
+        }
+    }
+
+    private bool TryGetCorrectionOccurredAtUtc(
+    out DateTime occurredAtUtc,
+    out string? errorMessage)
+    {
+        occurredAtUtc =
+            default;
+
+        errorMessage =
+            null;
+
+        if (CorrectionWorkspace is null)
+        {
+            errorMessage =
+                "Chưa tải dữ liệu bản ghi chấm công.";
+
+            return false;
+        }
+
+        if (!CorrectionDate.HasValue)
+        {
+            errorMessage =
+                "Vui lòng chọn ngày của sự kiện.";
+
+            return false;
+        }
+
+        string timeText =
+            CorrectionTimeText?
+                .Trim()
+            ?? string.Empty;
+
+        if (!TimeOnly.TryParseExact(
+                timeText,
+                [
+                    "H:mm",
+                "HH:mm"
+                ],
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.None,
+                out TimeOnly localTime))
+        {
+            errorMessage =
+                "Giờ chấm công phải có định dạng HH:mm.";
+
+            return false;
+        }
+
+        DateTime date =
+            CorrectionDate.Value;
+
+        DateTime localDateTime =
+            new(
+                date.Year,
+                date.Month,
+                date.Day,
+                localTime.Hour,
+                localTime.Minute,
+                0,
+                DateTimeKind.Unspecified);
+
+        TimeZoneInfo timeZone;
+
+        try
+        {
+            timeZone =
+                TimeZoneInfo.FindSystemTimeZoneById(
+                    CorrectionWorkspace.TimeZoneId);
+        }
+        catch (
+            TimeZoneNotFoundException)
+        {
+            errorMessage =
+                "Không tìm thấy múi giờ của bản ghi chấm công.";
+
+            return false;
+        }
+        catch (
+            InvalidTimeZoneException)
+        {
+            errorMessage =
+                "Múi giờ của bản ghi chấm công không hợp lệ.";
+
+            return false;
+        }
+
+        if (timeZone.IsInvalidTime(
+                localDateTime))
+        {
+            errorMessage =
+                "Thời điểm đã chọn không tồn tại trong múi giờ của bản ghi.";
+
+            return false;
+        }
+
+        if (timeZone.IsAmbiguousTime(
+                localDateTime))
+        {
+            errorMessage =
+                "Thời điểm đã chọn bị trùng do chuyển đổi múi giờ.";
+
+            return false;
+        }
+
+        occurredAtUtc =
+            TimeZoneInfo.ConvertTimeToUtc(
+                localDateTime,
+                timeZone);
+
+        return true;
     }
 
     private void SetGenerationDateToToday()

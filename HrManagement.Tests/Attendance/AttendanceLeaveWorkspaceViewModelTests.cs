@@ -291,6 +291,8 @@ public sealed class AttendanceLeaveWorkspaceViewModelTests
             new StubLeaveRequestSubmissionService(),
             new TestLeaveRequestStatusService(),
             new NoOpDailyAttendanceGenerationService(),
+            new NoOpAttendanceCorrectionService(),
+            new NoOpAttendanceCorrectionWorkspaceQueryService(),
             new FixedTimeProvider(
                 new DateTimeOffset(
                     2026,

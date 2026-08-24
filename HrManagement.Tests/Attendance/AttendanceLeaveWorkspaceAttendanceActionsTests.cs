@@ -1,4 +1,6 @@
 using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Application.Attendance.Corrections;
+using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Application.Attendance.Generation;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Leave.Requests;
@@ -327,6 +329,380 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
             test.QueryService.GetCallCount);
     }
 
+    private static AttendanceWorkspaceItem CreateAttendanceItem(
+    Guid attendanceRecordId,
+    Guid employeeId)
+    {
+        return new AttendanceWorkspaceItem(
+            attendanceRecordId,
+            employeeId,
+            "EMP006",
+            "Nguyễn Chí Thành",
+            new DateOnly(
+                2026,
+                8,
+                21),
+            true,
+            new TimeOnly(
+                8,
+                0),
+            new TimeOnly(
+                17,
+                0),
+            AttendanceCalculationStatus.Present,
+            480,
+            0,
+            0);
+    }
+
+    [Fact]
+    public async Task AddCorrection_MapsEditorValuesRecalculatesAndRefreshes()
+    {
+        TestContext test =
+            CreateContext();
+
+        Guid attendanceRecordId =
+            Guid.NewGuid();
+
+        AttendanceWorkspaceItem attendance =
+            CreateAttendanceItem(
+                attendanceRecordId,
+                test.EmployeeId);
+
+        test.QueryService.Attendance =
+        [
+            attendance
+        ];
+
+        test.CorrectionWorkspaceQueryService.Snapshot =
+            new AttendanceCorrectionWorkspaceSnapshot(
+                attendanceRecordId,
+                test.EmployeeId,
+                attendance.WorkDate,
+                "UTC",
+                [],
+                []);
+
+        await test.ViewModel.LoadAsync();
+
+        test.ViewModel.IsLoading =
+            true;
+
+        test.ViewModel.SelectedAttendanceItem =
+            attendance;
+
+        test.ViewModel.IsLoading =
+            false;
+
+        await test.ViewModel
+            .LoadCorrectionWorkspaceCommand
+            .ExecuteAsync(null);
+
+        test.ViewModel.CorrectionEventType =
+            AttendanceEventType.ClockIn;
+
+        test.ViewModel.CorrectionDate =
+            new DateTime(
+                2026,
+                8,
+                21);
+
+        test.ViewModel.CorrectionTimeText =
+            "09:15";
+
+        test.ViewModel.CorrectionReason =
+            "Bổ sung giờ vào ca";
+
+        await test.ViewModel
+            .AddAttendanceCorrectionCommand
+            .ExecuteAsync(null);
+
+        ApplyAttendanceCorrectionRequest request =
+            Assert.IsType<ApplyAttendanceCorrectionRequest>(
+                test.CorrectionService.Request);
+
+        Assert.Equal(
+            attendanceRecordId,
+            request.AttendanceRecordId);
+
+        Assert.Equal(
+            AttendanceCorrectionKind.AddEvent,
+            request.Kind);
+
+        Assert.Null(
+            request.AffectedEventId);
+
+        Assert.Equal(
+            AttendanceEventType.ClockIn,
+            request.AfterEventType);
+
+        Assert.Equal(
+            new DateTime(
+                2026,
+                8,
+                21,
+                9,
+                15,
+                0,
+                DateTimeKind.Utc),
+            request.AfterOccurredAtUtc);
+
+        Assert.Equal(
+            "Bổ sung giờ vào ca",
+            request.Reason);
+
+        Assert.Equal(
+            attendanceRecordId,
+            test.RecalculationService
+                .Request!
+                .AttendanceRecordId);
+
+        Assert.Equal(
+            "Đã bổ sung sự kiện chấm công.",
+            test.ViewModel.OperationMessage);
+
+        Assert.Null(
+            test.ViewModel.CorrectionReason);
+    }
+
+    [Fact]
+    public async Task ChangeCorrection_MapsSelectedEffectiveEvent()
+    {
+        TestContext test =
+            CreateContext();
+
+        Guid attendanceRecordId =
+            Guid.NewGuid();
+
+        Guid eventId =
+            Guid.NewGuid();
+
+        AttendanceWorkspaceItem attendance =
+            CreateAttendanceItem(
+                attendanceRecordId,
+                test.EmployeeId);
+
+        var effectiveEvent =
+            new AttendanceCorrectionWorkspaceEventItem(
+                eventId,
+                AttendanceEventType.ClockIn,
+                new DateTime(
+                    2026,
+                    8,
+                    21,
+                    8,
+                    0,
+                    0,
+                    DateTimeKind.Utc),
+                new DateTime(
+                    2026,
+                    8,
+                    21,
+                    8,
+                    0,
+                    0,
+                    DateTimeKind.Unspecified),
+                false,
+                false,
+                null);
+
+        test.QueryService.Attendance =
+        [
+            attendance
+        ];
+
+        test.CorrectionWorkspaceQueryService.Snapshot =
+            new AttendanceCorrectionWorkspaceSnapshot(
+                attendanceRecordId,
+                test.EmployeeId,
+                attendance.WorkDate,
+                "UTC",
+                [
+                    effectiveEvent
+                ],
+                []);
+
+        await test.ViewModel.LoadAsync();
+
+        test.ViewModel.IsLoading =
+            true;
+
+        test.ViewModel.SelectedAttendanceItem =
+            attendance;
+
+        test.ViewModel.IsLoading =
+            false;
+
+        await test.ViewModel
+            .LoadCorrectionWorkspaceCommand
+            .ExecuteAsync(null);
+
+        test.ViewModel.SelectedCorrectionEvent =
+            effectiveEvent;
+
+        test.ViewModel.CorrectionTimeText =
+            "08:30";
+
+        test.ViewModel.CorrectionReason =
+            "Điều chỉnh giờ vào ca";
+
+        await test.ViewModel
+            .ChangeAttendanceCorrectionCommand
+            .ExecuteAsync(null);
+
+        ApplyAttendanceCorrectionRequest request =
+            Assert.IsType<ApplyAttendanceCorrectionRequest>(
+                test.CorrectionService.Request);
+
+        Assert.Equal(
+            AttendanceCorrectionKind.ChangeEvent,
+            request.Kind);
+
+        Assert.Equal(
+            eventId,
+            request.AffectedEventId);
+
+        Assert.Equal(
+            AttendanceEventType.ClockIn,
+            request.AfterEventType);
+
+        Assert.Equal(
+            new DateTime(
+                2026,
+                8,
+                21,
+                8,
+                30,
+                0,
+                DateTimeKind.Utc),
+            request.AfterOccurredAtUtc);
+
+        Assert.Equal(
+            attendanceRecordId,
+            test.RecalculationService
+                .Request!
+                .AttendanceRecordId);
+
+        Assert.Equal(
+            "Đã sửa sự kiện chấm công.",
+            test.ViewModel.OperationMessage);
+    }
+
+    [Fact]
+    public async Task VoidCorrection_SendsNoAfterStateAndRecalculates()
+    {
+        TestContext test =
+            CreateContext();
+
+        Guid attendanceRecordId =
+            Guid.NewGuid();
+
+        Guid eventId =
+            Guid.NewGuid();
+
+        AttendanceWorkspaceItem attendance =
+            CreateAttendanceItem(
+                attendanceRecordId,
+                test.EmployeeId);
+
+        var effectiveEvent =
+            new AttendanceCorrectionWorkspaceEventItem(
+                eventId,
+                AttendanceEventType.ClockOut,
+                new DateTime(
+                    2026,
+                    8,
+                    21,
+                    17,
+                    0,
+                    0,
+                    DateTimeKind.Utc),
+                new DateTime(
+                    2026,
+                    8,
+                    21,
+                    17,
+                    0,
+                    0,
+                    DateTimeKind.Unspecified),
+                false,
+                false,
+                null);
+
+        test.QueryService.Attendance =
+        [
+            attendance
+        ];
+
+        test.CorrectionWorkspaceQueryService.Snapshot =
+            new AttendanceCorrectionWorkspaceSnapshot(
+                attendanceRecordId,
+                test.EmployeeId,
+                attendance.WorkDate,
+                "UTC",
+                [
+                    effectiveEvent
+                ],
+                []);
+
+        await test.ViewModel.LoadAsync();
+
+        test.ViewModel.IsLoading =
+            true;
+
+        test.ViewModel.SelectedAttendanceItem =
+            attendance;
+
+        test.ViewModel.IsLoading =
+            false;
+
+        await test.ViewModel
+            .LoadCorrectionWorkspaceCommand
+            .ExecuteAsync(null);
+
+        test.ViewModel.SelectedCorrectionEvent =
+            effectiveEvent;
+
+        test.ViewModel.CorrectionReason =
+            "Hủy sự kiện nhập nhầm";
+
+        await test.ViewModel
+            .VoidAttendanceCorrectionCommand
+            .ExecuteAsync(null);
+
+        ApplyAttendanceCorrectionRequest request =
+            Assert.IsType<ApplyAttendanceCorrectionRequest>(
+                test.CorrectionService.Request);
+
+        Assert.Equal(
+            AttendanceCorrectionKind.VoidEvent,
+            request.Kind);
+
+        Assert.Equal(
+            eventId,
+            request.AffectedEventId);
+
+        Assert.Null(
+            request.AfterEventType);
+
+        Assert.Null(
+            request.AfterOccurredAtUtc);
+
+        Assert.Equal(
+            "Hủy sự kiện nhập nhầm",
+            request.Reason);
+
+        Assert.Equal(
+            attendanceRecordId,
+            test.RecalculationService
+                .Request!
+                .AttendanceRecordId);
+
+        Assert.Equal(
+            "Đã hủy hiệu lực sự kiện chấm công.",
+            test.ViewModel.OperationMessage);
+    }
+
     private static readonly DateTime FixedUtc =
         new(
             2026,
@@ -390,6 +766,12 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
         var recalculationService =
             new TestAttendanceRecalculationService();
 
+        var correctionService =
+            new TestAttendanceCorrectionService();
+
+        var correctionWorkspaceQueryService =
+            new TestAttendanceCorrectionWorkspaceQueryService();
+
         var viewModel =
             new AttendanceLeaveWorkspaceViewModel(
                 queryService,
@@ -398,6 +780,8 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
                 new TestLeaveSubmissionService(),
                 new TestLeaveStatusService(),
                 generationService,
+                correctionService,
+                correctionWorkspaceQueryService,
                 new FixedTimeProvider(
                     new DateTimeOffset(
                         FixedUtc)));
@@ -408,6 +792,8 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
             punchService,
             recalculationService,
             generationService,
+            correctionService,
+            correctionWorkspaceQueryService,
             employeeId);
     }
 
@@ -417,11 +803,21 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
         TestAttendancePunchService PunchService,
         TestAttendanceRecalculationService RecalculationService,
         TestDailyAttendanceGenerationService GenerationService,
+        TestAttendanceCorrectionService CorrectionService,
+        TestAttendanceCorrectionWorkspaceQueryService
+            CorrectionWorkspaceQueryService,
         Guid EmployeeId);
 
     private sealed class TestWorkspaceQueryService
         : IAttendanceLeaveWorkspaceQueryService
     {
+        public IReadOnlyList<AttendanceWorkspaceItem>
+            Attendance
+        {
+            get;
+            set;
+        } = [];
+
         public IReadOnlyList<AttendanceLeaveEmployeeItem>
             Employees
         {
@@ -463,7 +859,7 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
 
             return Task.FromResult(
                 new AttendanceLeaveWorkspaceSnapshot(
-                    [],
+                    Attendance,
                     []));
         }
     }
@@ -572,6 +968,74 @@ public sealed class AttendanceLeaveWorkspaceAttendanceActionsTests
                         request.TargetStatus,
                     StatusChangeId:
                         Guid.NewGuid()));
+        }
+    }
+
+    private sealed class TestAttendanceCorrectionService
+    : IAttendanceCorrectionService
+    {
+        public ApplyAttendanceCorrectionRequest? Request
+        {
+            get;
+            private set;
+        }
+
+        public ApplyAttendanceCorrectionResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                IsSuccessful: true,
+                AttendanceCorrectionId:
+                    Guid.NewGuid(),
+                Revision:
+                    1);
+
+        public Task<ApplyAttendanceCorrectionResult> ApplyAsync(
+            ApplyAttendanceCorrectionRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Request =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
+    private sealed class TestAttendanceCorrectionWorkspaceQueryService
+        : IAttendanceCorrectionWorkspaceQueryService
+    {
+        public AttendanceCorrectionWorkspaceSnapshot? Snapshot
+        {
+            get;
+            set;
+        }
+
+        public Guid? AttendanceRecordId
+        {
+            get;
+            private set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task<AttendanceCorrectionWorkspaceSnapshot?> GetAsync(
+            Guid attendanceRecordId,
+            CancellationToken cancellationToken = default)
+        {
+            AttendanceRecordId =
+                attendanceRecordId;
+
+            CallCount++;
+
+            return Task.FromResult(
+                Snapshot);
         }
     }
 

@@ -20,15 +20,22 @@ public sealed class EfAttendanceCalculationPersistence
     }
 
     public async Task ApplyAsync(
-        AttendanceRecord calculatedRecord,
-        IReadOnlyList<AttendanceEvent> expectedEvents,
-        CancellationToken cancellationToken = default)
+    AttendanceRecord calculatedRecord,
+    IReadOnlyList<AttendanceEvent> expectedEvents,
+    int expectedCorrectionRevision,
+    CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(
             calculatedRecord);
 
         ArgumentNullException.ThrowIfNull(
             expectedEvents);
+
+        if (expectedCorrectionRevision < 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(expectedCorrectionRevision));
+        }
 
         ValidateRequest(
             calculatedRecord,
@@ -78,6 +85,38 @@ public sealed class EfAttendanceCalculationPersistence
         ValidateExpectedEvents(
             persistedEvents,
             expectedEvents);
+
+        int persistedCorrectionRevision =
+            await dbContext
+                .AttendanceCorrections
+                .Where(
+                    correction =>
+                        correction.AttendanceRecordId ==
+                        calculatedRecord.Id)
+                .Select(
+                    correction =>
+                        (int?)correction.Revision)
+                .MaxAsync(
+                    cancellationToken)
+            ?? 0;
+
+        int persistedCorrectionCount =
+            await dbContext
+                .AttendanceCorrections
+                .CountAsync(
+                    correction =>
+                        correction.AttendanceRecordId ==
+                        calculatedRecord.Id,
+                    cancellationToken);
+
+        if (persistedCorrectionRevision !=
+                expectedCorrectionRevision
+            || persistedCorrectionCount !=
+                expectedCorrectionRevision)
+        {
+            throw new DbUpdateConcurrencyException(
+                "Lịch sử điều chỉnh chấm công đã thay đổi trước khi lưu kết quả tính công.");
+        }
 
         int updatedRows =
             await dbContext

@@ -272,6 +272,8 @@ public sealed class AttendanceLeaveWorkspaceStatusActionsTests
                 new StatusActionLeaveSubmissionService(),
                 statusService,
                 new NoOpDailyAttendanceGenerationService(),
+                new NoOpAttendanceCorrectionService(),
+                new NoOpAttendanceCorrectionWorkspaceQueryService(),
                 new StatusActionTimeProvider(
                     new DateTimeOffset(
                         2026,

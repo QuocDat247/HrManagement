@@ -7,5 +7,6 @@ public interface IAttendanceCalculationPersistence
     Task ApplyAsync(
         AttendanceRecord calculatedRecord,
         IReadOnlyList<AttendanceEvent> expectedEvents,
+        int expectedCorrectionRevision,
         CancellationToken cancellationToken = default);
 }

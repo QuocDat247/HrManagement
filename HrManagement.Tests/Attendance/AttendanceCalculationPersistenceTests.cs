@@ -1,4 +1,4 @@
-using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
@@ -71,7 +71,8 @@ public sealed class AttendanceCalculationPersistenceTests
             [
                 clockIn,
                 clockOut
-            ]);
+            ],
+            expectedCorrectionRevision: 0);
 
         await using var verification =
             new HrManagementDbContext(
@@ -135,7 +136,8 @@ public sealed class AttendanceCalculationPersistenceTests
 
         await persistence.ApplyAsync(
             record,
-            []);
+            [],
+            expectedCorrectionRevision: 0);
 
         await using var verification =
             new HrManagementDbContext(
@@ -153,6 +155,259 @@ public sealed class AttendanceCalculationPersistenceTests
 
         Assert.Equal(
             0,
+            saved.WorkedMinutes);
+    }
+
+    [Fact]
+    public async Task NewCorrectionAfterCalculation_ThrowsConcurrency()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedContextAsync(
+                options);
+
+        AttendanceRecord record =
+            CreateRecord(
+                ids);
+
+        AttendanceEvent clockIn =
+            Event(
+                record,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    0));
+
+        AttendanceEvent clockOut =
+            Event(
+                record,
+                AttendanceEventType.ClockOut,
+                Utc(
+                    17,
+                    0));
+
+        await SeedRecordAsync(
+            options,
+            record,
+            clockIn,
+            clockOut);
+
+        IReadOnlyList<AttendanceEvent> expectedEvents =
+        [
+            clockIn,
+        clockOut
+        ];
+
+        ApplyCalculation(
+            record,
+            expectedEvents);
+
+        var correction =
+            new AttendanceCorrection(
+                Guid.NewGuid(),
+                record.Id,
+                record.EmployeeId,
+                clockIn.Id,
+                revision: 1,
+                AttendanceCorrectionKind.ChangeEvent,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    0),
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    15),
+                "Sửa giờ chấm vào",
+                Utc(
+                    18,
+                    0),
+                "user-1",
+                "admin");
+
+        await using (
+            var mutationContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await mutationContext
+                .AttendanceCorrections
+                .AddAsync(
+                    correction);
+
+            await mutationContext.SaveChangesAsync();
+        }
+
+        var persistence =
+            CreatePersistence(
+                options);
+
+        await Assert.ThrowsAsync<
+            DbUpdateConcurrencyException>(
+            () =>
+                persistence.ApplyAsync(
+                    record,
+                    expectedEvents,
+                    expectedCorrectionRevision: 0));
+
+        await using var verification =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceRecord saved =
+            await verification
+                .AttendanceRecords
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            AttendanceCalculationStatus.NotCalculated,
+            saved.Status);
+
+        Assert.Equal(
+            0,
+            saved.WorkedMinutes);
+
+        Assert.Single(
+            await verification
+                .AttendanceCorrections
+                .AsNoTracking()
+                .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task MatchingCorrectionRevision_PersistsCalculatedState()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedContextAsync(
+                options);
+
+        AttendanceRecord record =
+            CreateRecord(
+                ids);
+
+        AttendanceEvent clockIn =
+            Event(
+                record,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    0));
+
+        AttendanceEvent clockOut =
+            Event(
+                record,
+                AttendanceEventType.ClockOut,
+                Utc(
+                    17,
+                    0));
+
+        await SeedRecordAsync(
+            options,
+            record,
+            clockIn,
+            clockOut);
+
+        var correction =
+            new AttendanceCorrection(
+                Guid.NewGuid(),
+                record.Id,
+                record.EmployeeId,
+                clockIn.Id,
+                revision: 1,
+                AttendanceCorrectionKind.ChangeEvent,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    0),
+                AttendanceEventType.ClockIn,
+                Utc(
+                    9,
+                    0),
+                "Sửa giờ chấm vào",
+                Utc(
+                    18,
+                    0),
+                "user-1",
+                "admin");
+
+        await using (
+            var mutationContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            await mutationContext
+                .AttendanceCorrections
+                .AddAsync(
+                    correction);
+
+            await mutationContext.SaveChangesAsync();
+        }
+
+        AttendanceEvent effectiveClockIn =
+            new(
+                clockIn.Id,
+                record.Id,
+                record.EmployeeId,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    9,
+                    0));
+
+        ApplyCalculation(
+            record,
+            [
+                effectiveClockIn,
+            clockOut
+            ]);
+
+        var persistence =
+            CreatePersistence(
+                options);
+
+        await persistence.ApplyAsync(
+            record,
+            [
+                clockIn,
+            clockOut
+            ],
+            expectedCorrectionRevision: 1);
+
+        await using var verification =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceRecord saved =
+            await verification
+                .AttendanceRecords
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            AttendanceCalculationStatus.Present,
+            saved.Status);
+
+        Assert.Equal(
+            480,
             saved.WorkedMinutes);
     }
 
@@ -239,7 +494,8 @@ public sealed class AttendanceCalculationPersistenceTests
             () =>
                 persistence.ApplyAsync(
                     record,
-                    expectedEvents));
+                    expectedEvents,
+                    expectedCorrectionRevision: 0));
 
         await using var verification =
             new HrManagementDbContext(
@@ -338,7 +594,8 @@ public sealed class AttendanceCalculationPersistenceTests
             () =>
                 persistence.ApplyAsync(
                     record,
-                    staleEvents));
+                    staleEvents,
+                    expectedCorrectionRevision: 0));
     }
 
     [Fact]
@@ -375,7 +632,8 @@ public sealed class AttendanceCalculationPersistenceTests
             () =>
                 persistence.ApplyAsync(
                     record,
-                    []));
+                    [],
+                    expectedCorrectionRevision: 0));
     }
 
     [Fact]
@@ -434,7 +692,8 @@ public sealed class AttendanceCalculationPersistenceTests
             () =>
                 persistence.ApplyAsync(
                     staleRecord,
-                    []));
+                    [],
+                    expectedCorrectionRevision: 0));
 
         await using var verification =
             new HrManagementDbContext(

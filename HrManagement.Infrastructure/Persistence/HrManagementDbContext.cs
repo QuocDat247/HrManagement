@@ -11,6 +11,7 @@ using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Leave.Requests;
 using HrManagement.Domain.Leave.Types;
 using HrManagement.Domain.Attendance.Calendars;
+using HrManagement.Domain.Attendance.Corrections;
 
 namespace HrManagement.Infrastructure.Persistence;
 
@@ -31,7 +32,11 @@ public sealed class HrManagementDbContext : DbContext
         Set<LeaveRequest>();
 
     public DbSet<HolidayCalendarDay> HolidayCalendarDays =>
-    Set<HolidayCalendarDay>();
+        Set<HolidayCalendarDay>();
+
+    public DbSet<AttendanceCorrection>
+        AttendanceCorrections =>
+            Set<AttendanceCorrection>();
 
     public DbSet<AttendanceRecord> AttendanceRecords =>
         Set<AttendanceRecord>();
@@ -144,6 +149,9 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new AttendanceEventConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new AttendanceCorrectionConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new LeaveTypeConfiguration());

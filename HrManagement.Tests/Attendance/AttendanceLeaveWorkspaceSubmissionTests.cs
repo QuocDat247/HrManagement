@@ -210,6 +210,8 @@ public sealed class AttendanceLeaveWorkspaceSubmissionTests
                 submissionService,
                 new TestLeaveRequestStatusService(),
                 new NoOpDailyAttendanceGenerationService(),
+                new NoOpAttendanceCorrectionService(),
+                new NoOpAttendanceCorrectionWorkspaceQueryService(),
                 new FixedTimeProvider(
                     new DateTimeOffset(
                         2026,

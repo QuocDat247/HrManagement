@@ -1,12 +1,20 @@
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Application.Attendance.Corrections;
+using HrManagement.Domain.Attendance.Corrections;
 
 namespace HrManagement.Application.Attendance.Calculations;
 
 public sealed class AttendanceRecalculationService
     : IAttendanceRecalculationService
 {
+    private readonly IAttendanceCorrectionPersistence
+        _correctionPersistence;
+
+    private readonly IEffectiveAttendanceTimelineResolver
+        _timelineResolver;
+
     private readonly IApprovedLeaveAttendanceResolver
         _approvedLeaveResolver;
 
@@ -31,8 +39,16 @@ public sealed class AttendanceRecalculationService
         IApprovedLeaveAttendanceResolver approvedLeaveResolver,
         IAttendanceScheduleWindowResolver scheduleWindowResolver,
         IAttendanceCalculationPersistence persistence,
-        AttendanceAdherencePolicy adherencePolicy)
+        AttendanceAdherencePolicy adherencePolicy,
+        IAttendanceCorrectionPersistence correctionPersistence,
+        IEffectiveAttendanceTimelineResolver timelineResolver)
     {
+        _correctionPersistence =
+            correctionPersistence;
+
+        _timelineResolver =
+            timelineResolver;
+
         _approvedLeaveResolver =
             approvedLeaveResolver;
 
@@ -104,6 +120,54 @@ public sealed class AttendanceRecalculationService
                     record.Id,
                     cancellationToken);
 
+        IReadOnlyList<AttendanceCorrection> corrections =
+    await _correctionPersistence
+        .GetByAttendanceRecordIdAsync(
+            record.Id,
+            cancellationToken);
+
+        IReadOnlyList<EffectiveAttendanceEvent>
+            effectiveTimeline;
+
+        try
+        {
+            effectiveTimeline =
+                _timelineResolver.Resolve(
+                    record.Id,
+                    record.EmployeeId,
+                    events,
+                    corrections);
+        }
+        catch (ArgumentException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Failure(
+                exception.Message);
+        }
+
+        AttendanceEvent[] effectiveEvents =
+            effectiveTimeline
+                .Select(
+                    item =>
+                        new AttendanceEvent(
+                            item.EventId,
+                            record.Id,
+                            record.EmployeeId,
+                            item.EventType,
+                            item.OccurredAtUtc))
+                .ToArray();
+
+        int expectedCorrectionRevision =
+            corrections.Count == 0
+                ? 0
+                : corrections[
+                    corrections.Count - 1]
+                    .Revision;
+
         DailyAttendanceCalculation dailyCalculation;
 
         try
@@ -111,7 +175,7 @@ public sealed class AttendanceRecalculationService
             dailyCalculation =
                 DailyAttendanceCalculator.Calculate(
                     record,
-                    events,
+                    effectiveEvents,
                     hasApprovedLeave:
                         approvedLeave is not null);
         }
@@ -191,6 +255,7 @@ public sealed class AttendanceRecalculationService
             .ApplyAsync(
                 record,
                 events,
+                expectedCorrectionRevision,
                 cancellationToken);
 
         return Success(

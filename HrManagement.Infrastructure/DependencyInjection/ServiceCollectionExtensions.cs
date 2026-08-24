@@ -1,3 +1,5 @@
+using HrManagement.Application.Attendance.Corrections;
+using HrManagement.Infrastructure.Attendance.Corrections;
 using HrManagement.Application.Workspaces.HolidayExceptions;
 using HrManagement.Infrastructure.Workspaces.HolidayExceptions;
 using HrManagement.Application.Attendance.Calculations;
@@ -276,6 +278,26 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IDailyAttendanceGenerationService,
             DailyAttendanceGenerationService>();
+
+        services.AddSingleton<
+            IEffectiveAttendanceTimelineResolver,
+            EffectiveAttendanceTimelineResolver>();
+
+        services.AddSingleton<
+            IAttendanceCorrectionPersistence,
+            EfAttendanceCorrectionPersistence>();
+
+        services.AddSingleton<
+            IAttendanceCorrectionAuthorizationPolicy,
+            AuthenticatedAttendanceCorrectionAuthorizationPolicy>();
+
+        services.AddScoped<
+            IAttendanceCorrectionService,
+            AttendanceCorrectionService>();
+
+        services.AddScoped<
+            IAttendanceCorrectionWorkspaceQueryService,
+            AttendanceCorrectionWorkspaceQueryService>();
 
         services.AddSingleton<
             IHolidayExceptionWorkspaceQueryService,

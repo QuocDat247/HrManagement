@@ -13,4 +13,7 @@ public static class AuditEntityTypes
 
     public const string EmployeeIdentificationRecord =
         "EmployeeIdentificationRecord";
+
+    public const string AttendanceCorrection =
+        "AttendanceCorrection";
 }

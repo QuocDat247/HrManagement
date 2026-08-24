@@ -1,6 +1,8 @@
 using HrManagement.Application.Attendance.Calculations;
+using HrManagement.Application.Attendance.Corrections;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Domain.Attendance.Calculations;
+using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Records;
 
 namespace HrManagement.Tests.Attendance;
@@ -470,9 +472,109 @@ public sealed class AttendanceRecalculationServiceTests
             test.ScheduleWindowResolver.CallCount);
     }
 
+    [Fact]
+    public async Task Correction_ChangesEffectiveTimelineAndCalculatedWorkedMinutes()
+    {
+        TestContext test =
+            CreateContext();
+
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        test.RecordRepository.Record =
+            record;
+
+        Guid clockInId =
+            Guid.NewGuid();
+
+        AttendanceEvent clockIn =
+            new AttendanceEvent(
+                clockInId,
+                record.Id,
+                record.EmployeeId,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    8,
+                    0));
+
+        AttendanceEvent clockOut =
+            Event(
+                record,
+                AttendanceEventType.ClockOut,
+                Utc(
+                    17,
+                    0));
+
+        test.EventRepository.Events =
+        [
+            clockIn,
+        clockOut
+        ];
+
+        test.CorrectionPersistence.Corrections =
+        [
+            new AttendanceCorrection(
+            Guid.NewGuid(),
+            record.Id,
+            record.EmployeeId,
+            clockInId,
+            revision: 1,
+            AttendanceCorrectionKind.ChangeEvent,
+            AttendanceEventType.ClockIn,
+            Utc(
+                8,
+                0),
+            AttendanceEventType.ClockIn,
+            Utc(
+                9,
+                0),
+            "Sửa giờ chấm vào",
+            Utc(
+                18,
+                0),
+            "user-1",
+            "admin")
+        ];
+
+        RecalculateAttendanceResult result =
+            await test.Service
+                .RecalculateAsync(
+                    new RecalculateAttendanceRequest(
+                        record.Id));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            480,
+            result.WorkedMinutes);
+
+        Assert.Equal(
+            1,
+            test.Persistence.ExpectedCorrectionRevision);
+
+        Assert.Equal(
+            2,
+            test.Persistence.ExpectedEvents.Count);
+
+        Assert.Equal(
+            Utc(
+                8,
+                0),
+            test.Persistence
+                .ExpectedEvents[0]
+                .OccurredAtUtc);
+    }
+
     private static TestContext CreateContext(
         AttendanceAdherencePolicy? policy = null)
     {
+        var correctionPersistence =
+            new StubAttendanceCorrectionPersistence();
+
+        var timelineResolver =
+            new EffectiveAttendanceTimelineResolver();
+
         var approvedLeaveResolver =
             new StubApprovedLeaveAttendanceResolver();
 
@@ -496,7 +598,9 @@ public sealed class AttendanceRecalculationServiceTests
                 scheduleWindowResolver,
                 persistence,
                 policy ??
-                    new AttendanceAdherencePolicy());
+                    new AttendanceAdherencePolicy(),
+                correctionPersistence,
+                timelineResolver);
 
         return new TestContext(
             service,
@@ -504,7 +608,8 @@ public sealed class AttendanceRecalculationServiceTests
             eventRepository,
             approvedLeaveResolver,
             scheduleWindowResolver,
-            persistence);
+            persistence,
+            correctionPersistence);
     }
 
     private static AttendanceRecord CreateWorkingRecord()
@@ -579,7 +684,8 @@ public sealed class AttendanceRecalculationServiceTests
         StubAttendanceEventRepository EventRepository,
         StubApprovedLeaveAttendanceResolver ApprovedLeaveResolver,
         StubAttendanceScheduleWindowResolver ScheduleWindowResolver,
-        StubAttendanceCalculationPersistence Persistence);
+        StubAttendanceCalculationPersistence Persistence,
+        StubAttendanceCorrectionPersistence CorrectionPersistence);
 
     private sealed class StubAttendanceRecordRepository
         : IAttendanceRecordRepository
@@ -720,7 +826,7 @@ public sealed class AttendanceRecalculationServiceTests
     }
 
     private sealed class StubAttendanceCalculationPersistence
-        : IAttendanceCalculationPersistence
+    : IAttendanceCalculationPersistence
     {
         public AttendanceRecord? Record
         {
@@ -734,9 +840,16 @@ public sealed class AttendanceRecalculationServiceTests
             private set;
         } = [];
 
+        public int ExpectedCorrectionRevision
+        {
+            get;
+            private set;
+        }
+
         public Task ApplyAsync(
             AttendanceRecord calculatedRecord,
             IReadOnlyList<AttendanceEvent> expectedEvents,
+            int expectedCorrectionRevision,
             CancellationToken cancellationToken = default)
         {
             Record =
@@ -744,6 +857,9 @@ public sealed class AttendanceRecalculationServiceTests
 
             ExpectedEvents =
                 expectedEvents.ToList();
+
+            ExpectedCorrectionRevision =
+                expectedCorrectionRevision;
 
             return Task.CompletedTask;
         }
@@ -801,6 +917,43 @@ public sealed class AttendanceRecalculationServiceTests
 
             return Task.FromResult(
                 Input);
+        }
+    }
+
+    private sealed class StubAttendanceCorrectionPersistence
+    : IAttendanceCorrectionPersistence
+    {
+        public IReadOnlyList<AttendanceCorrection> Corrections
+        {
+            get;
+            set;
+        } = [];
+
+        public Task<IReadOnlyList<AttendanceCorrection>>
+            GetByAttendanceRecordIdAsync(
+                Guid attendanceRecordId,
+                CancellationToken cancellationToken = default)
+        {
+            IReadOnlyList<AttendanceCorrection> result =
+                Corrections
+                    .Where(
+                        correction =>
+                            correction.AttendanceRecordId ==
+                            attendanceRecordId)
+                    .OrderBy(
+                        correction =>
+                            correction.Revision)
+                    .ToArray();
+
+            return Task.FromResult(
+                result);
+        }
+
+        public Task AppendAsync(
+            AttendanceCorrection correction,
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
         }
     }
 }
