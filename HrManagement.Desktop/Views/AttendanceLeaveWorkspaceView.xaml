@@ -146,35 +146,43 @@
 
                         <Grid Margin="12">
 
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"
+                          MinWidth="350" />
+                                <ColumnDefinition Width="1.35*"
+                          MinWidth="480" />
+                            </Grid.ColumnDefinitions>
+
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0"
-                                Margin="0,0,0,12">
+                                        Grid.ColumnSpan="2"
+                                        Margin="0,0,0,12">
 
                                 <TextBlock Text="Dữ liệu chấm công"
-                                   FontSize="20"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                 <TextBlock Margin="0,4,0,0"
-                                   Text="Kết quả tính công theo ngày và lịch làm việc đã được snapshot."
-                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                                           Text="Kết quả tính công theo ngày và lịch làm việc đã được snapshot."
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
                             </StackPanel>
 
                             <Expander Grid.Row="1"
-          Header="Ghi nhận chấm công"
-          IsExpanded="False"
-          Margin="0,0,0,12">
+                                      Grid.Column="0"
+                                      Header="Ghi nhận chấm công"
+                                      IsExpanded="True"
+                                      Margin="0,0,8,12"
+                                      VerticalAlignment="Top">
 
                                 <Border Style="{DynamicResource CardBorderStyle}"
-            Margin="0,8,0,0">
+                                        Margin="0,8,0,0">
 
                                     <Grid>
 
@@ -185,32 +193,32 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0"
-                        Margin="0,0,16,0">
+                                                    Margin="0,0,16,0">
 
                                             <TextBlock Foreground="{DynamicResource SecondaryTextBrush}">
-                    <Run Text="Nhân viên: " />
-                    <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+                                            <Run Text="Nhân viên: " />
+                                            <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
                                             </TextBlock>
 
                                             <TextBlock Margin="0,3,0,0"
-                           Text="Chọn một nhân viên ở bộ lọc phía trên để ghi nhận vào ca hoặc ra ca."
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                       Text="Chọn một nhân viên ở bộ lọc phía trên để ghi nhận vào ca hoặc ra ca."
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                         </StackPanel>
 
                                         <Button Grid.Column="1"
-                    Margin="0,0,10,0"
-                    MinHeight="36"
-                    VerticalAlignment="Center"
-                    Content="Vào ca"
-                    Command="{Binding ClockInCommand}" />
+                                                Margin="0,0,10,0"
+                                                MinHeight="36"
+                                                VerticalAlignment="Center"
+                                                Content="Vào ca"
+                                                Command="{Binding ClockInCommand}" />
 
                                         <Button Grid.Column="2"
-                    MinHeight="36"
-                    VerticalAlignment="Center"
-                    Content="Ra ca"
-                    Command="{Binding ClockOutCommand}" />
+                                                MinHeight="36"
+                                                VerticalAlignment="Center"
+                                                Content="Ra ca"
+                                                Command="{Binding ClockOutCommand}" />
 
                                     </Grid>
 
@@ -219,13 +227,15 @@
                             </Expander>
 
                             <!-- DAILY ATTENDANCE GENERATION -->
-                            <Expander Grid.Row="2"
-          Header="Sinh dữ liệu chấm công"
-          IsExpanded="False"
-          Margin="0,0,0,12">
+                            <Expander Grid.Row="1"
+                                      Grid.Column="1"
+                                      Header="Sinh dữ liệu chấm công"
+                                      IsExpanded="True"
+                                      Margin="8,0,0,12"
+                                      VerticalAlignment="Top">
 
                                 <Border Style="{DynamicResource CardBorderStyle}"
-            Margin="0,8,0,0">
+                                        Margin="0,8,0,0">
 
                                     <Grid>
 
@@ -236,39 +246,39 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0"
-                        Margin="0,0,16,0">
+                                                    Margin="0,0,16,0">
 
                                             <TextBlock Foreground="{DynamicResource SecondaryTextBrush}">
-                    <Run Text="Phạm vi: " />
-                    <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
+                                            <Run Text="Phạm vi: " />
+                                            <Run Text="{Binding SelectedEmployeeOption.DisplayName}" />
                                             </TextBlock>
 
                                             <TextBlock Margin="0,3,0,0"
-                           Text="Tạo bản ghi dự kiến từ lịch làm việc. Bản ghi đã tồn tại sẽ được bỏ qua."
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                       Text="Tạo bản ghi dự kiến từ lịch làm việc. Bản ghi đã tồn tại sẽ được bỏ qua."
+                                                       TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1"
-                        Margin="0,0,10,0">
+                                                    Margin="0,0,10,0">
 
                                             <TextBlock Margin="0,0,0,5"
-                           Text="Ngày chấm công"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                       Text="Ngày chấm công"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                             <DatePicker MinHeight="30"
-                            SelectedDate="{Binding GenerationDate,
-                                                   Mode=TwoWay}" />
+                                                        SelectedDate="{Binding GenerationDate,
+                                                                               Mode=TwoWay}" />
 
                                         </StackPanel>
 
                                         <Button Grid.Column="2"
-                    MinHeight="36"
-                    VerticalAlignment="Bottom"
-                    Content="Sinh dữ liệu"
-                    Command="{Binding GenerateAttendanceCommand}"
-                    ToolTip="Sinh dữ liệu chấm công từ phân lịch làm việc của ngày đã chọn." />
+                                                MinHeight="36"
+                                                VerticalAlignment="Bottom"
+                                                Content="Sinh dữ liệu"
+                                                Command="{Binding GenerateAttendanceCommand}"
+                                                ToolTip="Sinh dữ liệu chấm công từ phân lịch làm việc của ngày đã chọn." />
 
                                     </Grid>
 
@@ -277,13 +287,15 @@
                             </Expander>
 
                             <!-- ATTENDANCE CORRECTIONS -->
-                            <Expander Grid.Row="3"
-                              Header="Điều chỉnh chấm công"
-                              IsExpanded="False"
-                              Margin="0,0,0,12">
+                            <Expander Grid.Row="2"
+                                      Grid.Column="0"
+                                      Header="Điều chỉnh chấm công"
+                                      IsExpanded="True"
+                                      Margin="0,0,8,0"
+                                      VerticalAlignment="Top">
 
                                 <Border Style="{DynamicResource CardBorderStyle}"
-                                Margin="0,8,0,0">
+                                        Margin="0,8,0,0">
 
                                     <Grid>
 
@@ -297,7 +309,7 @@
 
                                         <!-- Selected attendance record -->
                                         <Grid Grid.Row="0"
-                  Margin="0,0,0,10">
+                                              Margin="0,0,0,10">
 
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
@@ -307,183 +319,188 @@
                                             <StackPanel Grid.Column="0">
 
                                                 <TextBlock FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}">
+                                                           Foreground="{DynamicResource PrimaryTextBrush}">
 
-                        <Run Text="Bản ghi đang chọn: " />
+                                                <Run Text="Bản ghi đang chọn: " />
 
-                        <Run Text="{Binding SelectedAttendanceItem.EmployeeCode}" />
+                                                <Run Text="{Binding SelectedAttendanceItem.EmployeeCode}" />
 
-                        <Run Text=" - " />
+                                                <Run Text=" - " />
 
-                        <Run Text="{Binding SelectedAttendanceItem.EmployeeName}" />
+                                                <Run Text="{Binding SelectedAttendanceItem.EmployeeName}" />
 
                                                 </TextBlock>
 
                                                 <TextBlock Margin="0,3,0,0"
-                               Foreground="{DynamicResource SecondaryTextBrush}">
+                                                           TextWrapping="Wrap"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}">
 
-                        <Run Text="Ngày: " />
+                                                <Run Text="Ngày: " />
 
-                        <Run Text="{Binding SelectedAttendanceItem.WorkDate,
-                                           StringFormat={}{0:dd/MM/yyyy}}" />
+                                                <Run Text="{Binding SelectedAttendanceItem.WorkDate,
+                                                                   StringFormat={}{0:dd/MM/yyyy}}" />
 
-                        <Run Text="  •  Chọn sự kiện bên dưới để sửa hoặc hủy." />
+                                                <Run Text="  •  Chọn sự kiện bên dưới để sửa hoặc hủy." />
 
                                                 </TextBlock>
 
                                             </StackPanel>
 
                                             <Button Grid.Column="1"
-                        MinHeight="30"
-                        Content="Làm mới"
-                        Command="{Binding LoadCorrectionWorkspaceCommand}" />
+                                                    MinHeight="30"
+                                                    Content="Làm mới"
+                                                    Command="{Binding LoadCorrectionWorkspaceCommand}" />
 
                                         </Grid>
 
                                         <!-- Editor -->
                                         <Grid Grid.Row="1"
-                  Margin="0,0,0,10">
+                                              Margin="0,0,0,10">
 
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="130" />
-                                                <ColumnDefinition Width="135" />
-                                                <ColumnDefinition Width="100" />
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="95" />
-                                                <ColumnDefinition Width="95" />
-                                                <ColumnDefinition Width="95" />
+                                                <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
-                                            <TextBlock Grid.Row="0"
-                           Grid.Column="0"
-                           Margin="0,0,8,4"
-                           Text="Loại sự kiện"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            <StackPanel Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        Margin="0,0,8,0">
 
-                                            <TextBlock Grid.Row="0"
-                           Grid.Column="1"
-                           Margin="0,0,8,4"
-                           Text="Ngày"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <TextBlock Margin="0,0,0,4"
+                                                           Text="Loại sự kiện"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                            <TextBlock Grid.Row="0"
-                           Grid.Column="2"
-                           Margin="0,0,8,4"
-                           Text="Giờ"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                                <ComboBox MinHeight="30"
+                                                          ItemsSource="{Binding CorrectionEventTypes}"
+                                                          SelectedItem="{Binding CorrectionEventType,
+                                                                                 Mode=TwoWay}" />
 
-                                            <TextBlock Grid.Row="0"
-                           Grid.Column="3"
-                           Margin="0,0,8,4"
-                           Text="Lý do"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                            </StackPanel>
 
-                                            <ComboBox Grid.Row="1"
-                          Grid.Column="0"
-                          Margin="0,0,8,0"
-                          MinHeight="30"
-                          ItemsSource="{Binding CorrectionEventTypes}"
-                          SelectedItem="{Binding CorrectionEventType,
-                                                 Mode=TwoWay}" />
+                                            <StackPanel Grid.Row="0"
+                                                        Grid.Column="1">
 
-                                            <DatePicker Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="0,0,8,0"
-                            MinHeight="30"
-                            SelectedDate="{Binding CorrectionDate,
-                                                   Mode=TwoWay}" />
+                                                <TextBlock Margin="0,0,0,4"
+                                                           Text="Ngày"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                            <TextBox Grid.Row="1"
-                         Grid.Column="2"
-                         Margin="0,0,8,0"
-                         MinHeight="30"
-                         VerticalContentAlignment="Center"
-                         ToolTip="HH:mm"
-                         Text="{Binding CorrectionTimeText,
-                                        Mode=TwoWay,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                                <DatePicker MinHeight="30"
+                                                            SelectedDate="{Binding CorrectionDate,
+                                                                                   Mode=TwoWay}" />
 
-                                            <TextBox Grid.Row="1"
-                         Grid.Column="3"
-                         Margin="0,0,8,0"
-                         MinHeight="30"
-                         MaxLength="500"
-                         VerticalContentAlignment="Center"
-                         ToolTip="Lý do điều chỉnh là bắt buộc"
-                         Text="{Binding CorrectionReason,
-                                        Mode=TwoWay,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
 
-                                            <Button Grid.Row="1"
-                        Grid.Column="4"
-                        Margin="0,0,8,0"
-                        MinHeight="30"
-                        Content="Bổ sung"
-                        Command="{Binding AddAttendanceCorrectionCommand}" />
+                                            <StackPanel Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Margin="0,8,8,0">
 
-                                            <Button Grid.Row="1"
-                        Grid.Column="5"
-                        Margin="0,0,8,0"
-                        MinHeight="30"
-                        Content="Sửa"
-                        Command="{Binding ChangeAttendanceCorrectionCommand}" />
+                                                <TextBlock Margin="0,0,0,4"
+                                                           Text="Giờ"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                            <Button Grid.Row="1"
-                        Grid.Column="6"
-                        MinHeight="30"
-                        Content="Hủy hiệu lực"
-                        Command="{Binding VoidAttendanceCorrectionCommand}" />
+                                                <TextBox MinHeight="30"
+                                                         VerticalContentAlignment="Center"
+                                                         ToolTip="HH:mm"
+                                                         Text="{Binding CorrectionTimeText,
+                                                                        Mode=TwoWay,
+                                                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Margin="0,8,0,0">
+
+                                                <TextBlock Margin="0,0,0,4"
+                                                           Text="Lý do"
+                                                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                                <TextBox MinHeight="30"
+                                                         MaxLength="500"
+                                                         VerticalContentAlignment="Center"
+                                                         ToolTip="Lý do điều chỉnh là bắt buộc"
+                                                         Text="{Binding CorrectionReason,
+                                                                        Mode=TwoWay,
+                                                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                                            </StackPanel>
+
+                                            <StackPanel Grid.Row="2"
+                                                        Grid.ColumnSpan="2"
+                                                        Margin="0,10,0,0"
+                                                        Orientation="Horizontal"
+                                                        HorizontalAlignment="Right">
+
+                                                <Button Width="90"
+                                                        MinHeight="30"
+                                                        Margin="0,0,8,0"
+                                                        Content="Bổ sung"
+                                                        Command="{Binding AddAttendanceCorrectionCommand}" />
+
+                                                <Button Width="90"
+                                                        MinHeight="30"
+                                                        Margin="0,0,8,0"
+                                                        Content="Sửa"
+                                                        Command="{Binding ChangeAttendanceCorrectionCommand}" />
+
+                                                <Button Width="105"
+                                                        MinHeight="30"
+                                                        Content="Hủy hiệu lực"
+                                                        Command="{Binding VoidAttendanceCorrectionCommand}" />
+
+                                            </StackPanel>
 
                                         </Grid>
 
                                         <!-- Effective timeline -->
                                         <DataGrid Grid.Row="2"
-                      ItemsSource="{Binding CorrectionEventItems}"
-                      SelectedItem="{Binding SelectedCorrectionEvent,
-                                             Mode=TwoWay}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      HeadersVisibility="Column"
-                      RowHeaderWidth="0"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                                  ItemsSource="{Binding CorrectionEventItems}"
+                                                  SelectedItem="{Binding SelectedCorrectionEvent,
+                                                                         Mode=TwoWay}"
+                                                  AutoGenerateColumns="False"
+                                                  IsReadOnly="True"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0"
+                                                  SelectionMode="Single"
+                                                  SelectionUnit="FullRow"
+                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
                                             <DataGrid.Columns>
 
                                                 <DataGridTextColumn Header="Thời điểm"
-                                        Width="150"
-                                        Binding="{Binding OccurredAtLocal,
-                                                          StringFormat={}{0:dd/MM/yyyy HH:mm}}" />
+                                                                    Width="150"
+                                                                    Binding="{Binding OccurredAtLocal,
+                                                                                      StringFormat={}{0:dd/MM/yyyy HH:mm}}" />
 
                                                 <DataGridTextColumn Header="Sự kiện"
-                                        Width="100"
-                                        Binding="{Binding EventType}" />
+                                                                    Width="100"
+                                                                    Binding="{Binding EventType}" />
 
                                                 <DataGridCheckBoxColumn Header="Thủ công"
-                                            Width="75"
-                                            Binding="{Binding IsManual}" />
+                                                                        Width="75"
+                                                                        Binding="{Binding IsManual}" />
 
                                                 <DataGridCheckBoxColumn Header="Đã sửa"
-                                            Width="70"
-                                            Binding="{Binding IsCorrected}" />
+                                                                        Width="70"
+                                                                        Binding="{Binding IsCorrected}" />
 
                                                 <DataGridTextColumn Header="Revision"
-                                        Width="70"
-                                        Binding="{Binding LastCorrectionRevision}" />
+                                                                    Width="70"
+                                                                    Binding="{Binding LastCorrectionRevision}" />
 
                                                 <DataGridTextColumn Header="Event ID"
-                                        Width="*"
-                                        MinWidth="180"
-                                        Binding="{Binding EventId}" />
+                                                                    Width="*"
+                                                                    MinWidth="180"
+                                                                    Binding="{Binding EventId}" />
 
                                             </DataGrid.Columns>
 
@@ -491,34 +508,34 @@
 
                                         <!-- History title -->
                                         <TextBlock Grid.Row="3"
-                       Margin="0,10,0,5"
-                       Text="Lịch sử điều chỉnh"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                                   Margin="0,10,0,5"
+                                                   Text="Lịch sử điều chỉnh"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                         <!-- Correction history -->
                                         <DataGrid Grid.Row="4"
-                      ItemsSource="{Binding CorrectionHistoryItems}"
-                      AutoGenerateColumns="False"
-                      IsReadOnly="True"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      HeadersVisibility="Column"
-                      RowHeaderWidth="0"
-                      SelectionMode="Single"
-                      SelectionUnit="FullRow"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                                  ItemsSource="{Binding CorrectionHistoryItems}"
+                                                  AutoGenerateColumns="False"
+                                                  IsReadOnly="True"
+                                                  CanUserAddRows="False"
+                                                  CanUserDeleteRows="False"
+                                                  HeadersVisibility="Column"
+                                                  RowHeaderWidth="0"
+                                                  SelectionMode="Single"
+                                                  SelectionUnit="FullRow"
+                                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
                                             <DataGrid.Columns>
 
                                                 <DataGridTextColumn Header="Rev."
-                                        Width="55"
-                                        Binding="{Binding Revision}" />
+                                                                    Width="55"
+                                                                    Binding="{Binding Revision}" />
 
                                                 <DataGridTextColumn Header="Loại"
-                                        Width="90"
-                                        Binding="{Binding Kind}" />
+                                                                    Width="90"
+                                                                    Binding="{Binding Kind}" />
 
                                                 <DataGridTextColumn Header="Trước"
                                         Width="145"
@@ -549,11 +566,14 @@
 
                             </Expander>
 
-                            <Border Grid.Row="4"
-                            Height="280"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
+                            <Border Grid.Row="2"
+                                    Grid.Column="1"
+                                    Height="520"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Top"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8">
 
                                 <Grid>
 
@@ -616,38 +636,38 @@
                                                                 <Style TargetType="TextBlock">
 
                                                                     <Setter Property="Text"
-                Value="Chưa tính" />
+                                                                            Value="Chưa tính" />
 
                                                                     <Style.Triggers>
 
                                                                         <DataTrigger Binding="{Binding Status}"
-                         Value="{x:Static attendance:AttendanceCalculationStatus.NonWorkingDay}">
+                                                                                     Value="{x:Static attendance:AttendanceCalculationStatus.NonWorkingDay}">
                                                                             <Setter Property="Text"
-                        Value="Không làm việc" />
+                                                                                    Value="Không làm việc" />
                                                                         </DataTrigger>
 
                                                                         <DataTrigger Binding="{Binding Status}"
-                         Value="{x:Static attendance:AttendanceCalculationStatus.Absent}">
+                                                                                     Value="{x:Static attendance:AttendanceCalculationStatus.Absent}">
                                                                             <Setter Property="Text"
-                        Value="Vắng" />
+                                                                                    Value="Vắng" />
                                                                         </DataTrigger>
 
                                                                         <DataTrigger Binding="{Binding Status}"
-                         Value="{x:Static attendance:AttendanceCalculationStatus.Present}">
+                                                                                     Value="{x:Static attendance:AttendanceCalculationStatus.Present}">
                                                                             <Setter Property="Text"
-                        Value="Có mặt" />
+                                                                                    Value="Có mặt" />
                                                                         </DataTrigger>
 
                                                                         <DataTrigger Binding="{Binding Status}"
-                         Value="{x:Static attendance:AttendanceCalculationStatus.Incomplete}">
+                                                                                     Value="{x:Static attendance:AttendanceCalculationStatus.Incomplete}">
                                                                             <Setter Property="Text"
-                        Value="Chưa hoàn tất" />
+                                                                                    Value="Chưa hoàn tất" />
                                                                         </DataTrigger>
 
                                                                         <DataTrigger Binding="{Binding Status}"
-                         Value="{x:Static attendance:AttendanceCalculationStatus.ApprovedLeave}">
+                                                                                     Value="{x:Static attendance:AttendanceCalculationStatus.ApprovedLeave}">
                                                                             <Setter Property="Text"
-                        Value="Nghỉ đã duyệt" />
+                                                                                    Value="Nghỉ đã duyệt" />
                                                                         </DataTrigger>
 
                                                                     </Style.Triggers>
@@ -707,7 +727,7 @@
                          ========================================= -->
                             <Expander Grid.Row="0"
                               Header="Tạo đơn nghỉ phép"
-                              IsExpanded="False"
+                              IsExpanded="True"
                               Margin="0,0,0,12">
 
                                 <Border Style="{DynamicResource CardBorderStyle}"

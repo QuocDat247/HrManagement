@@ -5,11 +5,12 @@
         xmlns:views="clr-namespace:HrManagement.Desktop.Views"
         xmlns:converters="clr-namespace:HrManagement.Desktop.Converters"
         Title="Quản trị nhân sự"
-        Width="1200"
-        Height="760"
-        MinWidth="1000"
-        MinHeight="650"
-        WindowStartupLocation="CenterScreen">
+        Width="1500"
+        Height="900"
+        MinWidth="1200"
+        MinHeight="720"
+        WindowState="Maximized"
+WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
 
