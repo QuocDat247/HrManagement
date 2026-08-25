@@ -12,6 +12,7 @@ using HrManagement.Domain.Leave.Requests;
 using HrManagement.Domain.Leave.Types;
 using HrManagement.Domain.Attendance.Calendars;
 using HrManagement.Domain.Attendance.Corrections;
+using HrManagement.Domain.Attendance.Timesheets;
 
 namespace HrManagement.Infrastructure.Persistence;
 
@@ -33,6 +34,14 @@ public sealed class HrManagementDbContext : DbContext
 
     public DbSet<HolidayCalendarDay> HolidayCalendarDays =>
         Set<HolidayCalendarDay>();
+
+    public DbSet<TimesheetPeriod>
+        TimesheetPeriods =>
+            Set<TimesheetPeriod>();
+
+    public DbSet<MonthlyTimesheetDaySnapshot>
+        MonthlyTimesheetDaySnapshots =>
+            Set<MonthlyTimesheetDaySnapshot>();
 
     public DbSet<AttendanceCorrection>
         AttendanceCorrections =>
@@ -152,6 +161,12 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new AttendanceCorrectionConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new TimesheetPeriodConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new MonthlyTimesheetDaySnapshotConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new LeaveTypeConfiguration());

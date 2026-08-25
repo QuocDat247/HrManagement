@@ -8,6 +8,7 @@ using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Application.Attendance.Generation;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Application.Attendance.Schedules;
+using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Application.Attendance.Schedules.Overrides;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Dashboard.Analytics;
@@ -28,6 +29,7 @@ using HrManagement.Infrastructure.Attendance.Expectations;
 using HrManagement.Infrastructure.Attendance.Generation;
 using HrManagement.Infrastructure.Attendance.Records;
 using HrManagement.Infrastructure.Attendance.Schedules;
+using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Infrastructure.Attendance.Schedules.Overrides;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Dashboard.Analytics;
@@ -163,6 +165,14 @@ public static class ServiceCollectionExtensions
             EmployeeWorkScheduleAssignmentService>();
 
         services.AddSingleton<WorkScheduleSeedService>();
+
+        services.AddSingleton<
+            IMonthlyTimesheetQuerySource,
+            EfMonthlyTimesheetQuerySource>();
+
+        services.AddScoped<
+            IMonthlyTimesheetQueryService,
+            MonthlyTimesheetQueryService>();
 
         services.AddSingleton<
             IAttendanceRecordRepository,
