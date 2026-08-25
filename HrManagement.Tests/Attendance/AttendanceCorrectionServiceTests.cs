@@ -435,6 +435,54 @@ public sealed class AttendanceCorrectionServiceTests
                 .Kind);
     }
 
+    [Fact]
+    public async Task ApplyAsync_WhenPeriodIsClosed_RejectsBeforeAuthorizationAndPersistence()
+    {
+        TestContext test =
+            CreateContext(
+                rawEvents: []);
+
+        test.PeriodLockPolicy.IsLocked =
+            true;
+
+        var request =
+            new ApplyAttendanceCorrectionRequest(
+                test.Record.Id,
+                AttendanceCorrectionKind.AddEvent,
+                AffectedEventId: null,
+                AfterEventType:
+                    AttendanceEventType.ClockIn,
+                AfterOccurredAtUtc:
+                    Utc(8),
+                Reason:
+                    "Bổ sung chấm vào");
+
+        ApplyAttendanceCorrectionResult result =
+            await test.Service.ApplyAsync(
+                request);
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể điều chỉnh chấm công.",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            test.PeriodLockPolicy.CallCount);
+
+        Assert.Equal(
+            test.Record.WorkDate,
+            test.PeriodLockPolicy.LastWorkDate);
+
+        Assert.Null(
+            test.AuthorizationPolicy.Request);
+
+        Assert.Empty(
+            test.Persistence.Appended);
+    }
+
     private static TestContext CreateContext(
         IReadOnlyList<AttendanceEvent> rawEvents)
     {
@@ -471,6 +519,9 @@ public sealed class AttendanceCorrectionServiceTests
         var authorizationPolicy =
             new TestAttendanceCorrectionAuthorizationPolicy();
 
+        var periodLockPolicy =
+            new StubAttendancePeriodLockPolicy();
+
         var service =
             new AttendanceCorrectionService(
                 recordRepository,
@@ -479,6 +530,7 @@ public sealed class AttendanceCorrectionServiceTests
                 new EffectiveAttendanceTimelineResolver(),
                 currentUserContext,
                 authorizationPolicy,
+                periodLockPolicy,
                 new FixedTimeProvider(
                     Utc(12)));
 
@@ -486,7 +538,8 @@ public sealed class AttendanceCorrectionServiceTests
             record,
             service,
             persistence,
-            authorizationPolicy);
+            authorizationPolicy,
+            periodLockPolicy);
     }
 
     private static AttendanceRecord CreateRecord()
@@ -537,7 +590,8 @@ public sealed class AttendanceCorrectionServiceTests
         AttendanceRecord Record,
         AttendanceCorrectionService Service,
         StubAttendanceCorrectionPersistence Persistence,
-        TestAttendanceCorrectionAuthorizationPolicy AuthorizationPolicy);
+        TestAttendanceCorrectionAuthorizationPolicy AuthorizationPolicy,
+        StubAttendancePeriodLockPolicy PeriodLockPolicy);
 
     private sealed class StubAttendanceRecordRepository
         : IAttendanceRecordRepository

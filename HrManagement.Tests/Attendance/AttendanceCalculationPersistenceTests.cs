@@ -1,4 +1,5 @@
 using HrManagement.Domain.Attendance.Corrections;
+using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
@@ -708,6 +709,116 @@ public sealed class AttendanceCalculationPersistenceTests
         Assert.Equal(
             AttendanceCalculationStatus.NotCalculated,
             saved.Status);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenPeriodIsClosed_RejectsWithoutUpdatingCalculation()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedContextAsync(
+                options);
+
+        AttendanceRecord record =
+            CreateRecord(
+                ids);
+
+        await SeedRecordAsync(
+            options,
+            record);
+
+        ApplyCalculation(
+            record,
+            []);
+
+        var period =
+            new TimesheetPeriod(
+                Guid.NewGuid(),
+                2026,
+                8);
+
+        period.Close(
+            new DateTime(
+                2026,
+                8,
+                31,
+                12,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-1",
+            "admin");
+
+        await using (
+            var mutationContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            mutationContext.TimesheetPeriods.Add(
+                period);
+
+            await mutationContext.SaveChangesAsync();
+        }
+
+        EfAttendanceCalculationPersistence persistence =
+            CreatePersistence(
+                options);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    persistence.ApplyAsync(
+                        record,
+                        [],
+                        expectedCorrectionRevision: 0));
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể thay đổi dữ liệu chấm công.",
+            exception.Message);
+
+        await using var verification =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceRecord saved =
+            await verification
+                .AttendanceRecords
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            AttendanceCalculationStatus.NotCalculated,
+            saved.Status);
+
+        Assert.Equal(
+            0,
+            saved.WorkedMinutes);
+
+        Assert.Equal(
+            0,
+            saved.LateMinutes);
+
+        Assert.Equal(
+            0,
+            saved.EarlyLeaveMinutes);
+
+        TimesheetPeriod persistedPeriod =
+            await verification
+                .TimesheetPeriods
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.True(
+            persistedPeriod.IsClosed);
     }
 
     private static void ApplyCalculation(

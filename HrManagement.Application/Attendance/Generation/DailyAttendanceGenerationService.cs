@@ -1,4 +1,5 @@
 using HrManagement.Application.Attendance.Expectations;
+using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Records;
 
 namespace HrManagement.Application.Attendance.Generation;
@@ -12,15 +13,22 @@ public sealed class DailyAttendanceGenerationService
     private readonly IWorkExpectationResolver
         _expectationResolver;
 
+    private readonly IAttendancePeriodLockPolicy
+        _periodLockPolicy;
+
     public DailyAttendanceGenerationService(
         IDailyAttendanceGenerationPersistence persistence,
-        IWorkExpectationResolver expectationResolver)
+        IWorkExpectationResolver expectationResolver,
+        IAttendancePeriodLockPolicy periodLockPolicy)
     {
         _persistence =
             persistence;
 
         _expectationResolver =
             expectationResolver;
+
+        _periodLockPolicy =
+            periodLockPolicy;
     }
 
     public async Task<GenerateDailyAttendanceResult> GenerateAsync(
@@ -42,6 +50,18 @@ public sealed class DailyAttendanceGenerationService
         {
             return Failure(
                 "Nhân viên không hợp lệ.");
+        }
+
+        bool isPeriodLocked =
+            await _periodLockPolicy
+                .IsLockedAsync(
+                    request.WorkDate,
+                    cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            return Failure(
+                "Kỳ công của ngày đã chọn đã được đóng. Không thể sinh dữ liệu chấm công.");
         }
 
         IReadOnlyList<DailyAttendanceGenerationCandidate>

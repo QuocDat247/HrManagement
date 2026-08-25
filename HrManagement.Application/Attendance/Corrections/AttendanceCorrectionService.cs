@@ -1,4 +1,5 @@
 using HrManagement.Application.Attendance.Records;
+using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Application.Authentication;
 using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Records;
@@ -26,6 +27,9 @@ public sealed class AttendanceCorrectionService
     private readonly IAttendanceCorrectionAuthorizationPolicy
         _authorizationPolicy;
 
+    private readonly IAttendancePeriodLockPolicy
+        _periodLockPolicy;
+
     private readonly TimeProvider
         _timeProvider;
 
@@ -36,6 +40,7 @@ public sealed class AttendanceCorrectionService
         IEffectiveAttendanceTimelineResolver timelineResolver,
         ICurrentUserContext currentUserContext,
         IAttendanceCorrectionAuthorizationPolicy authorizationPolicy,
+        IAttendancePeriodLockPolicy periodLockPolicy,
         TimeProvider timeProvider)
     {
         _recordRepository =
@@ -55,6 +60,9 @@ public sealed class AttendanceCorrectionService
 
         _authorizationPolicy =
             authorizationPolicy;
+
+        _periodLockPolicy =
+            periodLockPolicy;
 
         _timeProvider =
             timeProvider;
@@ -96,6 +104,18 @@ public sealed class AttendanceCorrectionService
         {
             return Failure(
                 "Không tìm thấy bản ghi chấm công cần điều chỉnh.");
+        }
+
+        bool isPeriodLocked =
+            await _periodLockPolicy
+                .IsLockedAsync(
+                    record.WorkDate,
+                    cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            return Failure(
+                "Kỳ công của ngày chấm công đã được đóng. Không thể điều chỉnh chấm công.");
         }
 
         bool isAuthorized =

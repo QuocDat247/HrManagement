@@ -1,3 +1,4 @@
+using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Application.Attendance.Records;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Domain.Attendance.Schedules;
@@ -639,6 +640,240 @@ public sealed class AttendancePunchPersistenceTests
                     item =>
                         item.Id)
                 .SingleAsync());
+    }
+
+    [Fact]
+    public async Task FirstPunch_WhenPeriodIsClosed_RejectsRecordAndEvent()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedScheduleContextAsync(
+                options);
+
+        DateOnly workDate =
+            new(
+                2026,
+                8,
+                20);
+
+        var period =
+            new TimesheetPeriod(
+                Guid.NewGuid(),
+                2026,
+                8);
+
+        period.Close(
+            new DateTime(
+                2026,
+                8,
+                31,
+                12,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-1",
+            "admin");
+
+        await using (
+            var seedContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            seedContext.TimesheetPeriods.Add(
+                period);
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        AttendanceRecord record =
+            CreateRecord(
+                ids,
+                Guid.NewGuid(),
+                workDate);
+
+        AttendanceEvent clockIn =
+            CreateEvent(
+                record,
+                Guid.NewGuid(),
+                AttendanceEventType.ClockIn,
+                Utc(
+                    2026,
+                    8,
+                    20,
+                    1,
+                    0));
+
+        EfAttendancePunchPersistence persistence =
+            CreatePersistence(
+                options);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    persistence.AppendAsync(
+                        record,
+                        clockIn,
+                        expectedLastEvent: null));
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể thay đổi dữ liệu chấm công.",
+            exception.Message);
+
+        await using var verificationContext =
+            new HrManagementDbContext(
+                options);
+
+        Assert.Empty(
+            await verificationContext
+                .AttendanceRecords
+                .AsNoTracking()
+                .ToArrayAsync());
+
+        Assert.Empty(
+            await verificationContext
+                .AttendanceEvents
+                .AsNoTracking()
+                .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task ExistingRecord_WhenPeriodIsClosed_UsesRecordWorkDateAndRejectsEvent()
+    {
+        await using SqliteConnection connection =
+            await CreateOpenConnectionAsync();
+
+        DbContextOptions<HrManagementDbContext> options =
+            CreateOptions(
+                connection);
+
+        await EnsureCreatedAsync(
+            options);
+
+        SeedIds ids =
+            await SeedScheduleContextAsync(
+                options);
+
+        DateOnly recordWorkDate =
+            new(
+                2026,
+                8,
+                31);
+
+        AttendanceRecord record =
+            CreateRecord(
+                ids,
+                Guid.NewGuid(),
+                recordWorkDate);
+
+        AttendanceEvent clockIn =
+            CreateEvent(
+                record,
+                Guid.NewGuid(),
+                AttendanceEventType.ClockIn,
+                Utc(
+                    2026,
+                    8,
+                    31,
+                    15,
+                    0));
+
+        await SeedRecordAndEventsAsync(
+            options,
+            record,
+            clockIn);
+
+        var period =
+            new TimesheetPeriod(
+                Guid.NewGuid(),
+                2026,
+                8);
+
+        period.Close(
+            new DateTime(
+                2026,
+                8,
+                31,
+                18,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-1",
+            "admin");
+
+        await using (
+            var seedContext =
+                new HrManagementDbContext(
+                    options))
+        {
+            seedContext.TimesheetPeriods.Add(
+                period);
+
+            await seedContext.SaveChangesAsync();
+        }
+
+        AttendanceEvent clockOut =
+            CreateEvent(
+                record,
+                Guid.NewGuid(),
+                AttendanceEventType.ClockOut,
+                Utc(
+                    2026,
+                    9,
+                    1,
+                    0,
+                    30));
+
+        EfAttendancePunchPersistence persistence =
+            CreatePersistence(
+                options);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    persistence.AppendAsync(
+                        newRecord: null,
+                        clockOut,
+                        expectedLastEvent:
+                            clockIn));
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể thay đổi dữ liệu chấm công.",
+            exception.Message);
+
+        await using var verificationContext =
+            new HrManagementDbContext(
+                options);
+
+        AttendanceEvent[] events =
+            await verificationContext
+                .AttendanceEvents
+                .AsNoTracking()
+                .ToArrayAsync();
+
+        AttendanceEvent persistedClockIn =
+            Assert.Single(
+                events);
+
+        Assert.Equal(
+            clockIn.Id,
+            persistedClockIn.Id);
+
+        Assert.False(
+            await verificationContext
+                .AttendanceEvents
+                .AnyAsync(
+                    item =>
+                        item.Id ==
+                        clockOut.Id));
     }
 
     private static EfAttendancePunchPersistence CreatePersistence(

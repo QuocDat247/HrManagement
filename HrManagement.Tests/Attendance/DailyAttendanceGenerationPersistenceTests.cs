@@ -1,5 +1,6 @@
 using HrManagement.Application.Attendance.Expectations;
 using HrManagement.Domain.Attendance.Calendars;
+using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Expectations;
 using HrManagement.Infrastructure.Attendance.Expectations;
 using HrManagement.Application.Attendance.Generation;
@@ -187,7 +188,8 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         var service =
             new DailyAttendanceGenerationService(
                 database.Persistence,
-                expectationResolver);
+                expectationResolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult first =
             await service.GenerateAsync(
@@ -366,7 +368,8 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         var service =
             new DailyAttendanceGenerationService(
                 database.Persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -462,7 +465,8 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         var service =
             new DailyAttendanceGenerationService(
                 database.Persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -547,7 +551,8 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         var service =
             new DailyAttendanceGenerationService(
                 database.Persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult first =
             await service.GenerateAsync(
@@ -647,6 +652,91 @@ public sealed class DailyAttendanceGenerationPersistenceTests
         Assert.Equal(
             "Quốc khánh",
             record.ExpectationSourceName);
+    }
+
+    [Fact]
+    public async Task AddRangeAsync_WhenPeriodIsClosed_RejectsWithoutWritingAttendance()
+    {
+        DateOnly workDate =
+            new(
+                2026,
+                8,
+                21);
+
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await SeedAssignmentAsync(
+                database,
+                workDate);
+
+        var period =
+            new TimesheetPeriod(
+                Guid.NewGuid(),
+                2026,
+                8);
+
+        period.Close(
+            new DateTime(
+                2026,
+                8,
+                31,
+                12,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-1",
+            "admin");
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory
+                    .CreateDbContextAsync())
+        {
+            dbContext.TimesheetPeriods.Add(
+                period);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        var record =
+            new AttendanceRecord(
+                Guid.NewGuid(),
+                seed.EmployeeId,
+                seed.EmploymentPeriodId,
+                seed.AssignmentId,
+                seed.ScheduleId,
+                workDate,
+                "SE Asia Standard Time",
+                true,
+                new TimeOnly(
+                    8,
+                    0),
+                new TimeOnly(
+                    17,
+                    0),
+                60);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    database.Persistence.AddRangeAsync(
+                        [record]));
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể thay đổi dữ liệu chấm công.",
+            exception.Message);
+
+        await using HrManagementDbContext verificationContext =
+            await database.Factory
+                .CreateDbContextAsync();
+
+        Assert.Empty(
+            await verificationContext
+                .AttendanceRecords
+                .AsNoTracking()
+                .ToArrayAsync());
     }
 
     private static async Task<SeedResult>

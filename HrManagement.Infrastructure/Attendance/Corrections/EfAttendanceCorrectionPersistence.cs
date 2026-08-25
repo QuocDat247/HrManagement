@@ -4,6 +4,7 @@ using HrManagement.Application.Auditing;
 using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Auditing;
 using HrManagement.Infrastructure.Persistence;
+using HrManagement.Infrastructure.Attendance.Timesheets;
 using Microsoft.EntityFrameworkCore;
 
 namespace HrManagement.Infrastructure.Attendance.Corrections;
@@ -89,7 +90,8 @@ public sealed class EfAttendanceCorrectionPersistence
                     record =>
                         new
                         {
-                            record.EmployeeId
+                            record.EmployeeId,
+                            record.WorkDate
                         })
                 .SingleOrDefaultAsync(
                     cancellationToken);
@@ -106,6 +108,12 @@ public sealed class EfAttendanceCorrectionPersistence
             throw new InvalidOperationException(
                 "Điều chỉnh chấm công không thuộc nhân viên của bản ghi chấm công.");
         }
+
+        await AttendancePeriodWriteGuard
+            .EnsureUnlockedAsync(
+                dbContext,
+                attendanceRecord.WorkDate,
+                cancellationToken);
 
         int latestRevision =
             await dbContext

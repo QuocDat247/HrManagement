@@ -1,4 +1,6 @@
 using HrManagement.Application.Attendance.Calculations;
+using System.Data;
+using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Infrastructure.Persistence;
@@ -49,6 +51,7 @@ public sealed class EfAttendanceCalculationPersistence
         await using var transaction =
             await dbContext.Database
                 .BeginTransactionAsync(
+                    IsolationLevel.Serializable,
                     cancellationToken);
 
         AttendanceRecord? persistedRecord =
@@ -64,6 +67,12 @@ public sealed class EfAttendanceCalculationPersistence
         ValidatePersistedRecord(
             persistedRecord,
             calculatedRecord);
+
+        await AttendancePeriodWriteGuard
+            .EnsureUnlockedAsync(
+                dbContext,
+                calculatedRecord.WorkDate,
+                cancellationToken);
 
         List<AttendanceEvent> persistedEvents =
             await dbContext

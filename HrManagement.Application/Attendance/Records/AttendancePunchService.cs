@@ -1,4 +1,5 @@
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Application.Attendance.Timesheets;
 
 namespace HrManagement.Application.Attendance.Records;
 
@@ -17,11 +18,15 @@ public sealed class AttendancePunchService
     private readonly IAttendancePunchPersistence
         _persistence;
 
+    private readonly IAttendancePeriodLockPolicy
+        _periodLockPolicy;
+
     public AttendancePunchService(
         IAttendanceRecordRepository recordRepository,
         IAttendanceEventRepository eventRepository,
         IAttendancePunchContextResolver contextResolver,
-        IAttendancePunchPersistence persistence)
+        IAttendancePunchPersistence persistence,
+        IAttendancePeriodLockPolicy periodLockPolicy)
     {
         _recordRepository =
             recordRepository;
@@ -34,6 +39,9 @@ public sealed class AttendancePunchService
 
         _persistence =
             persistence;
+
+        _periodLockPolicy =
+            periodLockPolicy;
     }
 
     public async Task<RecordAttendancePunchResult> RecordAsync(
@@ -126,6 +134,18 @@ public sealed class AttendancePunchService
                 "Bản ghi chấm công không thuộc nhân viên.");
         }
 
+        bool isPeriodLocked =
+            await _periodLockPolicy
+                .IsLockedAsync(
+                    record.WorkDate,
+                    cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            return Failure(
+                "Kỳ công của ngày chấm công đã được đóng. Không thể ghi nhận chấm công.");
+        }
+
         IReadOnlyList<AttendanceEvent> existingEvents =
             await _eventRepository
                 .GetByAttendanceRecordIdAsync(
@@ -184,6 +204,18 @@ public sealed class AttendancePunchService
         {
             return Failure(
                 "Ngữ cảnh chấm công không thuộc nhân viên.");
+        }
+
+        bool isPeriodLocked =
+            await _periodLockPolicy
+                .IsLockedAsync(
+                    context.WorkDate,
+                    cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            return Failure(
+                "Kỳ công của ngày chấm công đã được đóng. Không thể ghi nhận chấm công.");
         }
 
         AttendanceRecord? existingRecord =

@@ -566,6 +566,53 @@ public sealed class AttendanceRecalculationServiceTests
                 .OccurredAtUtc);
     }
 
+    [Fact]
+    public async Task RecalculateAsync_WhenPeriodIsClosed_RejectsBeforeCalculation()
+    {
+        TestContext test =
+            CreateContext();
+
+        AttendanceRecord record =
+            CreateWorkingRecord();
+
+        test.RecordRepository.Record =
+            record;
+
+        test.PeriodLockPolicy.IsLocked =
+            true;
+
+        RecalculateAttendanceResult result =
+            await test.Service.RecalculateAsync(
+                new RecalculateAttendanceRequest(
+                    record.Id));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể tính lại chấm công.",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            test.PeriodLockPolicy.CallCount);
+
+        Assert.Equal(
+            record.WorkDate,
+            test.PeriodLockPolicy.LastWorkDate);
+
+        Assert.Equal(
+            0,
+            test.ApprovedLeaveResolver.CallCount);
+
+        Assert.Equal(
+            0,
+            test.ScheduleWindowResolver.CallCount);
+
+        Assert.Null(
+            test.Persistence.Record);
+    }
+
     private static TestContext CreateContext(
         AttendanceAdherencePolicy? policy = null)
     {
@@ -590,6 +637,9 @@ public sealed class AttendanceRecalculationServiceTests
         var persistence =
             new StubAttendanceCalculationPersistence();
 
+        var periodLockPolicy =
+            new StubAttendancePeriodLockPolicy();
+
         var service =
             new AttendanceRecalculationService(
                 recordRepository,
@@ -598,9 +648,10 @@ public sealed class AttendanceRecalculationServiceTests
                 scheduleWindowResolver,
                 persistence,
                 policy ??
-                    new AttendanceAdherencePolicy(),
+                new AttendanceAdherencePolicy(),
                 correctionPersistence,
-                timelineResolver);
+                timelineResolver,
+                periodLockPolicy);
 
         return new TestContext(
             service,
@@ -609,7 +660,8 @@ public sealed class AttendanceRecalculationServiceTests
             approvedLeaveResolver,
             scheduleWindowResolver,
             persistence,
-            correctionPersistence);
+            correctionPersistence,
+            periodLockPolicy);
     }
 
     private static AttendanceRecord CreateWorkingRecord()
@@ -685,7 +737,8 @@ public sealed class AttendanceRecalculationServiceTests
         StubApprovedLeaveAttendanceResolver ApprovedLeaveResolver,
         StubAttendanceScheduleWindowResolver ScheduleWindowResolver,
         StubAttendanceCalculationPersistence Persistence,
-        StubAttendanceCorrectionPersistence CorrectionPersistence);
+        StubAttendanceCorrectionPersistence CorrectionPersistence,
+        StubAttendancePeriodLockPolicy PeriodLockPolicy);
 
     private sealed class StubAttendanceRecordRepository
         : IAttendanceRecordRepository

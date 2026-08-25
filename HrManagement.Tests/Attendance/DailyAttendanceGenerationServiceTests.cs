@@ -66,7 +66,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         DateOnly workDate =
             new(
@@ -195,7 +196,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -256,7 +258,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -337,7 +340,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -402,7 +406,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -442,7 +447,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -477,7 +483,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -512,7 +519,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -562,7 +570,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -611,7 +620,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -670,7 +680,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -746,7 +757,8 @@ public sealed class DailyAttendanceGenerationServiceTests
         var service =
             new DailyAttendanceGenerationService(
                 persistence,
-                resolver);
+                resolver,
+                new StubAttendancePeriodLockPolicy());
 
         GenerateDailyAttendanceResult result =
             await service.GenerateAsync(
@@ -767,6 +779,65 @@ public sealed class DailyAttendanceGenerationServiceTests
         Assert.Equal(
             weeklyDayId,
             record.ExpectationSourceId);
+    }
+
+    [Fact]
+    public async Task GenerateAsync_WhenPeriodIsClosed_FailsBeforePersistence()
+    {
+        DateOnly workDate =
+            new(
+                2026,
+                8,
+                24);
+
+        var persistence =
+            new TestPersistence();
+
+        var resolver =
+            new TestExpectationResolver();
+
+        var periodLockPolicy =
+            new StubAttendancePeriodLockPolicy
+            {
+                IsLocked = true
+            };
+
+        var service =
+            new DailyAttendanceGenerationService(
+                persistence,
+                resolver,
+                periodLockPolicy);
+
+        GenerateDailyAttendanceResult result =
+            await service.GenerateAsync(
+                new GenerateDailyAttendanceRequest(
+                    workDate));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Kỳ công của ngày đã chọn đã được đóng. Không thể sinh dữ liệu chấm công.",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            periodLockPolicy.CallCount);
+
+        Assert.Equal(
+            workDate,
+            periodLockPolicy.LastWorkDate);
+
+        Assert.Equal(
+            0,
+            persistence.GetCandidatesCallCount);
+
+        Assert.Equal(
+            0,
+            resolver.ResolveManyCallCount);
+
+        Assert.Empty(
+            persistence.AddedRecords);
     }
 
     private static DailyAttendanceGenerationCandidate CreateCandidate(

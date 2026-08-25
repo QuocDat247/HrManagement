@@ -1,4 +1,5 @@
 using HrManagement.Application.Attendance.Records;
+using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Application.Attendance.Corrections;
@@ -30,6 +31,9 @@ public sealed class AttendanceRecalculationService
     private readonly IAttendanceCalculationPersistence
         _persistence;
 
+    private readonly IAttendancePeriodLockPolicy
+        _periodLockPolicy;
+
     private readonly AttendanceAdherencePolicy
         _adherencePolicy;
 
@@ -41,7 +45,8 @@ public sealed class AttendanceRecalculationService
         IAttendanceCalculationPersistence persistence,
         AttendanceAdherencePolicy adherencePolicy,
         IAttendanceCorrectionPersistence correctionPersistence,
-        IEffectiveAttendanceTimelineResolver timelineResolver)
+        IEffectiveAttendanceTimelineResolver timelineResolver,
+        IAttendancePeriodLockPolicy periodLockPolicy)
     {
         _correctionPersistence =
             correctionPersistence;
@@ -66,6 +71,9 @@ public sealed class AttendanceRecalculationService
 
         _adherencePolicy =
             adherencePolicy;
+
+        _periodLockPolicy =
+            periodLockPolicy;
     }
 
     public async Task<RecalculateAttendanceResult>
@@ -89,6 +97,18 @@ public sealed class AttendanceRecalculationService
         {
             return Failure(
                 "Không tìm thấy bản ghi chấm công.");
+        }
+
+        bool isPeriodLocked =
+            await _periodLockPolicy
+                .IsLockedAsync(
+                    record.WorkDate,
+                    cancellationToken);
+
+        if (isPeriodLocked)
+        {
+            return Failure(
+                "Kỳ công của ngày chấm công đã được đóng. Không thể tính lại chấm công.");
         }
 
         ApprovedLeaveAttendanceInput? approvedLeave;

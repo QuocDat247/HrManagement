@@ -1,4 +1,6 @@
 using HrManagement.Application.Attendance.Records;
+using System.Data;
+using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -40,6 +42,7 @@ public sealed class EfAttendancePunchPersistence
         await using var transaction =
             await dbContext.Database
                 .BeginTransactionAsync(
+                    IsolationLevel.Serializable,
                     cancellationToken);
 
         if (newRecord is not null)
@@ -72,6 +75,12 @@ public sealed class EfAttendancePunchPersistence
         AttendanceEvent newEvent,
         CancellationToken cancellationToken)
     {
+        await AttendancePeriodWriteGuard
+            .EnsureUnlockedAsync(
+                dbContext,
+                newRecord.WorkDate,
+                cancellationToken);
+
         bool recordAlreadyExists =
             await dbContext
                 .AttendanceRecords
@@ -142,6 +151,12 @@ public sealed class EfAttendancePunchPersistence
                 "Sự kiện chấm công không thuộc nhân viên của bản ghi.",
                 nameof(newEvent));
         }
+
+        await AttendancePeriodWriteGuard
+            .EnsureUnlockedAsync(
+                dbContext,
+                persistedRecord.WorkDate,
+                cancellationToken);
 
         IReadOnlyList<AttendanceEvent> persistedEvents =
             await dbContext

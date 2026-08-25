@@ -2,6 +2,7 @@ using HrManagement.Application.Attendance.Corrections;
 using HrManagement.Application.Auditing;
 using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Records;
+using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Domain.Auditing;
 using HrManagement.Infrastructure.Attendance.Corrections;
 using HrManagement.Infrastructure.Persistence;
@@ -617,6 +618,94 @@ public sealed class AttendanceCorrectionPersistenceTests
                 revision2.Id);
     }
 
+    [Fact]
+    public async Task AppendAsync_WhenPeriodIsClosed_RejectsCorrectionAndAudit()
+    {
+        var auditFactory =
+            new StubAuditEntryFactory(
+                Guid.NewGuid(),
+                "user-1",
+                "admin");
+
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync(
+                auditFactory);
+
+        SeedResult seed =
+            await database.SeedAttendanceRecordAsync();
+
+        var period =
+            new TimesheetPeriod(
+                Guid.NewGuid(),
+                2026,
+                8);
+
+        period.Close(
+            new DateTime(
+                2026,
+                8,
+                31,
+                12,
+                0,
+                0,
+                DateTimeKind.Utc),
+            "user-1",
+            "admin");
+
+        await using (
+            HrManagementDbContext dbContext =
+                await database.Factory
+                    .CreateDbContextAsync())
+        {
+            dbContext.TimesheetPeriods.Add(
+                period);
+
+            await dbContext.SaveChangesAsync();
+        }
+
+        AttendanceCorrection correction =
+            CreateCorrection(
+                seed,
+                revision: 1,
+                affectedEventId:
+                    Guid.NewGuid());
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    database.Persistence
+                        .AppendAsync(
+                            correction));
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể thay đổi dữ liệu chấm công.",
+            exception.Message);
+
+        await using HrManagementDbContext verificationContext =
+            await database.Factory
+                .CreateDbContextAsync();
+
+        Assert.Empty(
+            await verificationContext
+                .AttendanceCorrections
+                .AsNoTracking()
+                .ToArrayAsync());
+
+        Assert.Empty(
+            await verificationContext
+                .AuditEntries
+                .AsNoTracking()
+                .ToArrayAsync());
+
+        TimesheetPeriod persistedPeriod =
+            await verificationContext
+                .TimesheetPeriods
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.True(
+            persistedPeriod.IsClosed);
+    }
 
     private static AttendanceCorrection CreateCorrection(
         SeedResult seed,

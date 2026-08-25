@@ -1,4 +1,6 @@
 using HrManagement.Application.Attendance.Generation;
+using System.Data;
+using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Records;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -162,22 +164,53 @@ GetCandidatesAsync(
     }
 
     public async Task AddRangeAsync(
-        IReadOnlyList<AttendanceRecord> records,
-        CancellationToken cancellationToken = default)
+    IReadOnlyList<AttendanceRecord> records,
+    CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(
+            records);
+
         if (records.Count == 0)
         {
             return;
+        }
+
+        DateOnly workDate =
+            records[0].WorkDate;
+
+        if (records.Any(
+                record =>
+                    record.WorkDate !=
+                    workDate))
+        {
+            throw new ArgumentException(
+                "Các bản ghi sinh theo ngày phải thuộc cùng một ngày chấm công.",
+                nameof(records));
         }
 
         await using HrManagementDbContext dbContext =
             await _dbContextFactory.CreateDbContextAsync(
                 cancellationToken);
 
+        await using var transaction =
+            await dbContext.Database
+                .BeginTransactionAsync(
+                    IsolationLevel.Serializable,
+                    cancellationToken);
+
+        await AttendancePeriodWriteGuard
+            .EnsureUnlockedAsync(
+                dbContext,
+                workDate,
+                cancellationToken);
+
         dbContext.AttendanceRecords.AddRange(
             records);
 
         await dbContext.SaveChangesAsync(
+            cancellationToken);
+
+        await transaction.CommitAsync(
             cancellationToken);
     }
 }

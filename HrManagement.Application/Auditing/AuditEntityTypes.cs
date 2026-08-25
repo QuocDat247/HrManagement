@@ -16,4 +16,7 @@ public static class AuditEntityTypes
 
     public const string AttendanceCorrection =
         "AttendanceCorrection";
+
+    public const string TimesheetPeriod =
+        "TimesheetPeriod";
 }

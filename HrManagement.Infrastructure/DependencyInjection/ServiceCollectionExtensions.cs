@@ -170,6 +170,22 @@ public static class ServiceCollectionExtensions
             IMonthlyTimesheetQuerySource,
             EfMonthlyTimesheetQuerySource>();
 
+        services.AddSingleton<
+            ICloseTimesheetPeriodPersistence,
+            EfCloseTimesheetPeriodPersistence>();
+
+        services.AddSingleton<
+            IAttendancePeriodLockPolicy,
+            EfAttendancePeriodLockPolicy>();
+
+        services.AddSingleton<
+            ITimesheetPeriodClosingAuthorizationPolicy,
+            AuthenticatedTimesheetPeriodClosingAuthorizationPolicy>();
+
+        services.AddScoped<
+            ICloseTimesheetPeriodService,
+            CloseTimesheetPeriodService>();
+
         services.AddScoped<
             IMonthlyTimesheetQueryService,
             MonthlyTimesheetQueryService>();

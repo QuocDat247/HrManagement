@@ -623,6 +623,144 @@ public sealed class AttendancePunchServiceTests
             existingRecord.ExpectedEndTime);
     }
 
+    [Fact]
+    public async Task FirstClockIn_WhenPeriodIsClosed_IsRejectedBeforePersistence()
+    {
+        TestContext test =
+            CreateContext();
+
+        test.PeriodLockPolicy.IsLocked =
+            true;
+
+        DateOnly expectedWorkDate =
+            new(
+                2026,
+                8,
+                20);
+
+        RecordAttendancePunchResult result =
+            await test.Service.RecordAsync(
+                new RecordAttendancePunchRequest(
+                    test.EmployeeId,
+                    AttendanceEventType.ClockIn,
+                    Utc(
+                        2026,
+                        8,
+                        20,
+                        1,
+                        0)));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể ghi nhận chấm công.",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            test.ContextResolver.CallCount);
+
+        Assert.Equal(
+            1,
+            test.PeriodLockPolicy.CallCount);
+
+        Assert.Equal(
+            expectedWorkDate,
+            test.PeriodLockPolicy.LastWorkDate);
+
+        Assert.Null(
+            test.Persistence.NewRecord);
+
+        Assert.Null(
+            test.Persistence.NewEvent);
+    }
+
+    [Fact]
+    public async Task ClockOut_WhenOpenRecordPeriodIsClosed_UsesRecordWorkDateAndRejects()
+    {
+        TestContext test =
+            CreateContext();
+
+        DateOnly recordWorkDate =
+            new(
+                2026,
+                8,
+                20);
+
+        AttendanceRecord record =
+            CreateRecord(
+                test,
+                workDate:
+                    recordWorkDate,
+                startTime:
+                    new TimeOnly(
+                        22,
+                        0),
+                endTime:
+                    new TimeOnly(
+                        6,
+                        0));
+
+        AttendanceEvent clockIn =
+            CreateEvent(
+                record,
+                test.EmployeeId,
+                AttendanceEventType.ClockIn,
+                Utc(
+                    2026,
+                    8,
+                    20,
+                    15,
+                    0));
+
+        test.RecordRepository.ById =
+            record;
+
+        test.EventRepository.Latest =
+            clockIn;
+
+        test.EventRepository.ByRecord =
+            [clockIn];
+
+        test.PeriodLockPolicy.IsLocked =
+            true;
+
+        RecordAttendancePunchResult result =
+            await test.Service.RecordAsync(
+                new RecordAttendancePunchRequest(
+                    test.EmployeeId,
+                    AttendanceEventType.ClockOut,
+                    Utc(
+                        2026,
+                        8,
+                        21,
+                        0,
+                        30)));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            "Kỳ công của ngày chấm công đã được đóng. Không thể ghi nhận chấm công.",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            1,
+            test.PeriodLockPolicy.CallCount);
+
+        Assert.Equal(
+            recordWorkDate,
+            test.PeriodLockPolicy.LastWorkDate);
+
+        Assert.Equal(
+            0,
+            test.ContextResolver.CallCount);
+
+        Assert.Null(
+            test.Persistence.NewEvent);
+    }
+
     private static TestContext CreateContext()
     {
         Guid employeeId =
@@ -673,12 +811,16 @@ public sealed class AttendancePunchServiceTests
         var persistence =
             new StubAttendancePunchPersistence();
 
+        var periodLockPolicy =
+            new StubAttendancePeriodLockPolicy();
+
         var service =
             new AttendancePunchService(
                 recordRepository,
                 eventRepository,
                 contextResolver,
-                persistence);
+                persistence,
+                periodLockPolicy);
 
         return new TestContext(
             employeeId,
@@ -689,7 +831,8 @@ public sealed class AttendancePunchServiceTests
             recordRepository,
             eventRepository,
             contextResolver,
-            persistence);
+            persistence,
+            periodLockPolicy);
     }
 
     private static AttendanceRecord CreateRecord(
@@ -762,7 +905,8 @@ public sealed class AttendancePunchServiceTests
         StubAttendanceRecordRepository RecordRepository,
         StubAttendanceEventRepository EventRepository,
         StubAttendancePunchContextResolver ContextResolver,
-        StubAttendancePunchPersistence Persistence);
+        StubAttendancePunchPersistence Persistence,
+        StubAttendancePeriodLockPolicy PeriodLockPolicy);
 
     private sealed class StubAttendanceRecordRepository
         : IAttendanceRecordRepository
