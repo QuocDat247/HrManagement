@@ -45,7 +45,13 @@ public sealed class MonthlyTimesheetQueryService
                 month,
                 period.Id,
                 TimesheetPeriodStatus.Closed,
-                closedItems);
+                closedItems,
+                ClosedAtUtc:
+                    period.ClosedAtUtc,
+                ClosedByUserId:
+                    period.ClosedByUserId,
+                ClosedByUsername:
+                    period.ClosedByUsername);
         }
 
         DateOnly startDate =

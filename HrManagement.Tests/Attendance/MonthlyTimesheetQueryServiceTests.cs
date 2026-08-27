@@ -161,6 +161,18 @@ public sealed class MonthlyTimesheetQueryServiceTests
             result.TimesheetPeriodId);
 
         Assert.Equal(
+            period.ClosedAtUtc,
+            result.ClosedAtUtc);
+
+        Assert.Equal(
+            "user-1",
+            result.ClosedByUserId);
+
+        Assert.Equal(
+            "admin",
+            result.ClosedByUsername);
+
+        Assert.Equal(
             0,
             source.LiveReadCount);
 

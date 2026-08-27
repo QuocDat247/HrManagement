@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Attendance.Timesheets;
+using HrManagement.Desktop.Services;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -9,6 +10,12 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
 {
     private readonly IMonthlyTimesheetQueryService
         _queryService;
+
+    private readonly ICloseTimesheetPeriodService
+        _closePeriodService;
+
+    private readonly IUserConfirmationService
+        _confirmationService;
 
     private readonly TimeProvider
         _timeProvider;
@@ -56,6 +63,24 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
     private int correctedDayCount;
 
     [ObservableProperty]
+    private string closingReadinessText =
+        "Chưa tải";
+
+    [ObservableProperty]
+    private string closedAtText =
+        "—";
+
+    [ObservableProperty]
+    private string closedByText =
+        "—";
+
+    [ObservableProperty]
+    private bool canAttemptClosePeriod;
+
+    [ObservableProperty]
+    private bool isClosingPeriod;
+
+    [ObservableProperty]
     private bool isLoading;
 
     [ObservableProperty]
@@ -63,13 +88,26 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
 
     public MonthlyTimesheetWorkspaceViewModel(
         IMonthlyTimesheetQueryService queryService,
+        ICloseTimesheetPeriodService closePeriodService,
+        IUserConfirmationService confirmationService,
         TimeProvider timeProvider)
     {
         _queryService =
             queryService;
 
+        _closePeriodService =
+            closePeriodService;
+
+        _confirmationService =
+            confirmationService;
+
         _timeProvider =
             timeProvider;
+
+        ClosePeriodCommand =
+            new AsyncRelayCommand(
+                ClosePeriodAsync,
+                CanCloseDisplayedPeriod);
 
         DateTimeOffset localNow =
             _timeProvider.GetLocalNow();
@@ -109,6 +147,96 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand ClosePeriodCommand
+    {
+        get;
+    }
+
+    private async Task ClosePeriodAsync()
+    {
+        if (!CanCloseDisplayedPeriod()
+            || Timesheet is null)
+        {
+            return;
+        }
+
+        int year =
+            Timesheet.Year;
+
+        int month =
+            Timesheet.Month;
+
+        bool confirmed =
+            _confirmationService.Confirm(
+                "Xác nhận đóng kỳ công",
+                $"Bạn sắp đóng kỳ công tháng {month:00}/{year}.\n\n"
+                + "Sau khi đóng, dữ liệu bảng công của kỳ sẽ được chốt thành bản chụp bất biến "
+                + "và các thao tác chấm công, điều chỉnh hoặc tính lại trong kỳ sẽ bị khóa.\n\n"
+                + "Bạn có chắc chắn muốn tiếp tục?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        IsClosingPeriod =
+            true;
+
+        ClosePeriodCommand
+            .NotifyCanExecuteChanged();
+
+        try
+        {
+            CloseTimesheetPeriodResult result =
+                await _closePeriodService
+                    .CloseAsync(
+                        new CloseTimesheetPeriodRequest(
+                            year,
+                            month));
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    string.IsNullOrWhiteSpace(
+                        result.ErrorMessage)
+                        ? "Không thể đóng kỳ công."
+                        : result.ErrorMessage;
+
+                return;
+            }
+
+            await LoadAsync();
+        }
+        catch (Exception exception)
+        {
+            ErrorMessage =
+                exception.Message;
+        }
+        finally
+        {
+            IsClosingPeriod =
+                false;
+
+            ClosePeriodCommand
+                .NotifyCanExecuteChanged();
+        }
+    }
+
+    private bool CanCloseDisplayedPeriod()
+    {
+        return
+            !IsLoading
+            && !IsClosingPeriod
+            && CanAttemptClosePeriod
+            && Timesheet is not null
+            && !Timesheet.IsClosed
+            && Timesheet.Year == SelectedYear
+            && Timesheet.Month == SelectedMonth;
+    }
+
     private async Task LoadAsync()
     {
         ErrorMessage =
@@ -137,6 +265,9 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
         IsLoading =
             true;
 
+        ClosePeriodCommand
+            .NotifyCanExecuteChanged();
+
         try
         {
             MonthlyTimesheetReadModel readModel =
@@ -159,6 +290,9 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
         {
             IsLoading =
                 false;
+
+            ClosePeriodCommand
+                .NotifyCanExecuteChanged();
         }
     }
 
@@ -215,6 +349,28 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
             loadedRows.Count(
                 row =>
                     row.CorrectionRevision > 0);
+
+        CanAttemptClosePeriod =
+            !readModel.IsClosed
+            && PendingDayCount == 0;
+
+        ClosingReadinessText =
+            GetClosingReadinessText(
+                readModel,
+                PendingDayCount);
+
+        ClosedAtText =
+            FormatClosedAt(
+                readModel.ClosedAtUtc);
+
+        ClosedByText =
+            !string.IsNullOrWhiteSpace(
+                readModel.ClosedByUsername)
+                    ? readModel.ClosedByUsername
+                    : "—";
+
+        ClosePeriodCommand
+            .NotifyCanExecuteChanged();
     }
 
     private void ClearLoadedData()
@@ -242,6 +398,75 @@ public sealed partial class MonthlyTimesheetWorkspaceViewModel
 
         CorrectedDayCount =
             0;
+
+        ClosingReadinessText =
+            "Chưa tải";
+
+        ClosedAtText =
+            "—";
+
+        ClosedByText =
+            "—";
+
+        CanAttemptClosePeriod =
+            false;
+
+        ClosePeriodCommand
+            .NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedYearChanged(
+    int value)
+    {
+        ClosePeriodCommand?
+            .NotifyCanExecuteChanged();
+    }
+
+    partial void OnSelectedMonthChanged(
+        int value)
+    {
+        ClosePeriodCommand?
+            .NotifyCanExecuteChanged();
+    }
+
+    private static string GetClosingReadinessText(
+    MonthlyTimesheetReadModel readModel,
+    int pendingDayCount)
+    {
+        if (readModel.IsClosed)
+        {
+            return "Kỳ đã đóng";
+        }
+
+        if (pendingDayCount > 0)
+        {
+            return
+                $"Còn {pendingDayCount} ngày chờ xử lý";
+        }
+
+        return "Sẵn sàng kiểm tra đóng kỳ";
+    }
+
+    private string FormatClosedAt(
+        DateTime? closedAtUtc)
+    {
+        if (!closedAtUtc.HasValue)
+        {
+            return "—";
+        }
+
+        DateTime utcValue =
+            DateTime.SpecifyKind(
+                closedAtUtc.Value,
+                DateTimeKind.Utc);
+
+        DateTime localValue =
+            TimeZoneInfo.ConvertTimeFromUtc(
+                utcValue,
+                _timeProvider.LocalTimeZone);
+
+        return localValue.ToString(
+            "dd/MM/yyyy HH:mm");
     }
 
     private static IReadOnlyList<int> CreateYearOptions(

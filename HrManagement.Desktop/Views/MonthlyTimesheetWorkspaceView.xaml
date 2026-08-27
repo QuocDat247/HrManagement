@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -183,8 +184,75 @@
 
         </Border>
 
+        <!-- PERIOD CLOSING -->
+        <Border Grid.Row="2"
+        Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,12">
+
+            <Grid>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="160" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+
+                    <TextBlock Text="Đóng kỳ công"
+                       FontSize="16"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    <TextBlock Margin="0,5,20,0"
+                       Text="{Binding ClosingReadinessText}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                    Margin="20,0,0,0">
+
+                    <TextBlock Text="Thời điểm đóng"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Margin="0,5,0,0"
+                       Text="{Binding ClosedAtText}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                    Margin="20,0,0,0">
+
+                    <TextBlock Text="Người đóng"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Margin="0,5,0,0"
+                       Text="{Binding ClosedByText}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                </StackPanel>
+
+                <Button Grid.Column="3"
+                        Margin="20,0,0,0"
+                        MinHeight="36"
+                        Padding="14,7"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Center"
+                        Content="Đóng kỳ công"
+                        Command="{Binding ClosePeriodCommand}"
+                        ToolTip="{Binding ClosingReadinessText}" />
+
+            </Grid>
+
+        </Border>
         <!-- MESSAGE -->
-        <StackPanel Grid.Row="2"
+        <StackPanel Grid.Row="3"
                     Margin="0,0,0,10">
 
             <TextBlock Text="{Binding ErrorMessage}"
@@ -222,7 +290,7 @@
         </StackPanel>
 
         <!-- TIMESHEET -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 Style="{DynamicResource CardBorderStyle}">
 
             <Grid>

@@ -7,7 +7,10 @@ public sealed record MonthlyTimesheetReadModel(
     int Month,
     Guid? TimesheetPeriodId,
     TimesheetPeriodStatus PeriodStatus,
-    IReadOnlyList<MonthlyTimesheetDayItem> Items)
+    IReadOnlyList<MonthlyTimesheetDayItem> Items,
+    DateTime? ClosedAtUtc = null,
+    string? ClosedByUserId = null,
+    string? ClosedByUsername = null)
 {
     public bool IsClosed =>
         PeriodStatus ==

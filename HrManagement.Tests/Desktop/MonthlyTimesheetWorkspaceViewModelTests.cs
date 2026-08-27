@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Services;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Desktop.ViewModels;
@@ -27,6 +28,8 @@ public sealed class MonthlyTimesheetWorkspaceViewModelTests
         var viewModel =
             new MonthlyTimesheetWorkspaceViewModel(
                 queryService,
+                new StubCloseTimesheetPeriodService(),
+                new StubUserConfirmationService(),
                 timeProvider);
 
         Assert.Equal(
@@ -277,6 +280,21 @@ public sealed class MonthlyTimesheetWorkspaceViewModelTests
             1,
             viewModel.PendingDayCount);
 
+        Assert.False(
+            viewModel.CanAttemptClosePeriod);
+
+        Assert.Equal(
+            "Còn 1 ngày chờ xử lý",
+            viewModel.ClosingReadinessText);
+
+        Assert.Equal(
+            "—",
+            viewModel.ClosedAtText);
+
+        Assert.Equal(
+            "—",
+            viewModel.ClosedByText);
+
         Assert.Equal(
             1,
             viewModel.CorrectedDayCount);
@@ -332,7 +350,20 @@ public sealed class MonthlyTimesheetWorkspaceViewModelTests
                 Guid.NewGuid(),
                 TimesheetPeriodStatus.Closed,
                 Items:
-                    []);
+                    [],
+                ClosedAtUtc:
+                    new DateTime(
+                        2026,
+                        8,
+                        31,
+                        12,
+                        30,
+                        0,
+                        DateTimeKind.Utc),
+                ClosedByUserId:
+                    "user-1",
+                ClosedByUsername:
+                    "admin");
 
         var queryService =
             new StubMonthlyTimesheetQueryService
@@ -356,15 +387,373 @@ public sealed class MonthlyTimesheetWorkspaceViewModelTests
         Assert.Equal(
             "Bản chụp đã đóng",
             viewModel.DataSourceText);
+
+        Assert.False(
+            viewModel.CanAttemptClosePeriod);
+
+        Assert.Equal(
+            "Kỳ đã đóng",
+            viewModel.ClosingReadinessText);
+
+        Assert.Equal(
+            "31/08/2026 12:30",
+            viewModel.ClosedAtText);
+
+        Assert.Equal(
+            "admin",
+            viewModel.ClosedByText);
+    }
+
+    [Fact]
+    public async Task LoadAsync_WhenOpenAndAllRowsAreFinalized_IsReadyToAttemptClose()
+    {
+        var readModel =
+            new MonthlyTimesheetReadModel(
+                2026,
+                8,
+                TimesheetPeriodId:
+                    null,
+                TimesheetPeriodStatus.Open,
+                Items:
+                [
+                    new MonthlyTimesheetDayItem(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    new DateOnly(
+                        2026,
+                        8,
+                        24),
+                    true,
+                    480,
+                    AttendanceCalculationStatus.Present,
+                    480,
+                    0,
+                    0,
+                    0,
+                    "NV001",
+                    "Nguyễn Văn An")
+                ]);
+
+        var queryService =
+            new StubMonthlyTimesheetQueryService
+            {
+                Result =
+                    readModel
+            };
+
+        MonthlyTimesheetWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            viewModel.CanAttemptClosePeriod);
+
+        Assert.Equal(
+            "Sẵn sàng kiểm tra đóng kỳ",
+            viewModel.ClosingReadinessText);
+    }
+
+    [Fact]
+    public async Task ClosePeriodAsync_WhenConfirmationIsRejected_DoesNotClose()
+    {
+        var queryService =
+            new StubMonthlyTimesheetQueryService
+            {
+                Result =
+                    CreateReadyOpenTimesheet()
+            };
+
+        var closeService =
+            new StubCloseTimesheetPeriodService();
+
+        var confirmationService =
+            new StubUserConfirmationService
+            {
+                Result =
+                    false
+            };
+
+        MonthlyTimesheetWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService,
+                closeService,
+                confirmationService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            viewModel.CanAttemptClosePeriod);
+
+        await viewModel.ClosePeriodCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            confirmationService.CallCount);
+
+        Assert.Equal(
+            0,
+            closeService.CallCount);
+
+        Assert.False(
+            viewModel.Timesheet!.IsClosed);
+    }
+
+    [Fact]
+    public async Task ClosePeriodAsync_WhenSuccessful_RefreshesClosedSnapshot()
+    {
+        MonthlyTimesheetReadModel openTimesheet =
+            CreateReadyOpenTimesheet();
+
+        var queryService =
+            new StubMonthlyTimesheetQueryService
+            {
+                Result =
+                    openTimesheet
+            };
+
+        var closeService =
+            new StubCloseTimesheetPeriodService
+            {
+                Result =
+                    new CloseTimesheetPeriodResult(
+                        IsSuccessful:
+                            true,
+                        TimesheetPeriodId:
+                            Guid.NewGuid(),
+                        SnapshotCount:
+                            1,
+                        ClosedAtUtc:
+                            new DateTime(
+                                2026,
+                                8,
+                                31,
+                                12,
+                                30,
+                                0,
+                                DateTimeKind.Utc))
+            };
+
+        var confirmationService =
+            new StubUserConfirmationService
+            {
+                Result =
+                    true
+            };
+
+        MonthlyTimesheetWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService,
+                closeService,
+                confirmationService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        queryService.Result =
+            new MonthlyTimesheetReadModel(
+                2026,
+                8,
+                Guid.NewGuid(),
+                TimesheetPeriodStatus.Closed,
+                openTimesheet.Items,
+                ClosedAtUtc:
+                    new DateTime(
+                        2026,
+                        8,
+                        31,
+                        12,
+                        30,
+                        0,
+                        DateTimeKind.Utc),
+                ClosedByUserId:
+                    "user-1",
+                ClosedByUsername:
+                    "admin");
+
+        await viewModel.ClosePeriodCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            closeService.CallCount);
+
+        Assert.NotNull(
+            closeService.LastRequest);
+
+        Assert.Equal(
+            2026,
+            closeService.LastRequest!.Year);
+
+        Assert.Equal(
+            8,
+            closeService.LastRequest.Month);
+
+        Assert.Equal(
+            2,
+            queryService.CallCount);
+
+        Assert.True(
+            viewModel.Timesheet!.IsClosed);
+
+        Assert.Equal(
+            "Đã đóng",
+            viewModel.PeriodStatusText);
+
+        Assert.Equal(
+            "Bản chụp đã đóng",
+            viewModel.DataSourceText);
+
+        Assert.Equal(
+            "admin",
+            viewModel.ClosedByText);
+
+        Assert.False(
+            viewModel.CanAttemptClosePeriod);
+    }
+
+    [Fact]
+    public async Task ClosePeriodAsync_WhenServiceRejects_ShowsErrorAndDoesNotRefresh()
+    {
+        var queryService =
+            new StubMonthlyTimesheetQueryService
+            {
+                Result =
+                    CreateReadyOpenTimesheet()
+            };
+
+        var closeService =
+            new StubCloseTimesheetPeriodService
+            {
+                Result =
+                    new CloseTimesheetPeriodResult(
+                        IsSuccessful:
+                            false,
+                        ErrorMessage:
+                            "Kỳ công còn dữ liệu chưa hoàn tất.")
+            };
+
+        var confirmationService =
+            new StubUserConfirmationService
+            {
+                Result =
+                    true
+            };
+
+        MonthlyTimesheetWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService,
+                closeService,
+                confirmationService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        await viewModel.ClosePeriodCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            closeService.CallCount);
+
+        Assert.Equal(
+            1,
+            queryService.CallCount);
+
+        Assert.Equal(
+            "Kỳ công còn dữ liệu chưa hoàn tất.",
+            viewModel.ErrorMessage);
+
+        Assert.False(
+            viewModel.Timesheet!.IsClosed);
+    }
+
+    [Fact]
+    public async Task ClosePeriodCommand_WhenSelectionChangesWithoutRefresh_IsDisabled()
+    {
+        var queryService =
+            new StubMonthlyTimesheetQueryService
+            {
+                Result =
+                    CreateReadyOpenTimesheet()
+            };
+
+        MonthlyTimesheetWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            viewModel.ClosePeriodCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedMonth =
+            9;
+
+        Assert.False(
+            viewModel.ClosePeriodCommand
+                .CanExecute(
+                    null));
+    }
+
+    private static MonthlyTimesheetReadModel
+    CreateReadyOpenTimesheet()
+    {
+        return new MonthlyTimesheetReadModel(
+            2026,
+            8,
+            TimesheetPeriodId:
+                null,
+            TimesheetPeriodStatus.Open,
+            Items:
+            [
+                new MonthlyTimesheetDayItem(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                new DateOnly(
+                    2026,
+                    8,
+                    24),
+                true,
+                480,
+                AttendanceCalculationStatus.Present,
+                480,
+                0,
+                0,
+                0,
+                "NV001",
+                "Nguyễn Văn An")
+            ]);
     }
 
     private static MonthlyTimesheetWorkspaceViewModel
-        CreateViewModel(
-            StubMonthlyTimesheetQueryService? queryService = null)
+    CreateViewModel(
+        StubMonthlyTimesheetQueryService? queryService = null,
+        StubCloseTimesheetPeriodService? closePeriodService = null,
+        StubUserConfirmationService? confirmationService = null)
     {
         return new MonthlyTimesheetWorkspaceViewModel(
             queryService
                 ?? new StubMonthlyTimesheetQueryService(),
+            closePeriodService
+                ?? new StubCloseTimesheetPeriodService(),
+            confirmationService
+                ?? new StubUserConfirmationService(),
             new FixedTimeProvider(
                 new DateTimeOffset(
                     2026,
@@ -439,6 +828,100 @@ public sealed class MonthlyTimesheetWorkspaceViewModelTests
 
             return Task.FromResult(
                 Result);
+        }
+    }
+
+    private sealed class StubCloseTimesheetPeriodService
+    : ICloseTimesheetPeriodService
+    {
+        public CloseTimesheetPeriodResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                IsSuccessful:
+                    true,
+                TimesheetPeriodId:
+                    Guid.NewGuid(),
+                SnapshotCount:
+                    0,
+                ClosedAtUtc:
+                    new DateTime(
+                        2026,
+                        8,
+                        31,
+                        12,
+                        0,
+                        0,
+                        DateTimeKind.Utc));
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public CloseTimesheetPeriodRequest? LastRequest
+        {
+            get;
+            private set;
+        }
+
+        public Task<CloseTimesheetPeriodResult> CloseAsync(
+            CloseTimesheetPeriodRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            LastRequest =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
+    private sealed class StubUserConfirmationService
+        : IUserConfirmationService
+    {
+        public bool Result
+        {
+            get;
+            set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public string? LastTitle
+        {
+            get;
+            private set;
+        }
+
+        public string? LastMessage
+        {
+            get;
+            private set;
+        }
+
+        public bool Confirm(
+            string title,
+            string message)
+        {
+            CallCount++;
+
+            LastTitle =
+                title;
+
+            LastMessage =
+                message;
+
+            return Result;
         }
     }
 

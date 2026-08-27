@@ -1,3 +1,4 @@
+using HrManagement.Application.Authentication;
 using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Application.Auditing;
 using HrManagement.Domain.Attendance.Calculations;
@@ -379,6 +380,166 @@ public sealed class CloseTimesheetPeriodPersistenceTests
             audit.EntityId);
     }
 
+    [Fact]
+    public async Task CloseService_WhenMonthIsComplete_SwitchesQueryToClosedSnapshotAndLocksPeriod()
+    {
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await database.SeedCompleteAttendanceAsync(
+                correctionRevisionCount: 2);
+
+        var querySource =
+            new EfMonthlyTimesheetQuerySource(
+                database.Factory);
+
+        var queryService =
+            new MonthlyTimesheetQueryService(
+                querySource);
+
+        MonthlyTimesheetReadModel beforeClose =
+            await queryService.GetAsync(
+                2026,
+                8);
+
+        Assert.False(
+            beforeClose.IsClosed);
+
+        Assert.Equal(
+            TimesheetPeriodStatus.Open,
+            beforeClose.PeriodStatus);
+
+        Assert.Null(
+            beforeClose.TimesheetPeriodId);
+
+        MonthlyTimesheetDayItem beforeItem =
+            Assert.Single(
+                beforeClose.Items);
+
+        Assert.Equal(
+            seed.AttendanceRecordId,
+            beforeItem.AttendanceRecordId);
+
+        Assert.Equal(
+            "EMP-CLOSE",
+            beforeItem.EmployeeCode);
+
+        Assert.Equal(
+            "Nhân viên kiểm thử",
+            beforeItem.EmployeeFullName);
+
+        Assert.Equal(
+            2,
+            beforeItem.CorrectionRevision);
+
+        DateTimeOffset closedAt =
+            new(
+                2026,
+                8,
+                24,
+                18,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var closeService =
+            new CloseTimesheetPeriodService(
+                database.Persistence,
+                new StubCurrentUserContext(),
+                new AuthenticatedTimesheetPeriodClosingAuthorizationPolicy(),
+                new FixedTimeProvider(
+                    closedAt));
+
+        CloseTimesheetPeriodResult closeResult =
+            await closeService.CloseAsync(
+                new CloseTimesheetPeriodRequest(
+                    2026,
+                    8));
+
+        Assert.True(
+            closeResult.IsSuccessful);
+
+        Assert.NotNull(
+            closeResult.TimesheetPeriodId);
+
+        Assert.Equal(
+            1,
+            closeResult.SnapshotCount);
+
+        Assert.Equal(
+            closedAt.UtcDateTime,
+            closeResult.ClosedAtUtc);
+
+        MonthlyTimesheetReadModel afterClose =
+            await queryService.GetAsync(
+                2026,
+                8);
+
+        Assert.True(
+            afterClose.IsClosed);
+
+        Assert.Equal(
+            TimesheetPeriodStatus.Closed,
+            afterClose.PeriodStatus);
+
+        Assert.Equal(
+            closeResult.TimesheetPeriodId,
+            afterClose.TimesheetPeriodId);
+
+        Assert.Equal(
+            closeResult.ClosedAtUtc,
+            afterClose.ClosedAtUtc);
+
+        Assert.Equal(
+            "user-1",
+            afterClose.ClosedByUserId);
+
+        Assert.Equal(
+            "admin",
+            afterClose.ClosedByUsername);
+
+        MonthlyTimesheetDayItem afterItem =
+            Assert.Single(
+                afterClose.Items);
+
+        Assert.Equal(
+            seed.AttendanceRecordId,
+            afterItem.AttendanceRecordId);
+
+        Assert.Equal(
+            seed.EmployeeId,
+            afterItem.EmployeeId);
+
+        Assert.Equal(
+            beforeItem.Status,
+            afterItem.Status);
+
+        Assert.Equal(
+            beforeItem.WorkedMinutes,
+            afterItem.WorkedMinutes);
+
+        Assert.Equal(
+            2,
+            afterItem.CorrectionRevision);
+
+        Assert.Equal(
+            "EMP-CLOSE",
+            afterItem.EmployeeCode);
+
+        Assert.Equal(
+            "Nhân viên kiểm thử",
+            afterItem.EmployeeFullName);
+
+        var periodLockPolicy =
+            new EfAttendancePeriodLockPolicy(
+                database.Factory);
+
+        Assert.True(
+            await periodLockPolicy.IsLockedAsync(
+                seed.WorkDate));
+    }
+
     private static async Task AssertNoTimesheetWritesAsync(
         TestDatabase database)
     {
@@ -557,6 +718,23 @@ public sealed class CloseTimesheetPeriodPersistenceTests
             Guid attendanceRecordId =
                 Guid.NewGuid();
 
+            var employee =
+                new Employee(
+                    employeeId,
+                    "EMP-CLOSE",
+                    "Nhân viên kiểm thử",
+                    email: null,
+                    phoneNumber: null,
+                    dateOfBirth: null,
+                    hireDate:
+                        workDate,
+                    department:
+                        "Kiểm thử",
+                    position:
+                        "Nhân viên",
+                    status:
+                        EmployeeStatus.Active);
+
             var employmentPeriod =
                 new EmploymentPeriod(
                     employmentPeriodId,
@@ -616,6 +794,9 @@ public sealed class CloseTimesheetPeriodPersistenceTests
                 HrManagementDbContext dbContext =
                     await Factory.CreateDbContextAsync())
             {
+                dbContext.Employees.Add(
+                    employee);
+
                 dbContext.EmploymentPeriods.Add(
                     employmentPeriod);
 
@@ -693,6 +874,44 @@ public sealed class CloseTimesheetPeriodPersistenceTests
         {
             await _connection.DisposeAsync();
         }
+    }
+
+    private sealed class StubCurrentUserContext
+    : ICurrentUserContext
+    {
+        public AuthenticatedUser? CurrentUser
+        {
+            get;
+        } =
+            new(
+                "user-1",
+                "admin",
+                "Administrator");
+
+        public bool IsAuthenticated =>
+            CurrentUser is not null;
+    }
+
+    private sealed class FixedTimeProvider
+        : TimeProvider
+    {
+        private readonly DateTimeOffset
+            _utcNow;
+
+        public FixedTimeProvider(
+            DateTimeOffset utcNow)
+        {
+            _utcNow =
+                utcNow;
+        }
+
+        public override DateTimeOffset GetUtcNow()
+        {
+            return _utcNow;
+        }
+
+        public override TimeZoneInfo LocalTimeZone =>
+            TimeZoneInfo.Utc;
     }
 
     private sealed class TestDbContextFactory
