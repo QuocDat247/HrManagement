@@ -197,6 +197,22 @@ public static class ServiceCollectionExtensions
             SubmitOvertimeRequestService>();
 
         services.AddSingleton<
+            IOvertimeRequestStatusTransitionContextSource,
+            EfOvertimeRequestStatusTransitionContextSource>();
+
+        services.AddSingleton<
+            IOvertimeRequestStatusTransitionPersistence,
+            EfOvertimeRequestStatusTransitionPersistence>();
+
+        services.AddSingleton<
+            IOvertimeRequestStatusAuthorizationPolicy,
+            AuthenticatedOvertimeRequestStatusAuthorizationPolicy>();
+
+        services.AddScoped<
+            IOvertimeRequestStatusService,
+            OvertimeRequestStatusService>();
+
+        services.AddSingleton<
             ITimesheetPeriodClosingAuthorizationPolicy,
             AuthenticatedTimesheetPeriodClosingAuthorizationPolicy>();
 
