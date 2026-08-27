@@ -153,6 +153,8 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<MonthlyTimesheetWorkspaceViewModel>();
 
+        services.AddTransient<OvertimeWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();

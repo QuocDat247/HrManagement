@@ -198,7 +198,7 @@ public sealed class OvertimeRequestStatusServiceTests
     }
 
     [Fact]
-    public async Task ChangeStatusAsync_WhenExpectedStatusIsStale_FailsBeforePeriodLock()
+    public async Task ChangeStatusAsync_WhenExpectedStatusIsStale_FailsBeforePersistence()
     {
         OvertimeRequest overtimeRequest =
             CreatePendingRequest();
@@ -219,39 +219,6 @@ public sealed class OvertimeRequestStatusServiceTests
 
         Assert.Equal(
             "Yêu cầu tăng ca đã thay đổi trạng thái. Vui lòng làm mới dữ liệu trước khi thao tác.",
-            result.ErrorMessage);
-
-        Assert.Equal(
-            0,
-            context.PeriodLockPolicy.CallCount);
-
-        Assert.Empty(
-            context.Persistence.Applied);
-    }
-
-    [Fact]
-    public async Task ChangeStatusAsync_WhenPeriodIsClosed_FailsBeforePersistence()
-    {
-        OvertimeRequest overtimeRequest =
-            CreatePendingRequest();
-
-        TestContext context =
-            CreateContext(
-                overtimeRequest);
-
-        context.PeriodLockPolicy.IsLocked =
-            true;
-
-        ChangeOvertimeRequestStatusResult result =
-            await context.Service.ChangeStatusAsync(
-                ValidApproveRequest(
-                    overtimeRequest));
-
-        Assert.False(
-            result.IsSuccessful);
-
-        Assert.Equal(
-            "Kỳ công của ngày tăng ca đã được đóng. Không thể thay đổi trạng thái yêu cầu tăng ca.",
             result.ErrorMessage);
 
         Assert.Empty(
@@ -363,7 +330,6 @@ public sealed class OvertimeRequestStatusServiceTests
                 contextSource,
                 persistence,
                 authorizationPolicy,
-                periodLockPolicy,
                 currentUserContext,
                 new FixedTimeProvider(
                     new DateTimeOffset(
@@ -375,7 +341,6 @@ public sealed class OvertimeRequestStatusServiceTests
             contextSource,
             persistence,
             authorizationPolicy,
-            periodLockPolicy,
             currentUserContext);
     }
 
@@ -401,7 +366,6 @@ public sealed class OvertimeRequestStatusServiceTests
         StubContextSource ContextSource,
         StubPersistence Persistence,
         StubAuthorizationPolicy AuthorizationPolicy,
-        StubPeriodLockPolicy PeriodLockPolicy,
         StubCurrentUserContext CurrentUserContext);
 
     private sealed class StubContextSource

@@ -24,6 +24,7 @@ using HrManagement.Application.Leave.Types;
 using HrManagement.Application.Organization.Memberships;
 using HrManagement.Application.Workspaces.AttendanceLeave;
 using HrManagement.Application.Workspaces.WorkSchedules;
+using HrManagement.Application.Workspaces.Overtime;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Calculations;
 using HrManagement.Infrastructure.Attendance.Calendars;
@@ -43,6 +44,7 @@ using HrManagement.Infrastructure.Organization.Memberships;
 using HrManagement.Infrastructure.Persistence;
 using HrManagement.Infrastructure.Workspaces.AttendanceLeave;
 using HrManagement.Infrastructure.Workspaces.WorkSchedules;
+using HrManagement.Infrastructure.Workspaces.Overtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -191,6 +193,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IOvertimeRequestSubmissionAuthorizationPolicy,
             AuthenticatedOvertimeRequestSubmissionAuthorizationPolicy>();
+
+        services.AddSingleton<
+            IOvertimeWorkspaceQueryService,
+            EfOvertimeWorkspaceQueryService>();
 
         services.AddScoped<
             ISubmitOvertimeRequestService,

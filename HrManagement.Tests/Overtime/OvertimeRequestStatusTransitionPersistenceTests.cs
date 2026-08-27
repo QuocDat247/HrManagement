@@ -216,7 +216,7 @@ public sealed class OvertimeRequestStatusTransitionPersistenceTests
     }
 
     [Fact]
-    public async Task ApplyAsync_WhenPeriodIsClosed_RejectsWithoutWrites()
+    public async Task ApplyAsync_WhenTimesheetPeriodIsClosed_AllowsExistingRequestApproval()
     {
         await using TestDatabase database =
             await TestDatabase.CreateAsync();
@@ -238,17 +238,10 @@ public sealed class OvertimeRequestStatusTransitionPersistenceTests
                 approvedMinutes:
                     120);
 
-        InvalidOperationException exception =
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () =>
-                    database.Persistence.ApplyAsync(
-                        statusChange,
-                        "user-1",
-                        "admin"));
-
-        Assert.Equal(
-            "Kỳ công của ngày tăng ca đã được đóng. Không thể thay đổi trạng thái yêu cầu tăng ca.",
-            exception.Message);
+        await database.Persistence.ApplyAsync(
+            statusChange,
+            "user-1",
+            "admin");
 
         await using HrManagementDbContext verification =
             await database.Factory.CreateDbContextAsync();
@@ -260,20 +253,40 @@ public sealed class OvertimeRequestStatusTransitionPersistenceTests
                 .SingleAsync();
 
         Assert.Equal(
-            OvertimeRequestStatus.Pending,
+            OvertimeRequestStatus.Approved,
             saved.Status);
 
-        Assert.Empty(
+        Assert.Equal(
+            120,
+            saved.ApprovedMinutes);
+
+        OvertimeRequestStatusChange history =
             await verification
                 .OvertimeRequestStatusChanges
                 .AsNoTracking()
-                .ToArrayAsync());
+                .SingleAsync();
 
-        Assert.Empty(
+        Assert.Equal(
+            OvertimeRequestStatus.Pending,
+            history.PreviousStatus);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Approved,
+            history.NewStatus);
+
+        AuditEntry audit =
             await verification
                 .AuditEntries
                 .AsNoTracking()
-                .ToArrayAsync());
+                .SingleAsync();
+
+        Assert.Equal(
+            AuditAction.Updated,
+            audit.Action);
+
+        Assert.Equal(
+            seed.Request.Id,
+            audit.EntityId);
     }
 
     [Fact]

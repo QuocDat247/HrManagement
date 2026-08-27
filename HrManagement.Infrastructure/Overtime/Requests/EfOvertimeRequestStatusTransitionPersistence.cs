@@ -3,7 +3,6 @@ using HrManagement.Application.Auditing;
 using HrManagement.Application.Overtime.Requests;
 using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Overtime.Requests;
-using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -70,21 +69,6 @@ public sealed class EfOvertimeRequestStatusTransitionPersistence
         {
             throw new OvertimeRequestStatusConcurrencyException(
                 "Yêu cầu tăng ca đã thay đổi trạng thái. Vui lòng làm mới dữ liệu trước khi thao tác.");
-        }
-
-        try
-        {
-            await AttendancePeriodWriteGuard
-                .EnsureUnlockedAsync(
-                    dbContext,
-                    persistedRequest.WorkDate,
-                    cancellationToken);
-        }
-        catch (InvalidOperationException exception)
-        {
-            throw new InvalidOperationException(
-                "Kỳ công của ngày tăng ca đã được đóng. Không thể thay đổi trạng thái yêu cầu tăng ca.",
-                exception);
         }
 
         if (!string.Equals(

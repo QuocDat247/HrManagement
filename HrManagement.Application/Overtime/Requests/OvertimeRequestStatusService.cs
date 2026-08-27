@@ -16,9 +16,6 @@ public sealed class OvertimeRequestStatusService
     private readonly IOvertimeRequestStatusAuthorizationPolicy
         _authorizationPolicy;
 
-    private readonly IAttendancePeriodLockPolicy
-        _periodLockPolicy;
-
     private readonly ICurrentUserContext
         _currentUserContext;
 
@@ -29,7 +26,6 @@ public sealed class OvertimeRequestStatusService
         IOvertimeRequestStatusTransitionContextSource contextSource,
         IOvertimeRequestStatusTransitionPersistence persistence,
         IOvertimeRequestStatusAuthorizationPolicy authorizationPolicy,
-        IAttendancePeriodLockPolicy periodLockPolicy,
         ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
     {
@@ -41,9 +37,6 @@ public sealed class OvertimeRequestStatusService
 
         _authorizationPolicy =
             authorizationPolicy;
-
-        _periodLockPolicy =
-            periodLockPolicy;
 
         _currentUserContext =
             currentUserContext;
@@ -111,18 +104,6 @@ public sealed class OvertimeRequestStatusService
         {
             return Failure(
                 "Yêu cầu tăng ca đã thay đổi trạng thái. Vui lòng làm mới dữ liệu trước khi thao tác.");
-        }
-
-        bool isPeriodLocked =
-            await _periodLockPolicy
-                .IsLockedAsync(
-                    overtimeRequest.WorkDate,
-                    cancellationToken);
-
-        if (isPeriodLocked)
-        {
-            return Failure(
-                "Kỳ công của ngày tăng ca đã được đóng. Không thể thay đổi trạng thái yêu cầu tăng ca.");
         }
 
         DateTime changedAtUtc =
