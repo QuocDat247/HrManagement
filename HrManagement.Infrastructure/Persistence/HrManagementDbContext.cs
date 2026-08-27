@@ -13,11 +13,20 @@ using HrManagement.Domain.Leave.Types;
 using HrManagement.Domain.Attendance.Calendars;
 using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Timesheets;
+using HrManagement.Domain.Overtime.Requests;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<OvertimeRequest>
+        OvertimeRequests =>
+            Set<OvertimeRequest>();
+
+    public DbSet<OvertimeRequestStatusChange>
+        OvertimeRequestStatusChanges =>
+            Set<OvertimeRequestStatusChange>();
+
     public DbSet<WorkScheduleDateOverride>
         WorkScheduleDateOverrides =>
             Set<WorkScheduleDateOverride>();
@@ -167,6 +176,12 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new MonthlyTimesheetDaySnapshotConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new OvertimeRequestConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new OvertimeRequestStatusChangeConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new LeaveTypeConfiguration());

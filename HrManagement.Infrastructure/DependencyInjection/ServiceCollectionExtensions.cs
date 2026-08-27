@@ -1,6 +1,8 @@
 using HrManagement.Application.Attendance.Corrections;
 using HrManagement.Infrastructure.Attendance.Corrections;
 using HrManagement.Application.Workspaces.HolidayExceptions;
+using HrManagement.Application.Overtime.Requests;
+using HrManagement.Infrastructure.Overtime.Requests;
 using HrManagement.Infrastructure.Workspaces.HolidayExceptions;
 using HrManagement.Application.Attendance.Calculations;
 using HrManagement.Application.Attendance.Calendars;
@@ -177,6 +179,22 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IAttendancePeriodLockPolicy,
             EfAttendancePeriodLockPolicy>();
+
+        services.AddSingleton<
+            IOvertimeRequestSubmissionContextSource,
+            EfOvertimeRequestSubmissionContextSource>();
+
+        services.AddSingleton<
+            IOvertimeRequestSubmissionPersistence,
+            EfOvertimeRequestSubmissionPersistence>();
+
+        services.AddSingleton<
+            IOvertimeRequestSubmissionAuthorizationPolicy,
+            AuthenticatedOvertimeRequestSubmissionAuthorizationPolicy>();
+
+        services.AddScoped<
+            ISubmitOvertimeRequestService,
+            SubmitOvertimeRequestService>();
 
         services.AddSingleton<
             ITimesheetPeriodClosingAuthorizationPolicy,

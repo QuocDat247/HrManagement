@@ -19,4 +19,7 @@ public static class AuditEntityTypes
 
     public const string TimesheetPeriod =
         "TimesheetPeriod";
+
+    public const string OvertimeRequest =
+        "OvertimeRequest";
 }
