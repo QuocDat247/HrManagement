@@ -9,6 +9,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -220,8 +221,144 @@
 
         </Border>
 
+        <!-- SUBMIT OVERTIME -->
+        <Border Grid.Row="2"
+        Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,12">
+
+            <Grid>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="170" />
+                    <ColumnDefinition Width="140" />
+                    <ColumnDefinition Width="2.5*" />
+                    <ColumnDefinition Width="150" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="0"
+                   Margin="0,0,10,5"
+                   Text="Nhân viên"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="1"
+                   Margin="0,0,10,5"
+                   Text="Ngày tăng ca"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="2"
+                   Margin="0,0,10,5"
+                   Text="Số phút"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Grid.Row="0"
+                   Grid.Column="3"
+                   Margin="0,0,10,5"
+                   Text="Lý do"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <ComboBox Grid.Row="1"
+                  Grid.Column="0"
+                  Margin="0,0,10,0"
+                  MinHeight="32"
+                  ItemsSource="{Binding SubmissionEmployeeOptions}"
+                  DisplayMemberPath="DisplayName"
+                  SelectedItem="{Binding SelectedSubmissionEmployeeOption,
+                                         Mode=TwoWay}" />
+
+                <DatePicker Grid.Row="1"
+                    Grid.Column="1"
+                    Margin="0,0,10,0"
+                    MinHeight="32"
+                    SelectedDate="{Binding SubmissionWorkDate,
+                                           Mode=TwoWay}" />
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="2"
+                 Margin="0,0,10,0"
+                 MinHeight="32"
+                 MaxLength="4"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding SubmissionRequestedMinutesText,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox Grid.Row="1"
+                 Grid.Column="3"
+                 Margin="0,0,10,0"
+                 MinHeight="32"
+                 MaxLength="500"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding SubmissionReason,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}" />
+
+                <Button Grid.Row="1"
+                Grid.Column="4"
+                MinHeight="32"
+                Padding="12,6"
+                Content="Gửi yêu cầu"
+                Command="{Binding SubmitCommand}" />
+
+                <StackPanel Grid.Row="2"
+                    Grid.Column="0"
+                    Grid.ColumnSpan="5"
+                    Margin="0,8,0,0">
+
+                    <TextBlock Text="{Binding SubmissionErrorMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource WarningBrush}"
+                       FontWeight="SemiBold" />
+
+                    <TextBlock Text="{Binding SubmissionSuccessMessage}"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource PrimaryBrush}"
+                       FontWeight="SemiBold" />
+
+                    <TextBlock Text="Đang gửi yêu cầu tăng ca..."
+                       Foreground="{DynamicResource SecondaryTextBrush}"
+                       FontStyle="Italic">
+
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+
+                                <Setter Property="Visibility"
+                                Value="Collapsed" />
+
+                                <Style.Triggers>
+
+                                    <DataTrigger Binding="{Binding IsSubmitting}"
+                                         Value="True">
+
+                                        <Setter Property="Visibility"
+                                        Value="Visible" />
+
+                                    </DataTrigger>
+
+                                </Style.Triggers>
+
+                            </Style>
+                        </TextBlock.Style>
+
+                    </TextBlock>
+
+                </StackPanel>
+
+            </Grid>
+
+        </Border>
+
         <!-- MESSAGE -->
-        <StackPanel Grid.Row="2"
+        <StackPanel Grid.Row="3"
                     Margin="0,0,0,10">
 
             <TextBlock Text="{Binding ErrorMessage}"
@@ -259,7 +396,7 @@
         </StackPanel>
 
         <!-- WORKSPACE -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
 
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2.1*" />

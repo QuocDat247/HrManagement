@@ -1,4 +1,5 @@
 using HrManagement.Application.Workspaces.Overtime;
+using HrManagement.Application.Overtime.Requests;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Overtime.Requests;
 
@@ -300,12 +301,261 @@ public sealed class OvertimeWorkspaceViewModelTests
             viewModel.ErrorMessage);
     }
 
+    [Fact]
+    public async Task LoadAsync_PopulatesSubmissionEmployeeOptions()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var queryService =
+            new StubQueryService
+            {
+                Employees =
+                [
+                    new OvertimeEmployeeOption(
+                    employeeId,
+                    "EMP001",
+                    "Nguyễn Văn An")
+                ]
+            };
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        OvertimeSubmissionEmployeeOption option =
+            Assert.Single(
+                viewModel.SubmissionEmployeeOptions);
+
+        Assert.Equal(
+            employeeId,
+            option.EmployeeId);
+
+        Assert.Equal(
+            "EMP001 — Nguyễn Văn An",
+            option.DisplayName);
+
+        Assert.Same(
+            option,
+            viewModel.SelectedSubmissionEmployeeOption);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_WhenValid_SubmitsAndRefreshesSubmittedPeriod()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        Guid requestId =
+            Guid.NewGuid();
+
+        var queryService =
+            new StubQueryService
+            {
+                Employees =
+                [
+                    new OvertimeEmployeeOption(
+                    employeeId,
+                    "EMP001",
+                    "Nguyễn Văn An")
+                ]
+            };
+
+        var submitService =
+            new StubSubmitService
+            {
+                Result =
+                    new SubmitOvertimeRequestResult(
+                        IsSuccessful:
+                            true,
+                        OvertimeRequestId:
+                            requestId,
+                        Status:
+                            OvertimeRequestStatus.Pending)
+            };
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService,
+                submitService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        viewModel.SubmissionWorkDate =
+            new DateTime(
+                2026,
+                9,
+                2);
+
+        viewModel.SubmissionRequestedMinutesText =
+            "90";
+
+        viewModel.SubmissionReason =
+            "Hỗ trợ triển khai";
+
+        await viewModel.SubmitCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            submitService.CallCount);
+
+        Assert.NotNull(
+            submitService.LastRequest);
+
+        Assert.Equal(
+            employeeId,
+            submitService.LastRequest!.EmployeeId);
+
+        Assert.Equal(
+            new DateOnly(
+                2026,
+                9,
+                2),
+            submitService.LastRequest.WorkDate);
+
+        Assert.Equal(
+            90,
+            submitService.LastRequest.RequestedMinutes);
+
+        Assert.Equal(
+            "Hỗ trợ triển khai",
+            submitService.LastRequest.Reason);
+
+        Assert.Equal(
+            2026,
+            viewModel.SelectedYear);
+
+        Assert.Equal(
+            9,
+            viewModel.SelectedMonth);
+
+        Assert.Equal(
+            2,
+            queryService.QueryCallCount);
+
+        Assert.Equal(
+            "Đã gửi yêu cầu tăng ca thành công.",
+            viewModel.SubmissionSuccessMessage);
+
+        Assert.Null(
+            viewModel.SubmissionErrorMessage);
+    }
+
+    [Fact]
+    public async Task SubmitAsync_WhenServiceRejects_ShowsErrorWithoutRefresh()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var queryService =
+            new StubQueryService
+            {
+                Employees =
+                [
+                    new OvertimeEmployeeOption(
+                    employeeId,
+                    "EMP001",
+                    "Nguyễn Văn An")
+                ]
+            };
+
+        var submitService =
+            new StubSubmitService
+            {
+                Result =
+                    new SubmitOvertimeRequestResult(
+                        IsSuccessful:
+                            false,
+                        ErrorMessage:
+                            "Kỳ công của ngày tăng ca đã được đóng. Không thể gửi yêu cầu tăng ca.")
+            };
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService,
+                submitService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        await viewModel.SubmitCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            submitService.CallCount);
+
+        Assert.Equal(
+            1,
+            queryService.QueryCallCount);
+
+        Assert.Equal(
+            "Kỳ công của ngày tăng ca đã được đóng. Không thể gửi yêu cầu tăng ca.",
+            viewModel.SubmissionErrorMessage);
+
+        Assert.Null(
+            viewModel.SubmissionSuccessMessage);
+    }
+
+    private sealed class StubSubmitService
+    : ISubmitOvertimeRequestService
+    {
+        public SubmitOvertimeRequestResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                IsSuccessful:
+                    false,
+                ErrorMessage:
+                    "Chưa cấu hình kết quả kiểm thử.");
+
+        public SubmitOvertimeRequestRequest? LastRequest
+        {
+            get;
+            private set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task<SubmitOvertimeRequestResult> SubmitAsync(
+            SubmitOvertimeRequestRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            LastRequest =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
     private static OvertimeWorkspaceViewModel CreateViewModel(
-        StubQueryService? queryService = null)
+        StubQueryService? queryService = null,
+        StubSubmitService? submitService = null)
     {
         return new OvertimeWorkspaceViewModel(
             queryService
             ?? new StubQueryService(),
+            submitService
+            ?? new StubSubmitService(),
             new FixedTimeProvider(
                 new DateTimeOffset(
                     2026,
