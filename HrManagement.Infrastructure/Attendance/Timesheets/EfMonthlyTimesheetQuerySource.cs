@@ -109,6 +109,15 @@ public sealed class EfMonthlyTimesheetQuerySource
                         item.Revision,
                     cancellationToken);
 
+        Dictionary<Guid, EmployeeIdentity>
+            employeeIdentities =
+                await LoadEmployeeIdentitiesAsync(
+                    dbContext,
+                    records.Select(
+                        record =>
+                            record.EmployeeId),
+                    cancellationToken);
+
         return records
             .Select(
                 record =>
@@ -117,6 +126,11 @@ public sealed class EfMonthlyTimesheetQuerySource
                         correctionRevisions
                             .GetValueOrDefault(
                                 record.Id);
+
+                    EmployeeIdentity employeeIdentity =
+                        GetRequiredEmployeeIdentity(
+                            employeeIdentities,
+                            record.EmployeeId);
 
                     return new MonthlyTimesheetDayItem(
                         record.Id,
@@ -128,7 +142,9 @@ public sealed class EfMonthlyTimesheetQuerySource
                         record.WorkedMinutes,
                         record.LateMinutes,
                         record.EarlyLeaveMinutes,
-                        correctionRevision);
+                        correctionRevision,
+                        employeeIdentity.EmployeeCode,
+                        employeeIdentity.FullName);
                 })
             .ToArray();
     }
@@ -148,22 +164,47 @@ public sealed class EfMonthlyTimesheetQuerySource
                 .CreateDbContextAsync(
                     cancellationToken);
 
-        return await dbContext
-            .MonthlyTimesheetDaySnapshots
-            .AsNoTracking()
-            .Where(
-                snapshot =>
-                    snapshot.TimesheetPeriodId ==
-                    timesheetPeriodId)
-            .OrderBy(
-                snapshot =>
-                    snapshot.EmployeeId)
-            .ThenBy(
-                snapshot =>
-                    snapshot.WorkDate)
+        List<MonthlyTimesheetDaySnapshot> snapshots =
+    await dbContext
+        .MonthlyTimesheetDaySnapshots
+        .AsNoTracking()
+        .Where(
+            snapshot =>
+                snapshot.TimesheetPeriodId ==
+                timesheetPeriodId)
+        .OrderBy(
+            snapshot =>
+                snapshot.EmployeeId)
+        .ThenBy(
+            snapshot =>
+                snapshot.WorkDate)
+        .ToListAsync(
+            cancellationToken);
+
+        if (snapshots.Count == 0)
+        {
+            return [];
+        }
+
+        Dictionary<Guid, EmployeeIdentity>
+            employeeIdentities =
+                await LoadEmployeeIdentitiesAsync(
+                    dbContext,
+                    snapshots.Select(
+                        snapshot =>
+                            snapshot.EmployeeId),
+                    cancellationToken);
+
+        return snapshots
             .Select(
                 snapshot =>
-                    new MonthlyTimesheetDayItem(
+                {
+                    EmployeeIdentity employeeIdentity =
+                        GetRequiredEmployeeIdentity(
+                            employeeIdentities,
+                            snapshot.EmployeeId);
+
+                    return new MonthlyTimesheetDayItem(
                         snapshot.AttendanceRecordId,
                         snapshot.EmployeeId,
                         snapshot.WorkDate,
@@ -173,8 +214,68 @@ public sealed class EfMonthlyTimesheetQuerySource
                         snapshot.WorkedMinutes,
                         snapshot.LateMinutes,
                         snapshot.EarlyLeaveMinutes,
-                        snapshot.CorrectionRevision))
-            .ToListAsync(
+                        snapshot.CorrectionRevision,
+                        employeeIdentity.EmployeeCode,
+                        employeeIdentity.FullName);
+                })
+            .ToArray();
+    }
+
+    private static async Task<
+    Dictionary<Guid, EmployeeIdentity>>
+    LoadEmployeeIdentitiesAsync(
+        HrManagementDbContext dbContext,
+        IEnumerable<Guid> employeeIds,
+        CancellationToken cancellationToken)
+    {
+        Guid[] distinctEmployeeIds =
+            employeeIds
+                .Distinct()
+                .ToArray();
+
+        if (distinctEmployeeIds.Length == 0)
+        {
+            return [];
+        }
+
+        return await dbContext
+            .Employees
+            .AsNoTracking()
+            .Where(
+                employee =>
+                    distinctEmployeeIds.Contains(
+                        employee.Id))
+            .Select(
+                employee =>
+                    new EmployeeIdentity(
+                        employee.Id,
+                        employee.EmployeeCode,
+                        employee.FullName))
+            .ToDictionaryAsync(
+                employee =>
+                    employee.Id,
                 cancellationToken);
     }
+
+    private static EmployeeIdentity
+        GetRequiredEmployeeIdentity(
+            IReadOnlyDictionary<Guid, EmployeeIdentity>
+                employeeIdentities,
+            Guid employeeId)
+    {
+        if (!employeeIdentities.TryGetValue(
+                employeeId,
+                out EmployeeIdentity? employeeIdentity))
+        {
+            throw new InvalidOperationException(
+                $"Không tìm thấy nhân viên của dòng bảng công: {employeeId}.");
+        }
+
+        return employeeIdentity;
+    }
+
+    private sealed record EmployeeIdentity(
+        Guid Id,
+        string EmployeeCode,
+        string FullName);
 }

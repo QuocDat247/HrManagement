@@ -40,7 +40,11 @@ WindowStartupLocation="CenterScreen">
         <DataTemplate DataType="{x:Type vm:HolidayExceptionWorkspaceViewModel}">
             <views:HolidayExceptionWorkspaceView />
         </DataTemplate>
-        
+
+        <DataTemplate DataType="{x:Type vm:MonthlyTimesheetWorkspaceViewModel}">
+            <views:MonthlyTimesheetWorkspaceView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:AttendanceLeaveWorkspaceViewModel}">
             <views:AttendanceLeaveWorkspaceView />
         </DataTemplate>

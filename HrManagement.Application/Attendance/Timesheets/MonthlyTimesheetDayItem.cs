@@ -12,4 +12,6 @@ public sealed record MonthlyTimesheetDayItem(
     int WorkedMinutes,
     int LateMinutes,
     int EarlyLeaveMinutes,
-    int CorrectionRevision);
+    int CorrectionRevision,
+    string EmployeeCode = "",
+    string EmployeeFullName = "");

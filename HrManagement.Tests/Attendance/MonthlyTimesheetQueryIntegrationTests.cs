@@ -1,3 +1,4 @@
+using HrManagement.Domain.Employees;
 using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Domain.Attendance.Calculations;
 using HrManagement.Domain.Attendance.Corrections;
@@ -47,6 +48,14 @@ public sealed class MonthlyTimesheetQueryIntegrationTests
         Assert.Equal(
             seed.EmployeeId,
             item.EmployeeId);
+
+        Assert.Equal(
+            "NV001",
+            item.EmployeeCode);
+
+        Assert.Equal(
+            "Nguyễn Văn An",
+            item.EmployeeFullName);
 
         Assert.Equal(
             seed.WorkDate,
@@ -114,6 +123,14 @@ public sealed class MonthlyTimesheetQueryIntegrationTests
         Assert.Equal(
             seed.AttendanceRecordId,
             item.AttendanceRecordId);
+
+        Assert.Equal(
+            "NV001",
+            item.EmployeeCode);
+
+        Assert.Equal(
+            "Nguyễn Văn An",
+            item.EmployeeFullName);
 
         Assert.Equal(
             AttendanceCalculationStatus.Absent,
@@ -277,11 +294,31 @@ public sealed class MonthlyTimesheetQueryIntegrationTests
             Guid employeeId =
                 Guid.NewGuid();
 
-            DateOnly workDate =
-                new(
-                    2026,
-                    8,
-                    24);
+            var employee =
+                new Employee(
+                    employeeId,
+                    "NV001",
+                    "Nguyễn Văn An",
+                    "nguyenvanan@example.com",
+                    phoneNumber: null,
+                    dateOfBirth: null,
+                    hireDate:
+                        new DateOnly(
+                            2026,
+                            1,
+                            1),
+                    department:
+                        "Phòng phát triển",
+                    position:
+                        "Lập trình viên",
+                    status:
+                        EmployeeStatus.Active);
+
+                        DateOnly workDate =
+                            new(
+                                2026,
+                                8,
+                                24);
 
             var record =
                 new AttendanceRecord(
@@ -321,6 +358,9 @@ public sealed class MonthlyTimesheetQueryIntegrationTests
 
             await using HrManagementDbContext dbContext =
                 await Factory.CreateDbContextAsync();
+
+            dbContext.Employees.Add(
+                employee);
 
             dbContext.AttendanceRecords.Add(
                 record);
