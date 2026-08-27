@@ -480,64 +480,112 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0"
-                          Margin="0,0,0,10">
+                    <!-- ACTIONS -->
+                    <StackPanel Grid.Row="0"
+                Margin="0,0,0,14">
 
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Xử lý yêu cầu"
+                   FontSize="18"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
-                        <StackPanel>
+                        <TextBlock Margin="0,4,0,0"
+                   Text="{Binding SelectedRow.EmployeeName}"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
-                            <TextBlock Text="Lịch sử xử lý"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                        <TextBlock Margin="0,2,0,10"
+                   Text="{Binding SelectedRow.StatusText,
+                                  StringFormat=Trạng thái hiện tại: {0}}"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                            <TextBlock Margin="0,4,10,0"
-                                       Text="Chọn một yêu cầu để xem lịch sử."
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <TextBlock Text="Phút duyệt (khi duyệt)"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                        </StackPanel>
+                        <TextBox Margin="0,4,0,8"
+                 MinHeight="30"
+                 MaxLength="4"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding TransitionApprovedMinutesText,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}" />
 
-                        <Button Grid.Column="1"
-                                Padding="10,5"
-                                VerticalAlignment="Center"
-                                Content="Làm mới"
-                                Command="{Binding RefreshHistoryCommand}" />
+                        <TextBlock Text="Ghi chú"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                    </Grid>
+                        <TextBox Margin="0,4,0,8"
+                 MinHeight="30"
+                 MaxLength="500"
+                 VerticalContentAlignment="Center"
+                 Text="{Binding TransitionNote,
+                                Mode=TwoWay,
+                                UpdateSourceTrigger=PropertyChanged}" />
 
+                        <Grid>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Column="0"
+                    MinHeight="32"
+                    Content="Duyệt"
+                    Command="{Binding ApproveCommand}" />
+
+                            <Button Grid.Column="2"
+                    MinHeight="32"
+                    Content="Từ chối"
+                    Command="{Binding RejectCommand}" />
+
+                            <Button Grid.Column="4"
+                    MinHeight="32"
+                    Content="Hủy"
+                    Command="{Binding CancelCommand}" />
+
+                        </Grid>
+
+                    </StackPanel>
+
+                    <!-- TRANSITION MESSAGE -->
                     <StackPanel Grid.Row="1"
-                                Margin="0,0,0,8">
+                Margin="0,0,0,12">
 
-                        <TextBlock Text="{Binding HistoryErrorMessage}"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource WarningBrush}"
-                                   FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding TransitionErrorMessage}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource WarningBrush}"
+                   FontWeight="SemiBold" />
 
-                        <TextBlock Text="Đang tải lịch sử..."
-                                   Foreground="{DynamicResource SecondaryTextBrush}"
-                                   FontStyle="Italic">
+                        <TextBlock Text="{Binding TransitionSuccessMessage}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource PrimaryBrush}"
+                   FontWeight="SemiBold" />
+
+                        <TextBlock Text="Đang xử lý yêu cầu..."
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   FontStyle="Italic">
 
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
 
                                     <Setter Property="Visibility"
-                                            Value="Collapsed" />
+                            Value="Collapsed" />
 
                                     <Style.Triggers>
 
-                                        <DataTrigger Binding="{Binding IsHistoryLoading}"
-                                                     Value="True">
+                                        <DataTrigger Binding="{Binding IsChangingStatus}"
+                                     Value="True">
 
                                             <Setter Property="Visibility"
-                                                    Value="Visible" />
+                                    Value="Visible" />
 
                                         </DataTrigger>
 
@@ -550,39 +598,109 @@
 
                     </StackPanel>
 
-                    <DataGrid Grid.Row="2"
-                              ItemsSource="{Binding HistoryRows}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserAddRows="False"
-                              SelectionMode="Single">
+                    <!-- HISTORY HEADER -->
+                    <Grid Grid.Row="2"
+          Margin="0,0,0,10">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+
+                            <TextBlock Text="Lịch sử xử lý"
+                       FontSize="18"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                            <TextBlock Margin="0,4,10,0"
+                       Text="Chọn một yêu cầu để xem lịch sử."
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        </StackPanel>
+
+                        <Button Grid.Column="1"
+                Padding="10,5"
+                VerticalAlignment="Center"
+                Content="Làm mới"
+                Command="{Binding RefreshHistoryCommand}" />
+
+                    </Grid>
+
+                    <!-- HISTORY MESSAGE -->
+                    <StackPanel Grid.Row="3"
+                Margin="0,0,0,8">
+
+                        <TextBlock Text="{Binding HistoryErrorMessage}"
+                   TextWrapping="Wrap"
+                   Foreground="{DynamicResource WarningBrush}"
+                   FontWeight="SemiBold" />
+
+                        <TextBlock Text="Đang tải lịch sử..."
+                   Foreground="{DynamicResource SecondaryTextBrush}"
+                   FontStyle="Italic">
+
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+
+                                    <Setter Property="Visibility"
+                            Value="Collapsed" />
+
+                                    <Style.Triggers>
+
+                                        <DataTrigger Binding="{Binding IsHistoryLoading}"
+                                     Value="True">
+
+                                            <Setter Property="Visibility"
+                                    Value="Visible" />
+
+                                        </DataTrigger>
+
+                                    </Style.Triggers>
+
+                                </Style>
+                            </TextBlock.Style>
+
+                        </TextBlock>
+
+                    </StackPanel>
+
+                    <!-- HISTORY GRID -->
+                    <DataGrid Grid.Row="4"
+              ItemsSource="{Binding HistoryRows}"
+              AutoGenerateColumns="False"
+              IsReadOnly="True"
+              CanUserAddRows="False"
+              SelectionMode="Single">
 
                         <DataGrid.Columns>
 
                             <DataGridTextColumn Header="Thời điểm"
-                                                Width="135"
-                                                Binding="{Binding ChangedAtText}" />
+                                Width="135"
+                                Binding="{Binding ChangedAtText}" />
 
                             <DataGridTextColumn Header="Từ"
-                                                Width="95"
-                                                Binding="{Binding PreviousStatusText}" />
+                                Width="95"
+                                Binding="{Binding PreviousStatusText}" />
 
                             <DataGridTextColumn Header="Sang"
-                                                Width="95"
-                                                Binding="{Binding NewStatusText}" />
+                                Width="95"
+                                Binding="{Binding NewStatusText}" />
 
                             <DataGridTextColumn Header="Phút"
-                                                Width="65"
-                                                Binding="{Binding ApprovedMinutesText}" />
+                                Width="65"
+                                Binding="{Binding ApprovedMinutesText}" />
 
                             <DataGridTextColumn Header="Người xử lý"
-                                                Width="110"
-                                                Binding="{Binding ChangedByUsername}" />
+                                Width="110"
+                                Binding="{Binding ChangedByUsername}" />
 
                             <DataGridTextColumn Header="Ghi chú"
-                                                Width="2*"
-                                                MinWidth="130"
-                                                Binding="{Binding NoteText}" />
+                                Width="2*"
+                                MinWidth="130"
+                                Binding="{Binding NoteText}" />
 
                         </DataGrid.Columns>
 

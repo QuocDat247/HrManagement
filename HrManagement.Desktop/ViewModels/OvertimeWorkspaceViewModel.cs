@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HrManagement.Desktop.Services;
 using HrManagement.Application.Overtime.Requests;
 using HrManagement.Application.Workspaces.Overtime;
 using HrManagement.Domain.Overtime.Requests;
@@ -14,6 +15,12 @@ public sealed partial class OvertimeWorkspaceViewModel
 
     private readonly ISubmitOvertimeRequestService
         _submitService;
+
+    private readonly IOvertimeRequestStatusService
+        _statusService;
+
+    private readonly IUserConfirmationService
+        _confirmationService;
 
     private readonly TimeProvider
         _timeProvider;
@@ -107,6 +114,22 @@ public sealed partial class OvertimeWorkspaceViewModel
     private bool isSubmitting;
 
     [ObservableProperty]
+    private string transitionApprovedMinutesText =
+        string.Empty;
+
+    [ObservableProperty]
+    private string? transitionNote;
+
+    [ObservableProperty]
+    private bool isChangingStatus;
+
+    [ObservableProperty]
+    private string? transitionErrorMessage;
+
+    [ObservableProperty]
+    private string? transitionSuccessMessage;
+
+    [ObservableProperty]
     private string? submissionErrorMessage;
 
     [ObservableProperty]
@@ -127,6 +150,8 @@ public sealed partial class OvertimeWorkspaceViewModel
     public OvertimeWorkspaceViewModel(
         IOvertimeWorkspaceQueryService queryService,
         ISubmitOvertimeRequestService submitService,
+        IOvertimeRequestStatusService statusService,
+        IUserConfirmationService confirmationService,
         TimeProvider timeProvider)
     {
         _queryService =
@@ -134,6 +159,12 @@ public sealed partial class OvertimeWorkspaceViewModel
 
         _submitService =
             submitService;
+
+        _statusService =
+            statusService;
+
+        _confirmationService =
+            confirmationService;
 
         _timeProvider =
             timeProvider;
@@ -213,6 +244,21 @@ public sealed partial class OvertimeWorkspaceViewModel
             new AsyncRelayCommand(
                 SubmitAsync,
                 CanSubmit);
+
+        ApproveCommand =
+            new AsyncRelayCommand(
+                ApproveSelectedAsync,
+                CanApproveSelected);
+
+        RejectCommand =
+            new AsyncRelayCommand(
+                RejectSelectedAsync,
+                CanRejectSelected);
+
+        CancelCommand =
+            new AsyncRelayCommand(
+                CancelSelectedAsync,
+                CanCancelSelected);
     }
 
     public IAsyncRelayCommand LoadCommand
@@ -231,6 +277,21 @@ public sealed partial class OvertimeWorkspaceViewModel
     }
 
     public IAsyncRelayCommand SubmitCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ApproveCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand RejectCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand CancelCommand
     {
         get;
     }
@@ -440,6 +501,31 @@ public sealed partial class OvertimeWorkspaceViewModel
     partial void OnSelectedRowChanged(
         OvertimeWorkspaceRowViewModel? value)
     {
+        TransitionErrorMessage =
+            null;
+
+        TransitionSuccessMessage =
+            null;
+
+        TransitionNote =
+            null;
+
+        TransitionApprovedMinutesText =
+            value?.Status ==
+                OvertimeRequestStatus.Pending
+                ? value.RequestedMinutes.ToString()
+                : value?.ApprovedMinutes?.ToString()
+                    ?? string.Empty;
+
+        ApproveCommand?
+            .NotifyCanExecuteChanged();
+
+        RejectCommand?
+            .NotifyCanExecuteChanged();
+
+        CancelCommand?
+            .NotifyCanExecuteChanged();
+
         int loadVersion =
             ++_historyLoadVersion;
 
@@ -553,6 +639,250 @@ public sealed partial class OvertimeWorkspaceViewModel
                     .NotifyCanExecuteChanged();
             }
         }
+    }
+
+    private bool CanApproveSelected()
+    {
+        return
+            !IsChangingStatus
+            && SelectedRow?.Status ==
+                OvertimeRequestStatus.Pending;
+    }
+
+    private bool CanRejectSelected()
+    {
+        return
+            !IsChangingStatus
+            && SelectedRow?.Status ==
+                OvertimeRequestStatus.Pending;
+    }
+
+    private bool CanCancelSelected()
+    {
+        return
+            !IsChangingStatus
+            && SelectedRow?.Status is
+                OvertimeRequestStatus.Pending
+                or OvertimeRequestStatus.Approved;
+    }
+
+    private Task ApproveSelectedAsync()
+    {
+        return ChangeSelectedStatusAsync(
+            OvertimeRequestStatus.Approved);
+    }
+
+    private Task RejectSelectedAsync()
+    {
+        return ChangeSelectedStatusAsync(
+            OvertimeRequestStatus.Rejected);
+    }
+
+    private Task CancelSelectedAsync()
+    {
+        return ChangeSelectedStatusAsync(
+            OvertimeRequestStatus.Cancelled);
+    }
+
+    private async Task ChangeSelectedStatusAsync(
+        OvertimeRequestStatus targetStatus)
+    {
+        TransitionErrorMessage =
+            null;
+
+        TransitionSuccessMessage =
+            null;
+
+        OvertimeWorkspaceRowViewModel? row =
+            SelectedRow;
+
+        if (row is null)
+        {
+            TransitionErrorMessage =
+                "Vui lòng chọn một yêu cầu tăng ca.";
+
+            return;
+        }
+
+        int? approvedMinutes =
+            null;
+
+        if (targetStatus ==
+            OvertimeRequestStatus.Approved)
+        {
+            if (!int.TryParse(
+                    TransitionApprovedMinutesText,
+                    out int parsedApprovedMinutes)
+                || parsedApprovedMinutes <= 0
+                || parsedApprovedMinutes >
+                    row.RequestedMinutes)
+            {
+                TransitionErrorMessage =
+                    "Số phút tăng ca được duyệt phải từ 1 đến số phút đã yêu cầu.";
+
+                return;
+            }
+
+            approvedMinutes =
+                parsedApprovedMinutes;
+        }
+
+        string? normalizedNote =
+            string.IsNullOrWhiteSpace(
+                TransitionNote)
+                ? null
+                : TransitionNote.Trim();
+
+        if (normalizedNote?.Length > 500)
+        {
+            TransitionErrorMessage =
+                "Ghi chú thay đổi trạng thái không được vượt quá 500 ký tự.";
+
+            return;
+        }
+
+        bool confirmed =
+            _confirmationService.Confirm(
+                GetConfirmationTitle(
+                    targetStatus),
+                GetConfirmationMessage(
+                    row,
+                    targetStatus,
+                    approvedMinutes));
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        Guid overtimeRequestId =
+            row.OvertimeRequestId;
+
+        IsChangingStatus =
+            true;
+
+        try
+        {
+            ChangeOvertimeRequestStatusResult result =
+                await _statusService
+                    .ChangeStatusAsync(
+                        new ChangeOvertimeRequestStatusRequest(
+                            overtimeRequestId,
+                            row.Status,
+                            targetStatus,
+                            approvedMinutes,
+                            normalizedNote));
+
+            if (!result.IsSuccessful)
+            {
+                TransitionErrorMessage =
+                    string.IsNullOrWhiteSpace(
+                        result.ErrorMessage)
+                        ? "Không thể thay đổi trạng thái yêu cầu tăng ca."
+                        : result.ErrorMessage;
+
+                return;
+            }
+
+            if (SelectedStatusOption?.Status.HasValue ==
+                true)
+            {
+                SelectedStatusOption =
+                    StatusOptions.First(
+                        option =>
+                            !option.Status.HasValue);
+            }
+
+            await LoadAsync();
+
+            SelectedRow =
+                Rows.FirstOrDefault(
+                    current =>
+                        current.OvertimeRequestId ==
+                        overtimeRequestId);
+
+            TransitionNote =
+                null;
+
+            TransitionSuccessMessage =
+                GetSuccessMessage(
+                    targetStatus);
+        }
+        catch (Exception exception)
+        {
+            TransitionErrorMessage =
+                exception.Message;
+        }
+        finally
+        {
+            IsChangingStatus =
+                false;
+        }
+    }
+
+    private static string GetConfirmationTitle(
+        OvertimeRequestStatus targetStatus)
+    {
+        return targetStatus switch
+        {
+            OvertimeRequestStatus.Approved =>
+                "Xác nhận duyệt tăng ca",
+
+            OvertimeRequestStatus.Rejected =>
+                "Xác nhận từ chối tăng ca",
+
+            OvertimeRequestStatus.Cancelled =>
+                "Xác nhận hủy yêu cầu tăng ca",
+
+            _ =>
+                "Xác nhận thay đổi tăng ca"
+        };
+    }
+
+    private static string GetConfirmationMessage(
+        OvertimeWorkspaceRowViewModel row,
+        OvertimeRequestStatus targetStatus,
+        int? approvedMinutes)
+    {
+        return targetStatus switch
+        {
+            OvertimeRequestStatus.Approved =>
+                $"Duyệt {approvedMinutes} phút tăng ca cho "
+                + $"{row.EmployeeCode} — {row.EmployeeName} "
+                + $"ngày {row.WorkDateText}?",
+
+            OvertimeRequestStatus.Rejected =>
+                $"Từ chối yêu cầu tăng ca của "
+                + $"{row.EmployeeCode} — {row.EmployeeName} "
+                + $"ngày {row.WorkDateText}?",
+
+            OvertimeRequestStatus.Cancelled =>
+                $"Hủy yêu cầu tăng ca của "
+                + $"{row.EmployeeCode} — {row.EmployeeName} "
+                + $"ngày {row.WorkDateText}?",
+
+            _ =>
+                "Bạn có chắc chắn muốn tiếp tục?"
+        };
+    }
+
+    private static string GetSuccessMessage(
+        OvertimeRequestStatus targetStatus)
+    {
+        return targetStatus switch
+        {
+            OvertimeRequestStatus.Approved =>
+                "Đã duyệt yêu cầu tăng ca thành công.",
+
+            OvertimeRequestStatus.Rejected =>
+                "Đã từ chối yêu cầu tăng ca.",
+
+            OvertimeRequestStatus.Cancelled =>
+                "Đã hủy yêu cầu tăng ca.",
+
+            _ =>
+                "Đã cập nhật yêu cầu tăng ca."
+        };
     }
 
     private bool CanSubmit()
@@ -698,6 +1028,19 @@ public sealed partial class OvertimeWorkspaceViewModel
             SubmitCommand
                 .NotifyCanExecuteChanged();
         }
+    }
+
+    partial void OnIsChangingStatusChanged(
+    bool value)
+    {
+        ApproveCommand?
+            .NotifyCanExecuteChanged();
+
+        RejectCommand?
+            .NotifyCanExecuteChanged();
+
+        CancelCommand?
+            .NotifyCanExecuteChanged();
     }
 
     partial void OnSelectedSubmissionEmployeeOptionChanged(

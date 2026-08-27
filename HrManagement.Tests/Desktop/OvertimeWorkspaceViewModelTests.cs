@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Services;
 using HrManagement.Application.Workspaces.Overtime;
 using HrManagement.Application.Overtime.Requests;
 using HrManagement.Desktop.ViewModels;
@@ -547,15 +548,284 @@ public sealed class OvertimeWorkspaceViewModelTests
         }
     }
 
+    [Fact]
+    public void SelectedPendingRow_EnablesApproveRejectAndCancel()
+    {
+        OvertimeWorkspaceRowViewModel row =
+            new(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                new DateOnly(
+                    2026,
+                    8,
+                    27),
+                120,
+                null,
+                OvertimeRequestStatus.Pending,
+                Utc(
+                    10),
+                null);
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel();
+
+        viewModel.SelectedRow =
+            row;
+
+        Assert.True(
+            viewModel.ApproveCommand.CanExecute(
+                null));
+
+        Assert.True(
+            viewModel.RejectCommand.CanExecute(
+                null));
+
+        Assert.True(
+            viewModel.CancelCommand.CanExecute(
+                null));
+
+        Assert.Equal(
+            "120",
+            viewModel.TransitionApprovedMinutesText);
+    }
+
+    [Fact]
+    public async Task ApproveSelectedAsync_WhenValid_SendsExpectedStatusAndRefreshes()
+    {
+        Guid requestId =
+            Guid.NewGuid();
+
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var queryService =
+            new StubQueryService
+            {
+                Snapshot =
+                    new OvertimeWorkspaceSnapshot(
+                    [
+                        new OvertimeWorkspaceItem(
+                        requestId,
+                        employeeId,
+                        "EMP001",
+                        "Nguyễn Văn An",
+                        new DateOnly(
+                            2026,
+                            8,
+                            27),
+                        120,
+                        null,
+                        OvertimeRequestStatus.Pending,
+                        Utc(
+                            10),
+                        null)
+                    ])
+            };
+
+        var statusService =
+            new StubStatusService
+            {
+                Result =
+                    new ChangeOvertimeRequestStatusResult(
+                        IsSuccessful:
+                            true,
+                        OvertimeRequestId:
+                            requestId,
+                        Status:
+                            OvertimeRequestStatus.Approved,
+                        ApprovedMinutes:
+                            90,
+                        StatusChangeId:
+                            Guid.NewGuid())
+            };
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                queryService:
+                    queryService,
+                statusService:
+                    statusService);
+
+        await viewModel.LoadCommand
+            .ExecuteAsync(
+                null);
+
+        viewModel.SelectedRow =
+            Assert.Single(
+                viewModel.Rows);
+
+        viewModel.TransitionApprovedMinutesText =
+            "90";
+
+        viewModel.TransitionNote =
+            "Duyệt một phần";
+
+        await viewModel.ApproveCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            statusService.CallCount);
+
+        Assert.NotNull(
+            statusService.LastRequest);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Pending,
+            statusService.LastRequest!.ExpectedStatus);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Approved,
+            statusService.LastRequest.TargetStatus);
+
+        Assert.Equal(
+            90,
+            statusService.LastRequest.ApprovedMinutes);
+
+        Assert.Equal(
+            "Duyệt một phần",
+            statusService.LastRequest.Note);
+
+        Assert.Equal(
+            2,
+            queryService.QueryCallCount);
+
+        Assert.Equal(
+            "Đã duyệt yêu cầu tăng ca thành công.",
+            viewModel.TransitionSuccessMessage);
+    }
+
+    [Fact]
+    public async Task RejectSelectedAsync_WhenConfirmationRejected_DoesNotCallStatusService()
+    {
+        var confirmationService =
+            new StubUserConfirmationService
+            {
+                Result =
+                    false
+            };
+
+        var statusService =
+            new StubStatusService();
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                statusService:
+                    statusService,
+                confirmationService:
+                    confirmationService);
+
+        viewModel.SelectedRow =
+            new OvertimeWorkspaceRowViewModel(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                new DateOnly(
+                    2026,
+                    8,
+                    27),
+                120,
+                null,
+                OvertimeRequestStatus.Pending,
+                Utc(
+                    10),
+                null);
+
+        await viewModel.RejectCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            confirmationService.CallCount);
+
+        Assert.Equal(
+            0,
+            statusService.CallCount);
+    }
+
+    [Fact]
+    public async Task CancelSelectedAsync_FromApproved_SendsExpectedApprovedStatus()
+    {
+        Guid requestId =
+            Guid.NewGuid();
+
+        var statusService =
+            new StubStatusService
+            {
+                Result =
+                    new ChangeOvertimeRequestStatusResult(
+                        IsSuccessful:
+                            true,
+                        OvertimeRequestId:
+                            requestId,
+                        Status:
+                            OvertimeRequestStatus.Cancelled,
+                        StatusChangeId:
+                            Guid.NewGuid())
+            };
+
+        OvertimeWorkspaceViewModel viewModel =
+            CreateViewModel(
+                statusService:
+                    statusService);
+
+        viewModel.SelectedRow =
+            new OvertimeWorkspaceRowViewModel(
+                requestId,
+                Guid.NewGuid(),
+                "EMP001",
+                "Nguyễn Văn An",
+                new DateOnly(
+                    2026,
+                    8,
+                    27),
+                120,
+                90,
+                OvertimeRequestStatus.Approved,
+                Utc(
+                    10),
+                null);
+
+        await viewModel.CancelCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            1,
+            statusService.CallCount);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Approved,
+            statusService.LastRequest!.ExpectedStatus);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Cancelled,
+            statusService.LastRequest.TargetStatus);
+
+        Assert.Null(
+            statusService.LastRequest.ApprovedMinutes);
+    }
+
     private static OvertimeWorkspaceViewModel CreateViewModel(
         StubQueryService? queryService = null,
-        StubSubmitService? submitService = null)
+        StubSubmitService? submitService = null,
+        StubStatusService? statusService = null,
+        StubUserConfirmationService? confirmationService = null)
     {
         return new OvertimeWorkspaceViewModel(
             queryService
             ?? new StubQueryService(),
             submitService
             ?? new StubSubmitService(),
+            statusService
+            ?? new StubStatusService(),
+            confirmationService
+            ?? new StubUserConfirmationService(),
             new FixedTimeProvider(
                 new DateTimeOffset(
                     2026,
@@ -565,6 +835,73 @@ public sealed class OvertimeWorkspaceViewModelTests
                     0,
                     0,
                     TimeSpan.Zero)));
+    }
+
+    private sealed class StubStatusService
+    : IOvertimeRequestStatusService
+    {
+        public ChangeOvertimeRequestStatusResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                IsSuccessful:
+                    false,
+                ErrorMessage:
+                    "Chưa cấu hình kết quả transition.");
+
+        public ChangeOvertimeRequestStatusRequest? LastRequest
+        {
+            get;
+            private set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task<ChangeOvertimeRequestStatusResult>
+            ChangeStatusAsync(
+                ChangeOvertimeRequestStatusRequest request,
+                CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            LastRequest =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
+    private sealed class StubUserConfirmationService
+        : IUserConfirmationService
+    {
+        public bool Result
+        {
+            get;
+            set;
+        } =
+            true;
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public bool Confirm(
+            string title,
+            string message)
+        {
+            CallCount++;
+
+            return Result;
+        }
     }
 
     private sealed class StubQueryService
