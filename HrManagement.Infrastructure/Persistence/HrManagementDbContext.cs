@@ -16,6 +16,7 @@ using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Domain.Overtime.Requests;
 using HrManagement.Domain.Payroll.Compensation;
 using HrManagement.Domain.Payroll.Periods;
+using HrManagement.Domain.Payroll.Snapshots;
 
 namespace HrManagement.Infrastructure.Persistence;
 
@@ -28,6 +29,10 @@ public sealed class HrManagementDbContext : DbContext
     public DbSet<PayrollPeriod>
         PayrollPeriods =>
             Set<PayrollPeriod>();
+
+    public DbSet<PayrollEmployeeSnapshot>
+        PayrollEmployeeSnapshots =>
+            Set<PayrollEmployeeSnapshot>();
 
     public DbSet<OvertimeRequest>
         OvertimeRequests =>
@@ -198,6 +203,9 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new PayrollPeriodConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new PayrollEmployeeSnapshotConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new LeaveTypeConfiguration());
