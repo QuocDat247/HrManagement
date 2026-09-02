@@ -29,19 +29,19 @@
                     Margin="0,20,0,16">
 
             <Button Content="Thêm chức danh"
-                    Command="{Binding AddPositionCommand}" Height="30" Width="100" />
+                    Command="{Binding AddPositionCommand}" Height="30" Width="120" />
 
             <Button Content="Sửa"
                     Command="{Binding EditPositionCommand}"
-                    Margin="8,0,0,0" Width="40" />
+                    Margin="8,0,0,0" Width="58" />
 
             <Button Content="Ngừng sử dụng"
                     Command="{Binding DeactivatePositionCommand}"
-                    Margin="8,0,0,0" Width="100" />
+                    Margin="8,0,0,0" Width="117" />
 
             <Button Content="Kích hoạt lại"
                     Command="{Binding ReactivatePositionCommand}"
-                    Margin="8,0,0,0" Width="90" />
+                    Margin="8,0,0,0" Width="99" />
 
             <Button Content="Xem nhân viên"
                     Command="{Binding ViewEmployeesCommand}"

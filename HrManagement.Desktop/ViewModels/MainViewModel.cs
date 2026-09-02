@@ -1,34 +1,28 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Navigation;
-using HrManagement.Desktop.Theming;
+using HrManagement.Application.Authentication;
 
 namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly INavigationService _navigationService;
-    private readonly IThemeService _themeService;
 
     [ObservableProperty]
     private NavigationItem? _selectedNavigationItem;
-    private void ToggleTheme()
-    {
-        AppTheme nextTheme =
-            _themeService.CurrentTheme == AppTheme.Blue
-                ? AppTheme.Green
-                : AppTheme.Blue;
-
-        _themeService.ApplyTheme(nextTheme);
-    }
 
     // Constructor>
     public MainViewModel(
         INavigationService navigationService,
-        IThemeService themeService)
+        ICurrentUserContext currentUserContext)
     {
         _navigationService = navigationService;
-        _themeService = themeService;
+
+        CurrentUserDisplayName =
+            currentUserContext.CurrentUser?.DisplayName
+            ?? currentUserContext.CurrentUser?.Username
+            ?? "Người dùng";
 
         _navigationService.CurrentViewModelChanged +=
             OnCurrentViewModelChanged;
@@ -78,7 +72,11 @@ public sealed partial class MainViewModel : ObservableObject
 
             new NavigationItem(
                 "Chấm công & Nghỉ phép",
-                typeof(AttendanceLeaveWorkspaceViewModel))
+                typeof(AttendanceLeaveWorkspaceViewModel)),
+
+            new NavigationItem(
+                "Cài đặt",
+                typeof(SettingsViewModel))
 
         ];
 
@@ -89,14 +87,13 @@ public sealed partial class MainViewModel : ObservableObject
 
         _navigationService.NavigateTo(
             SelectedNavigationItem.ViewModelType);
-
-        ToggleThemeCommand =
-        new RelayCommand(ToggleTheme);
     }
-    // <
 
     // Command>
-    public IRelayCommand ToggleThemeCommand { get; }
+    public string CurrentUserDisplayName
+    {
+        get;
+    }
 
     public IReadOnlyList<NavigationItem> NavigationItems { get; }
 

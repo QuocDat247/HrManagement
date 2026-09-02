@@ -16,7 +16,7 @@ WindowStartupLocation="CenterScreen">
 
         <converters:EqualityConverter
             x:Key="EqualityConverter" />
-        
+
         <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
             <views:DashboardView/>
         </DataTemplate>
@@ -51,6 +51,10 @@ WindowStartupLocation="CenterScreen">
 
         <DataTemplate DataType="{x:Type vm:PayrollWorkspaceViewModel}">
             <views:PayrollWorkspaceView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView />
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type vm:AttendanceLeaveWorkspaceViewModel}">
@@ -136,21 +140,23 @@ WindowStartupLocation="CenterScreen">
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-    
+
                     <TextBlock Text="{Binding SelectedNavigationItem.Title}"
                                Style="{DynamicResource PageTitleTextStyle}" />
 
-                    <TextBlock Grid.Column="1"
-                               Text="admin"
-                               Style="{DynamicResource SecondaryTextStyle}"
-                               VerticalAlignment="Center" />
+                    <Border Grid.Column="1"
+                            Padding="12,7"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource CardBackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6">
 
-                    <Button Content="Đổi theme"
-        Command="{Binding ToggleThemeCommand}"
-        Background="{DynamicResource PrimaryBrush}"
-        Foreground="White"
-        Margin="0,0,16,0"
-        Padding="12,6"/>
+                        <TextBlock Text="{Binding CurrentUserDisplayName}"
+                           Style="{DynamicResource SecondaryTextStyle}"
+                           VerticalAlignment="Center" />
+
+                    </Border>
 
                 </Grid>
 

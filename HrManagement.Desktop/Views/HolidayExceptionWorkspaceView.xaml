@@ -189,7 +189,8 @@
                                         MinHeight="32">
 
                                 <DatePicker.Style>
-                                    <Style TargetType="DatePicker">
+                                    <Style TargetType="{x:Type DatePicker}"
+                                           BasedOn="{StaticResource {x:Type DatePicker}}">
                                         <Setter Property="IsEnabled"
                                                 Value="True" />
 
@@ -374,7 +375,8 @@
                                             MinHeight="32">
 
                                     <DatePicker.Style>
-                                        <Style TargetType="DatePicker">
+                                        <Style TargetType="{x:Type DatePicker}"
+                                               BasedOn="{StaticResource {x:Type DatePicker}}">
                                             <Setter Property="IsEnabled"
                                                     Value="True" />
 

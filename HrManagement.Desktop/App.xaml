@@ -1,4 +1,4 @@
-﻿<Application x:Class="HrManagement.Desktop.App"
+<Application x:Class="HrManagement.Desktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
@@ -9,7 +9,10 @@
             <ResourceDictionary.MergedDictionaries>
 
                 <ResourceDictionary
-                    Source="Themes/Presets/Blue.xaml" />
+                    Source="Themes/Appearance/Light.xaml" />
+
+                <ResourceDictionary
+                    Source="Themes/Accents/Blue.xaml" />
 
                 <ResourceDictionary
                     Source="Themes/Controls.xaml" />

@@ -2,14 +2,18 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hồ sơ nhân viên"
-        Width="760"
-        Height="680"
+        Width="984"
+        Height="908"
         MinWidth="680"
         MinHeight="580"
         WindowStartupLocation="CenterOwner"
         Loaded="EmployeeProfileWindow_Loaded">
 
     <Grid Margin="24">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="335*"/>
+            <ColumnDefinition Width="21*"/>
+        </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -21,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <StackPanel>
+        <StackPanel Grid.ColumnSpan="2" Margin="0,0,0,128" Grid.RowSpan="2">
 
             <TextBlock Text="Hồ sơ nhân viên"
                        FontSize="24"
@@ -40,7 +44,7 @@
         BorderBrush="{DynamicResource BorderBrush}"
         BorderThickness="1"
         CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}">
+        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
 
             <Grid>
 
@@ -93,7 +97,7 @@
         BorderBrush="{DynamicResource BorderBrush}"
         BorderThickness="1"
         CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}">
+        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
 
             <Grid>
 
@@ -139,15 +143,15 @@
             </Grid>
 
         </Border>
-        
+
         <!-- Employee summary -->
         <Border Grid.Row="1"
-                Margin="0,20,0,18"
+                Margin="0,38,0,18"
                 Padding="16"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="1"
                 CornerRadius="6"
-                Background="{DynamicResource PageBackgroundBrush}">
+                Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
 
             <Grid>
 
@@ -198,7 +202,7 @@
         BorderBrush="{DynamicResource BorderBrush}"
         BorderThickness="1"
         CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}">
+        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
 
             <StackPanel>
 
@@ -281,7 +285,7 @@
              Height="3"
              VerticalAlignment="Top"
              IsIndeterminate="True"
-             Panel.ZIndex="10">
+             Panel.ZIndex="10" Grid.ColumnSpan="2">
 
             <ProgressBar.Style>
                 <Style TargetType="ProgressBar">
@@ -305,12 +309,12 @@
             </ProgressBar.Style>
 
         </ProgressBar>
-        
+
         <!-- Phase 16 profile workspace -->
         <ScrollViewer x:Name="ProfileScrollViewer"
                       Grid.Row="4"
                       VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled">
+                      HorizontalScrollBarVisibility="Disabled" Grid.ColumnSpan="2">
 
             <StackPanel>
 
@@ -349,7 +353,7 @@
                     </TextBlock.Style>
 
                 </TextBlock>
-                
+
                 <!-- Personal information -->
                 <Border x:Name="PersonalSection"
                         Padding="18"
@@ -780,7 +784,7 @@
                                 </StackPanel>
 
                             </Border>
-                            
+
                             <ListBox Margin="0,16,0,0"
                                  MinHeight="80"
                                  MaxHeight="220"
@@ -810,100 +814,100 @@
 
                                     </Style>
                                 </ListBox.Style>
-                                
+
                                 <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="HorizontalContentAlignment"
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="HorizontalContentAlignment"
                                             Value="Stretch" />
 
-                                    <Setter Property="Padding"
+                                        <Setter Property="Padding"
                                             Value="0" />
-                                </Style>
-                            </ListBox.ItemContainerStyle>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
 
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
 
-                                    <Grid Margin="10,8">
+                                        <Grid Margin="10,8">
 
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
 
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="1.4*" />
-                                            <ColumnDefinition Width="1.2*" />
-                                            <ColumnDefinition Width="2*" />
-                                        </Grid.ColumnDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1.4*" />
+                                                <ColumnDefinition Width="1.2*" />
+                                                <ColumnDefinition Width="2*" />
+                                            </Grid.ColumnDefinitions>
 
-                                        <!-- Tên -->
-                                        <TextBlock Grid.Row="0"
+                                            <!-- Tên -->
+                                            <TextBlock Grid.Row="0"
                                                    Grid.Column="0"
                                                    Grid.ColumnSpan="2"
                                                    Text="{Binding FullName}"
                                                    FontWeight="SemiBold"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                        <!-- Primary badge -->
-                                        <TextBlock Grid.Row="0"
+                                            <!-- Primary badge -->
+                                            <TextBlock Grid.Row="0"
                                                    Grid.Column="2"
                                                    HorizontalAlignment="Right"
                                                    Text="Liên hệ chính"
                                                    FontWeight="SemiBold">
 
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
 
-                                                    <Setter Property="Visibility"
+                                                        <Setter Property="Visibility"
                                                             Value="Collapsed" />
 
-                                                    <Style.Triggers>
+                                                        <Style.Triggers>
 
-                                                        <DataTrigger Binding="{Binding IsPrimary}"
+                                                            <DataTrigger Binding="{Binding IsPrimary}"
                                                                      Value="True">
 
-                                                            <Setter Property="Visibility"
+                                                                <Setter Property="Visibility"
                                                                     Value="Visible" />
 
-                                                        </DataTrigger>
+                                                            </DataTrigger>
 
-                                                    </Style.Triggers>
+                                                        </Style.Triggers>
 
-                                                </Style>
-                                            </TextBlock.Style>
+                                                    </Style>
+                                                </TextBlock.Style>
 
-                                        </TextBlock>
+                                            </TextBlock>
 
-                                        <!-- Quan hệ -->
-                                        <TextBlock Grid.Row="1"
+                                            <!-- Quan hệ -->
+                                            <TextBlock Grid.Row="1"
                                                    Grid.Column="0"
                                                    Margin="0,5,0,0"
                                                    Text="{Binding Relationship}"
                                                    Foreground="{DynamicResource SecondaryTextBrush}"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                        <!-- Điện thoại -->
-                                        <TextBlock Grid.Row="1"
+                                            <!-- Điện thoại -->
+                                            <TextBlock Grid.Row="1"
                                                    Grid.Column="1"
                                                    Margin="12,5,0,0"
                                                    Text="{Binding PhoneNumber}"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                        <!-- Email -->
-                                        <TextBlock Grid.Row="1"
+                                            <!-- Email -->
+                                            <TextBlock Grid.Row="1"
                                                    Grid.Column="2"
                                                    Margin="12,5,0,0"
                                                    Text="{Binding Email}"
                                                    TextTrimming="CharacterEllipsis" />
 
-                                    </Grid>
+                                        </Grid>
 
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
 
-                        </ListBox>
-                            </Grid>
+                            </ListBox>
+                        </Grid>
 
                         <!-- Editor -->
                         <Border Margin="0,16,0,0"
@@ -1351,7 +1355,7 @@
                 Margin="0,18,0,0"
                 HorizontalAlignment="Right"
                 Content="Đóng"
-                IsCancel="True" />
+                IsCancel="True" Grid.ColumnSpan="2" />
 
     </Grid>
 

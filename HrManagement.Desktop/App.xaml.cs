@@ -43,6 +43,12 @@ public partial class App : System.Windows.Application
 
         _serviceProvider = services.BuildServiceProvider();
 
+        IApplicationThemeService applicationThemeService =
+            _serviceProvider.GetRequiredService<
+                IApplicationThemeService>();
+
+        await applicationThemeService.InitializeAsync();
+
         DatabaseInitializer databaseInitializer =
             _serviceProvider.GetRequiredService<DatabaseInitializer>();
 
@@ -131,7 +137,17 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<EmployeesViewModel>();
 
-        services.AddSingleton<IThemeService, ThemeService>();
+        services.AddSingleton<
+            IApplicationThemePreferenceStore,
+            JsonApplicationThemePreferenceStore>();
+
+        services.AddSingleton<
+            ISystemAppearanceSource,
+            WindowsSystemAppearanceSource>();
+
+        services.AddSingleton<
+            IApplicationThemeService,
+            ApplicationThemeService>();
 
         services.AddInfrastructure();
 
@@ -156,6 +172,8 @@ public partial class App : System.Windows.Application
         services.AddTransient<OvertimeWorkspaceViewModel>();
 
         services.AddTransient<PayrollWorkspaceViewModel>();
+
+        services.AddTransient<SettingsViewModel>();
 
         services.AddSingleton<
             IEmployeeNavigationService,
