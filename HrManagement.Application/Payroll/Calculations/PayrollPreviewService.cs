@@ -81,7 +81,13 @@ public sealed class PayrollPreviewService
                 _baseSalaryPolicy.Calculate(
                     year,
                     month,
-                    employeeInput.CompensationSegments);
+                    employeeInput.CompensationSegments,
+                    employeeInput
+                        .TimesheetDays
+                        .Select(
+                            day =>
+                                day.WorkDate)
+                        .ToArray());
 
             decimal roundedBaseSalary =
                 _moneyRoundingPolicy.Round(

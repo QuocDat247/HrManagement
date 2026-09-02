@@ -8,10 +8,14 @@ public sealed class CalendarDayBaseSalaryProrationPolicy
     public BaseSalaryProrationResult Calculate(
         int year,
         int month,
-        IReadOnlyList<EmployeeCompensationSegment> segments)
+        IReadOnlyList<EmployeeCompensationSegment> segments,
+        IReadOnlyCollection<DateOnly> coveredDates)
     {
         ArgumentNullException.ThrowIfNull(
             segments);
+
+        ArgumentNullException.ThrowIfNull(
+            coveredDates);
 
         ValidatePeriod(
             year,
@@ -22,6 +26,13 @@ public sealed class CalendarDayBaseSalaryProrationPolicy
             throw new ArgumentException(
                 "Không có cấu hình lương để phân bổ.",
                 nameof(segments));
+        }
+
+        if (coveredDates.Count == 0)
+        {
+            throw new ArgumentException(
+                "Không có ngày làm việc thuộc phạm vi kỳ lương.",
+                nameof(coveredDates));
         }
 
         Guid[] employeeIds =
@@ -69,99 +80,103 @@ public sealed class CalendarDayBaseSalaryProrationPolicy
                     year,
                     month));
 
+        DateOnly[] normalizedCoveredDates =
+            coveredDates
+                .Distinct()
+                .OrderBy(
+                    date =>
+                        date)
+                .ToArray();
+
+        if (normalizedCoveredDates.Any(
+                date =>
+                    date < periodStart
+                    || date > periodEnd))
+        {
+            throw new ArgumentException(
+                "Danh sách ngày được phân bổ chứa ngày nằm ngoài kỳ lương.",
+                nameof(coveredDates));
+        }
+
+        foreach (
+            DateOnly coveredDate
+            in normalizedCoveredDates)
+        {
+            int matchingCount =
+                segments.Count(
+                    segment =>
+                        segment.EffectiveFrom <=
+                            coveredDate
+                        && (
+                            !segment.EffectiveTo.HasValue
+                            || segment.EffectiveTo.Value >=
+                                coveredDate
+                        ));
+
+            if (matchingCount == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Không có cấu hình lương bao phủ ngày {coveredDate:dd/MM/yyyy}.");
+            }
+
+            if (matchingCount > 1)
+            {
+                throw new InvalidOperationException(
+                    $"Có nhiều cấu hình lương cùng bao phủ ngày {coveredDate:dd/MM/yyyy}.");
+            }
+        }
+
         int periodCalendarDays =
             periodEnd.DayNumber
             - periodStart.DayNumber
             + 1;
 
-        var appliedSegments =
-            segments
-                .Select(
-                    segment =>
-                    {
-                        DateOnly appliedFrom =
-                            segment.EffectiveFrom >
-                                periodStart
-                                ? segment.EffectiveFrom
-                                : periodStart;
+        var components =
+            new List<BaseSalaryProrationComponent>();
 
-                        DateOnly segmentEnd =
-                            segment.EffectiveTo
-                                ?? periodEnd;
-
-                        DateOnly appliedTo =
-                            segmentEnd <
-                                periodEnd
-                                ? segmentEnd
-                                : periodEnd;
-
-                        return new
-                        {
-                            Segment =
-                                segment,
-                            AppliedFrom =
-                                appliedFrom,
-                            AppliedTo =
-                                appliedTo
-                        };
-                    })
-                .Where(
-                    item =>
-                        item.AppliedFrom <=
-                            item.AppliedTo)
+        foreach (
+            EmployeeCompensationSegment segment
+            in segments
                 .OrderBy(
-                    item =>
-                        item.AppliedFrom)
+                    segment =>
+                        segment.EffectiveFrom)
                 .ThenBy(
-                    item =>
-                        item.Segment.CompensationId)
-                .ToArray();
-
-        if (appliedSegments.Length == 0)
+                    segment =>
+                        segment.CompensationId))
         {
-            throw new ArgumentException(
-                "Không có cấu hình lương nào giao với kỳ cần phân bổ.",
-                nameof(segments));
-        }
+            DateOnly[] appliedDates =
+                normalizedCoveredDates
+                    .Where(
+                        date =>
+                            segment.EffectiveFrom <=
+                                date
+                            && (
+                                !segment.EffectiveTo.HasValue
+                                || segment.EffectiveTo.Value >=
+                                    date
+                            ))
+                    .ToArray();
 
-        for (
-            int index = 1;
-            index < appliedSegments.Length;
-            index++)
-        {
-            if (appliedSegments[index].AppliedFrom <=
-                appliedSegments[index - 1].AppliedTo)
+            if (appliedDates.Length == 0)
             {
-                throw new InvalidOperationException(
-                    "Các khoảng hiệu lực lương bị chồng lấn trong kỳ.");
+                continue;
             }
+
+            decimal proratedAmount =
+                segment.MonthlyBaseSalary
+                * appliedDates.Length
+                / periodCalendarDays;
+
+            components.Add(
+                new BaseSalaryProrationComponent(
+                    segment.CompensationId,
+                    appliedDates[0],
+                    appliedDates[^1],
+                    appliedDates.Length,
+                    periodCalendarDays,
+                    segment.MonthlyBaseSalary,
+                    proratedAmount));
         }
-
-        BaseSalaryProrationComponent[] components =
-            appliedSegments
-                .Select(
-                    item =>
-                    {
-                        int coveredCalendarDays =
-                            item.AppliedTo.DayNumber
-                            - item.AppliedFrom.DayNumber
-                            + 1;
-
-                        decimal proratedAmount =
-                            item.Segment.MonthlyBaseSalary
-                            * coveredCalendarDays
-                            / periodCalendarDays;
-
-                        return new BaseSalaryProrationComponent(
-                            item.Segment.CompensationId,
-                            item.AppliedFrom,
-                            item.AppliedTo,
-                            coveredCalendarDays,
-                            periodCalendarDays,
-                            item.Segment.MonthlyBaseSalary,
-                            proratedAmount);
-                    })
-                .ToArray();
 
         decimal totalAmount =
             components.Sum(

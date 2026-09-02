@@ -28,7 +28,10 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
                             1),
                         null,
                         25_000_000m)
-                ]);
+                ],
+                CoveredDates(
+                new DateOnly(2026, 8, 1),
+                new DateOnly(2026, 8, 31)));
 
         Assert.Equal(
             "VND",
@@ -82,7 +85,10 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
                             16),
                         null,
                         28_000_000m)
-                ]);
+                ],
+                CoveredDates(
+                new DateOnly(2026, 8, 1),
+                new DateOnly(2026, 8, 31)));
 
         decimal expected =
             25_000_000m
@@ -120,7 +126,10 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
                             16),
                         null,
                         31_000_000m)
-                ]);
+                ],
+                CoveredDates(
+                new DateOnly(2026, 8, 16),
+                new DateOnly(2026, 8, 31)));
 
         Assert.Equal(
             16_000_000m,
@@ -161,7 +170,10 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
                             null,
                             2_000m,
                             "USD")
-                    ]));
+                    ],
+                CoveredDates(
+                new DateOnly(2026, 8, 1),
+                new DateOnly(2026, 8, 31))));
     }
 
     [Fact]
@@ -196,7 +208,60 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
                                 16),
                             null,
                             28_000_000m)
-                    ]));
+                    ],
+                CoveredDates(
+                new DateOnly(2026, 8, 1),
+                new DateOnly(2026, 8, 31))));
+    }
+
+    [Fact]
+    public void Calculate_WhenEmploymentEndsMidMonth_OpenCompensationDoesNotPayAfterCoverageEnds()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        BaseSalaryProrationResult result =
+            _policy.Calculate(
+                2026,
+                8,
+                [
+                    Segment(
+                    employeeId,
+                    new DateOnly(
+                        2026,
+                        8,
+                        1),
+                    null,
+                    31_000_000m)
+                ],
+                CoveredDates(
+                    new DateOnly(
+                        2026,
+                        8,
+                        1),
+                    new DateOnly(
+                        2026,
+                        8,
+                        15)));
+
+        Assert.Equal(
+            15_000_000m,
+            result.TotalAmount);
+
+        BaseSalaryProrationComponent component =
+            Assert.Single(
+                result.Components);
+
+        Assert.Equal(
+            15,
+            component.CoveredCalendarDays);
+
+        Assert.Equal(
+            new DateOnly(
+                2026,
+                8,
+                15),
+            component.AppliedTo);
     }
 
     private static EmployeeCompensationSegment Segment(
@@ -214,5 +279,25 @@ public sealed class CalendarDayBaseSalaryProrationPolicyTests
             effectiveTo,
             monthlyBaseSalary,
             currencyCode);
+    }
+
+    private static IReadOnlyCollection<DateOnly>
+    CoveredDates(
+        DateOnly from,
+        DateOnly to)
+    {
+        var dates =
+            new List<DateOnly>();
+
+        for (
+            DateOnly date = from;
+            date <= to;
+            date = date.AddDays(1))
+        {
+            dates.Add(
+                date);
+        }
+
+        return dates;
     }
 }

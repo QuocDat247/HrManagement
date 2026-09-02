@@ -177,26 +177,53 @@ public sealed class PayrollPreviewServiceTests
     }
 
     private static PayrollEmployeeCalculationInput EmployeeInput(
-        Guid employeeId,
-        bool withOvertime = false)
+    Guid employeeId,
+    bool withOvertime = false)
     {
-        var day =
-            new MonthlyTimesheetDayItem(
-                Guid.NewGuid(),
-                employeeId,
-                new DateOnly(
-                    2026,
-                    8,
-                    10),
-                false,
-                0,
-                AttendanceCalculationStatus.NonWorkingDay,
-                120,
-                0,
-                0,
-                0,
-                "EMP001",
-                "Nguyễn Văn An");
+        DateOnly overtimeDate =
+            new(
+                2026,
+                8,
+                10);
+
+        MonthlyTimesheetDayItem[] days =
+            Enumerable
+                .Range(
+                    1,
+                    DateTime.DaysInMonth(
+                        2026,
+                        8))
+                .Select(
+                    dayNumber =>
+                    {
+                        DateOnly workDate =
+                            new(
+                                2026,
+                                8,
+                                dayNumber);
+
+                        int workedMinutes =
+                            withOvertime
+                            && workDate == overtimeDate
+                                ? 120
+                                : 0;
+
+                        return new MonthlyTimesheetDayItem(
+                            Guid.NewGuid(),
+                            employeeId,
+                            workDate,
+                            false,
+                            0,
+                            AttendanceCalculationStatus
+                                .NonWorkingDay,
+                            workedMinutes,
+                            0,
+                            0,
+                            0,
+                            "EMP001",
+                            "Nguyễn Văn An");
+                    })
+                .ToArray();
 
         var compensation =
             new EmployeeCompensationSegment(
@@ -216,10 +243,10 @@ public sealed class PayrollPreviewServiceTests
                 ?
                 [
                     new ApprovedOvertimePayrollItem(
-                        Guid.NewGuid(),
-                        employeeId,
-                        day.WorkDate,
-                        120)
+                    Guid.NewGuid(),
+                    employeeId,
+                    overtimeDate,
+                    120)
                 ]
                 : [];
 
@@ -227,7 +254,7 @@ public sealed class PayrollPreviewServiceTests
             employeeId,
             "EMP001",
             "Nguyễn Văn An",
-            [day],
+            days,
             [compensation],
             overtime);
     }

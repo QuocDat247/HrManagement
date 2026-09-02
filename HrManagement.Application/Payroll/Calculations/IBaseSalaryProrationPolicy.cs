@@ -7,5 +7,6 @@ public interface IBaseSalaryProrationPolicy
     BaseSalaryProrationResult Calculate(
         int year,
         int month,
-        IReadOnlyList<EmployeeCompensationSegment> segments);
+        IReadOnlyList<EmployeeCompensationSegment> segments,
+        IReadOnlyCollection<DateOnly> coveredDates);
 }

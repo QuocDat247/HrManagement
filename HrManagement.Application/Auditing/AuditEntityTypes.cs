@@ -25,4 +25,10 @@ public static class AuditEntityTypes
 
     public const string EmployeeCompensation =
         "EmployeeCompensation";
+
+    public const string PayrollPeriod =
+        "PayrollPeriod";
+
+    public const string PayrollEmployeeSnapshot =
+        "PayrollEmployeeSnapshot";
 }

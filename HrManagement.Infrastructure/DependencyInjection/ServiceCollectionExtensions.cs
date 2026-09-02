@@ -1,3 +1,5 @@
+using HrManagement.Application.Payroll.Periods;
+using HrManagement.Infrastructure.Payroll.Periods;
 using HrManagement.Application.Payroll.Calculations;
 using HrManagement.Infrastructure.Payroll.Calculations;
 using HrManagement.Application.Payroll.Compensation;
@@ -280,6 +282,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IPayrollPreviewService,
             PayrollPreviewService>();
+
+        services.AddSingleton<
+            IClosePayrollPeriodPersistence,
+            EfClosePayrollPeriodPersistence>();
+
+        services.AddSingleton<
+            IPayrollPeriodClosingAuthorizationPolicy,
+            AuthenticatedPayrollPeriodClosingAuthorizationPolicy>();
+
+        services.AddScoped<
+            IClosePayrollPeriodService,
+            ClosePayrollPeriodService>();
 
         services.AddScoped<
             IPayrollCalculationInputService,
