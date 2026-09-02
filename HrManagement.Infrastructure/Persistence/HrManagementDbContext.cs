@@ -14,11 +14,21 @@ using HrManagement.Domain.Attendance.Calendars;
 using HrManagement.Domain.Attendance.Corrections;
 using HrManagement.Domain.Attendance.Timesheets;
 using HrManagement.Domain.Overtime.Requests;
+using HrManagement.Domain.Payroll.Compensation;
+using HrManagement.Domain.Payroll.Periods;
 
 namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<EmployeeCompensation>
+        EmployeeCompensations =>
+            Set<EmployeeCompensation>();
+
+    public DbSet<PayrollPeriod>
+        PayrollPeriods =>
+            Set<PayrollPeriod>();
+
     public DbSet<OvertimeRequest>
         OvertimeRequests =>
             Set<OvertimeRequest>();
@@ -182,6 +192,12 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new OvertimeRequestStatusChangeConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new EmployeeCompensationConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new PayrollPeriodConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new LeaveTypeConfiguration());
