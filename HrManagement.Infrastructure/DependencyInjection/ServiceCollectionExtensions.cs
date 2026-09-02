@@ -296,6 +296,10 @@ public static class ServiceCollectionExtensions
             ClosePayrollPeriodService>();
 
         services.AddSingleton<
+            IClosedPayrollQueryService,
+            EfClosedPayrollQueryService>();
+
+        services.AddSingleton<
             IPayrollFinancialPeriodLockSource,
             EfPayrollFinancialPeriodLockSource>();
 
