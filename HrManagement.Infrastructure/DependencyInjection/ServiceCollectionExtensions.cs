@@ -258,9 +258,20 @@ public static class ServiceCollectionExtensions
             IEmployeeOvertimePayabilityResolver,
             EmployeeOvertimePayabilityResolver>();
 
+        services.AddSingleton(
+            new PayrollPolicyProfile(
+                standardMonthlyWorkingMinutes:
+                    12_480,
+                nonWorkingDayOvertimeMultiplier:
+                    2.0m));
+
+        services.AddSingleton<
+            IPayrollPolicyProfileSource,
+            ConfiguredPayrollPolicyProfileSource>();
+
         services.AddSingleton<
             IOvertimeAmountPolicy,
-            UnconfiguredOvertimeAmountPolicy>();
+            ConfiguredOvertimeAmountPolicy>();
 
         services.AddSingleton<
             IMoneyRoundingPolicy,
