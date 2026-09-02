@@ -1,3 +1,5 @@
+using HrManagement.Application.Payroll.Calculations;
+using HrManagement.Infrastructure.Payroll.Calculations;
 using HrManagement.Application.Payroll.Compensation;
 using HrManagement.Infrastructure.Payroll.Compensation;
 using HrManagement.Application.Attendance.Corrections;
@@ -239,6 +241,38 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IEmployeeCompensationService,
             EmployeeCompensationService>();
+
+        services.AddSingleton<
+            IApprovedOvertimePayrollSource,
+            EfApprovedOvertimePayrollSource>();
+
+        services.AddSingleton<
+            IBaseSalaryProrationPolicy,
+            CalendarDayBaseSalaryProrationPolicy>();
+
+        services.AddSingleton<
+            IOvertimePayabilityPolicy,
+            ConservativeOvertimePayabilityPolicy>();
+
+        services.AddSingleton<
+            IEmployeeOvertimePayabilityResolver,
+            EmployeeOvertimePayabilityResolver>();
+
+        services.AddSingleton<
+            IOvertimeAmountPolicy,
+            UnconfiguredOvertimeAmountPolicy>();
+
+        services.AddSingleton<
+            IMoneyRoundingPolicy,
+            CurrencyMoneyRoundingPolicy>();
+
+        services.AddScoped<
+            IPayrollPreviewService,
+            PayrollPreviewService>();
+
+        services.AddScoped<
+            IPayrollCalculationInputService,
+            PayrollCalculationInputService>();
 
         services.AddSingleton<
             ITimesheetPeriodClosingAuthorizationPolicy,
