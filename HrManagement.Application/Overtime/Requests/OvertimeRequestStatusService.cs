@@ -1,3 +1,4 @@
+using HrManagement.Application.Payroll.Periods;
 using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Application.Authentication;
 using HrManagement.Domain.Overtime.Requests;
@@ -16,6 +17,9 @@ public sealed class OvertimeRequestStatusService
     private readonly IOvertimeRequestStatusAuthorizationPolicy
         _authorizationPolicy;
 
+    private readonly IPayrollFinancialPeriodLockSource
+        _financialPeriodLockSource;
+
     private readonly ICurrentUserContext
         _currentUserContext;
 
@@ -26,6 +30,7 @@ public sealed class OvertimeRequestStatusService
         IOvertimeRequestStatusTransitionContextSource contextSource,
         IOvertimeRequestStatusTransitionPersistence persistence,
         IOvertimeRequestStatusAuthorizationPolicy authorizationPolicy,
+        IPayrollFinancialPeriodLockSource financialPeriodLockSource,
         ICurrentUserContext currentUserContext,
         TimeProvider timeProvider)
     {
@@ -37,6 +42,9 @@ public sealed class OvertimeRequestStatusService
 
         _authorizationPolicy =
             authorizationPolicy;
+
+        _financialPeriodLockSource =
+            financialPeriodLockSource;
 
         _currentUserContext =
             currentUserContext;
@@ -104,6 +112,24 @@ public sealed class OvertimeRequestStatusService
         {
             return Failure(
                 "Yêu cầu tăng ca đã thay đổi trạng thái. Vui lòng làm mới dữ liệu trước khi thao tác.");
+        }
+
+        if (AffectsPayrollMoney(
+        overtimeRequest.Status,
+        request.TargetStatus))
+        {
+            bool payrollPeriodLocked =
+                await _financialPeriodLockSource
+                    .IsLockedAsync(
+                        overtimeRequest.WorkDate,
+                        overtimeRequest.WorkDate,
+                        cancellationToken);
+
+            if (payrollPeriodLocked)
+            {
+                return Failure(
+                    "Không thể thay đổi trạng thái tăng ca vì kỳ lương của ngày tăng ca đã được đóng.");
+            }
         }
 
         DateTime changedAtUtc =
@@ -209,6 +235,24 @@ public sealed class OvertimeRequestStatusService
         }
 
         return null;
+    }
+
+    private static bool AffectsPayrollMoney(
+    OvertimeRequestStatus previousStatus,
+    OvertimeRequestStatus targetStatus)
+    {
+        return (
+                previousStatus ==
+                    OvertimeRequestStatus.Pending
+                && targetStatus ==
+                    OvertimeRequestStatus.Approved
+            )
+            || (
+                previousStatus ==
+                    OvertimeRequestStatus.Approved
+                && targetStatus ==
+                    OvertimeRequestStatus.Cancelled
+            );
     }
 
     private static ChangeOvertimeRequestStatusResult Failure(

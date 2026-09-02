@@ -1,3 +1,4 @@
+using HrManagement.Application.Payroll.Periods;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Employees;
 using HrManagement.Domain.Employees;
@@ -20,6 +21,9 @@ public sealed class EmployeeCompensationService
     private readonly IEmployeeCompensationAuthorizationPolicy
         _authorizationPolicy;
 
+    private readonly IPayrollFinancialPeriodLockSource
+        _financialPeriodLockSource;
+
     private readonly ICurrentUserContext
         _currentUserContext;
 
@@ -28,6 +32,7 @@ public sealed class EmployeeCompensationService
         IEmployeeCompensationContextSource contextSource,
         IEmployeeCompensationPersistence persistence,
         IEmployeeCompensationAuthorizationPolicy authorizationPolicy,
+        IPayrollFinancialPeriodLockSource financialPeriodLockSource,
         ICurrentUserContext currentUserContext)
     {
         _employeeRepository =
@@ -41,6 +46,9 @@ public sealed class EmployeeCompensationService
 
         _authorizationPolicy =
             authorizationPolicy;
+
+        _financialPeriodLockSource =
+            financialPeriodLockSource;
 
         _currentUserContext =
             currentUserContext;
@@ -132,6 +140,19 @@ public sealed class EmployeeCompensationService
         {
             return Failure(
                 "Ngày hiệu lực lương không nằm trong giai đoạn làm việc của nhân viên.");
+        }
+
+        bool affectsClosedPayrollPeriod =
+            await _financialPeriodLockSource
+                .IsLockedAsync(
+                    request.EffectiveFrom,
+                    employmentPeriod.EndDate,
+                    cancellationToken);
+
+        if (affectsClosedPayrollPeriod)
+        {
+            return Failure(
+                "Không thể thay đổi cấu hình lương vì khoảng hiệu lực mới chồng lấn kỳ lương đã đóng.");
         }
 
         EmployeeCompensation? currentCompensation =

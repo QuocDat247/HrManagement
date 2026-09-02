@@ -1,3 +1,5 @@
+using HrManagement.Application.Payroll.Periods;
+using HrManagement.Infrastructure.Payroll.Periods;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Employees;
@@ -269,6 +271,10 @@ public sealed class EmployeeCompensationWorkflowAcceptanceTests
                     factory,
                     auditFactory);
 
+            var financialPeriodLockSource =
+                new EfPayrollFinancialPeriodLockSource(
+                    factory);
+
             var service =
                 new EmployeeCompensationService(
                     new EfEmployeeRepository(
@@ -276,6 +282,7 @@ public sealed class EmployeeCompensationWorkflowAcceptanceTests
                     contextSource,
                     persistence,
                     new AuthenticatedEmployeeCompensationAuthorizationPolicy(),
+                    financialPeriodLockSource,
                     currentUserContext);
 
             return new TestDatabase(

@@ -1,4 +1,5 @@
 using System.Data;
+using HrManagement.Domain.Payroll.Periods;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Overtime.Requests;
 using HrManagement.Domain.Auditing;
@@ -82,6 +83,31 @@ public sealed class EfOvertimeRequestStatusTransitionPersistence
         {
             throw new InvalidOperationException(
                 "Người thay đổi trạng thái tăng ca không khớp với actor của transition.");
+        }
+
+        if (AffectsPayrollMoney(
+        statusChange.PreviousStatus,
+        statusChange.NewStatus))
+        {
+            bool payrollPeriodLocked =
+                await dbContext
+                    .PayrollPeriods
+                    .AsNoTracking()
+                    .AnyAsync(
+                        period =>
+                            period.Year ==
+                                persistedRequest.WorkDate.Year
+                            && period.Month ==
+                                persistedRequest.WorkDate.Month
+                            && period.Status ==
+                                PayrollPeriodStatus.Closed,
+                        cancellationToken);
+
+            if (payrollPeriodLocked)
+            {
+                throw new InvalidOperationException(
+                    "Không thể thay đổi trạng thái tăng ca vì kỳ lương của ngày tăng ca đã được đóng.");
+            }
         }
 
         OvertimeRequestStatusChange persistedStatusChange;
@@ -188,5 +214,23 @@ public sealed class EfOvertimeRequestStatusTransitionPersistence
 
         await transaction.CommitAsync(
             cancellationToken);
+    }
+
+    private static bool AffectsPayrollMoney(
+    OvertimeRequestStatus previousStatus,
+    OvertimeRequestStatus targetStatus)
+    {
+        return (
+                previousStatus ==
+                    OvertimeRequestStatus.Pending
+                && targetStatus ==
+                    OvertimeRequestStatus.Approved
+            )
+            || (
+                previousStatus ==
+                    OvertimeRequestStatus.Approved
+                && targetStatus ==
+                    OvertimeRequestStatus.Cancelled
+            );
     }
 }

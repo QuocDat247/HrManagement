@@ -1,6 +1,7 @@
 using System.Data;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Payroll.Compensation;
+using HrManagement.Domain.Payroll.Periods;
 using HrManagement.Domain.Auditing;
 using HrManagement.Domain.Employees;
 using HrManagement.Domain.Payroll.Compensation;
@@ -105,6 +106,45 @@ public sealed class EfEmployeeCompensationPersistence
         {
             throw new EmployeeCompensationConcurrencyException(
                 "Ngày hiệu lực lương không còn nằm trong giai đoạn làm việc của nhân viên.");
+        }
+
+        int fromPeriodKey =
+            newCompensation.EffectiveFrom.Year
+            * 100
+            + newCompensation.EffectiveFrom.Month;
+
+                int? toPeriodKey =
+                    employmentPeriod.EndDate.HasValue
+                        ? employmentPeriod.EndDate.Value.Year
+                            * 100
+                            + employmentPeriod.EndDate.Value.Month
+                        : null;
+
+        bool overlapsClosedPayrollPeriod =
+            await dbContext
+                .PayrollPeriods
+                .AsNoTracking()
+                .AnyAsync(
+                    period =>
+                        period.Status ==
+                            PayrollPeriodStatus.Closed
+                        && (
+                            period.Year * 100
+                            + period.Month
+                        ) >= fromPeriodKey
+                        && (
+                            !toPeriodKey.HasValue
+                            || (
+                                period.Year * 100
+                                + period.Month
+                            ) <= toPeriodKey.Value
+                        ),
+                    cancellationToken);
+
+        if (overlapsClosedPayrollPeriod)
+        {
+            throw new InvalidOperationException(
+                "Không thể thay đổi cấu hình lương vì khoảng hiệu lực mới chồng lấn kỳ lương đã đóng.");
         }
 
         EmployeeCompensation[] currentRows =

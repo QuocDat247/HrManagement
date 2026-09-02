@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Payroll.Periods;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Overtime.Requests;
@@ -411,11 +412,16 @@ public sealed class OvertimeWorkflowAcceptanceTests
                     factory,
                     auditFactory);
 
+            var financialPeriodLockSource =
+                new EfPayrollFinancialPeriodLockSource(
+                    factory);
+
             var statusService =
                 new OvertimeRequestStatusService(
                     statusContextSource,
                     statusPersistence,
                     new AuthenticatedOvertimeRequestStatusAuthorizationPolicy(),
+                    financialPeriodLockSource,
                     currentUserContext,
                     timeProvider);
 

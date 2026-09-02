@@ -1,3 +1,4 @@
+using HrManagement.Application.Payroll.Periods;
 using HrManagement.Application.Attendance.Timesheets;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Overtime.Requests;
@@ -284,6 +285,150 @@ public sealed class OvertimeRequestStatusServiceTests
             result.ErrorMessage);
     }
 
+    [Fact]
+    public async Task ChangeStatusAsync_WhenApprovingAndPayrollIsClosed_FailsWithoutMutation()
+    {
+        OvertimeRequest overtimeRequest =
+            CreatePendingRequest();
+
+        TestContext context =
+            CreateContext(
+                overtimeRequest);
+
+        context.FinancialPeriodLockSource.Result =
+            true;
+
+        ChangeOvertimeRequestStatusResult result =
+            await context.Service.ChangeStatusAsync(
+                ValidApproveRequest(
+                    overtimeRequest));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Contains(
+            "kỳ lương",
+            result.ErrorMessage);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Pending,
+            overtimeRequest.Status);
+
+        Assert.Null(
+            overtimeRequest.ApprovedMinutes);
+
+        Assert.Empty(
+            context.Persistence.Applied);
+
+        Assert.Equal(
+            1,
+            context.FinancialPeriodLockSource.CallCount);
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_WhenCancellingApprovedAndPayrollIsClosed_FailsWithoutMutation()
+    {
+        OvertimeRequest overtimeRequest =
+            CreatePendingRequest();
+
+        overtimeRequest.TransitionTo(
+            Guid.NewGuid(),
+            OvertimeRequestStatus.Approved,
+            Utc(
+                12),
+            "user-1",
+            "admin",
+            approvedMinutes:
+                120);
+
+        TestContext context =
+            CreateContext(
+                overtimeRequest);
+
+        context.FinancialPeriodLockSource.Result =
+            true;
+
+        ChangeOvertimeRequestStatusResult result =
+            await context.Service.ChangeStatusAsync(
+                new ChangeOvertimeRequestStatusRequest(
+                    overtimeRequest.Id,
+                    OvertimeRequestStatus.Approved,
+                    OvertimeRequestStatus.Cancelled));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            OvertimeRequestStatus.Approved,
+            overtimeRequest.Status);
+
+        Assert.Equal(
+            120,
+            overtimeRequest.ApprovedMinutes);
+
+        Assert.Empty(
+            context.Persistence.Applied);
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_WhenRejectingPendingRequest_DoesNotUsePayrollLock()
+    {
+        OvertimeRequest overtimeRequest =
+            CreatePendingRequest();
+
+        TestContext context =
+            CreateContext(
+                overtimeRequest);
+
+        context.FinancialPeriodLockSource.Result =
+            true;
+
+        ChangeOvertimeRequestStatusResult result =
+            await context.Service.ChangeStatusAsync(
+                new ChangeOvertimeRequestStatusRequest(
+                    overtimeRequest.Id,
+                    OvertimeRequestStatus.Pending,
+                    OvertimeRequestStatus.Rejected));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            0,
+            context.FinancialPeriodLockSource.CallCount);
+
+        Assert.Single(
+            context.Persistence.Applied);
+    }
+
+    [Fact]
+    public async Task ChangeStatusAsync_WhenCancellingPendingRequest_DoesNotUsePayrollLock()
+    {
+        OvertimeRequest overtimeRequest =
+            CreatePendingRequest();
+
+        TestContext context =
+            CreateContext(
+                overtimeRequest);
+
+        context.FinancialPeriodLockSource.Result =
+            true;
+
+        ChangeOvertimeRequestStatusResult result =
+            await context.Service.ChangeStatusAsync(
+                new ChangeOvertimeRequestStatusRequest(
+                    overtimeRequest.Id,
+                    OvertimeRequestStatus.Pending,
+                    OvertimeRequestStatus.Cancelled));
+
+        Assert.True(
+            result.IsSuccessful);
+
+        Assert.Equal(
+            0,
+            context.FinancialPeriodLockSource.CallCount);
+    }
+
     private static ChangeOvertimeRequestStatusRequest
         ValidApproveRequest(
             OvertimeRequest overtimeRequest)
@@ -312,8 +457,8 @@ public sealed class OvertimeRequestStatusServiceTests
         var authorizationPolicy =
             new StubAuthorizationPolicy();
 
-        var periodLockPolicy =
-            new StubPeriodLockPolicy();
+        var financialPeriodLockSource =
+            new StubFinancialPeriodLockSource();
 
         var currentUserContext =
             new StubCurrentUserContext
@@ -330,6 +475,7 @@ public sealed class OvertimeRequestStatusServiceTests
                 contextSource,
                 persistence,
                 authorizationPolicy,
+                financialPeriodLockSource,
                 currentUserContext,
                 new FixedTimeProvider(
                     new DateTimeOffset(
@@ -341,6 +487,7 @@ public sealed class OvertimeRequestStatusServiceTests
             contextSource,
             persistence,
             authorizationPolicy,
+            financialPeriodLockSource,
             currentUserContext);
     }
 
@@ -366,6 +513,7 @@ public sealed class OvertimeRequestStatusServiceTests
         StubContextSource ContextSource,
         StubPersistence Persistence,
         StubAuthorizationPolicy AuthorizationPolicy,
+        StubFinancialPeriodLockSource FinancialPeriodLockSource,
         StubCurrentUserContext CurrentUserContext);
 
     private sealed class StubContextSource
@@ -471,10 +619,10 @@ public sealed class OvertimeRequestStatusServiceTests
         }
     }
 
-    private sealed class StubPeriodLockPolicy
-        : IAttendancePeriodLockPolicy
+    private sealed class StubFinancialPeriodLockSource
+    : IPayrollFinancialPeriodLockSource
     {
-        public bool IsLocked
+        public bool Result
         {
             get;
             set;
@@ -486,14 +634,33 @@ public sealed class OvertimeRequestStatusServiceTests
             private set;
         }
 
+        public DateOnly? LastEffectiveFrom
+        {
+            get;
+            private set;
+        }
+
+        public DateOnly? LastEffectiveTo
+        {
+            get;
+            private set;
+        }
+
         public Task<bool> IsLockedAsync(
-            DateOnly workDate,
+            DateOnly effectiveFrom,
+            DateOnly? effectiveTo = null,
             CancellationToken cancellationToken = default)
         {
             CallCount++;
 
+            LastEffectiveFrom =
+                effectiveFrom;
+
+            LastEffectiveTo =
+                effectiveTo;
+
             return Task.FromResult(
-                IsLocked);
+                Result);
         }
     }
 

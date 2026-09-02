@@ -1,3 +1,4 @@
+using HrManagement.Application.Payroll.Periods;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Employees;
 using HrManagement.Application.Payroll.Compensation;
@@ -324,6 +325,64 @@ public sealed class EmployeeCompensationServiceTests
             context.AuthorizationPolicy.CallCount);
     }
 
+    [Fact]
+    public async Task SetAsync_WhenNewEffectiveRangeOverlapsClosedPayroll_FailsWithoutMutatingCurrentCompensation()
+    {
+        TestContext context =
+            CreateContext();
+
+        var current =
+            new EmployeeCompensation(
+                Guid.NewGuid(),
+                context.EmployeeId,
+                context.EmploymentPeriod.Id,
+                new DateOnly(
+                    2026,
+                    8,
+                    1),
+                25_000_000m,
+                "VND");
+
+        context.ContextSource.Context =
+            new EmployeeCompensationContext(
+                context.EmploymentPeriod,
+                current);
+
+        context.FinancialPeriodLockSource.Result =
+            true;
+
+        SetEmployeeCompensationResult result =
+            await context.Service.SetAsync(
+                new SetEmployeeCompensationRequest(
+                    context.EmployeeId,
+                    new DateOnly(
+                        2026,
+                        8,
+                        15),
+                    28_000_000m,
+                    "VND"));
+
+        Assert.False(
+            result.IsSuccessful);
+
+        Assert.Contains(
+            "kỳ lương đã đóng",
+            result.ErrorMessage);
+
+        Assert.True(
+            current.IsOpen);
+
+        Assert.Null(
+            current.EffectiveTo);
+
+        Assert.Empty(
+            context.Persistence.NewCompensations);
+
+        Assert.Equal(
+            1,
+            context.FinancialPeriodLockSource.CallCount);
+    }
+
     private static SetEmployeeCompensationRequest
         ValidRequest(
             Guid employeeId)
@@ -375,6 +434,9 @@ public sealed class EmployeeCompensationServiceTests
         var authorizationPolicy =
             new StubAuthorizationPolicy();
 
+        var financialPeriodLockSource =
+            new StubFinancialPeriodLockSource();
+
         var currentUserContext =
             new StubCurrentUserContext
             {
@@ -391,6 +453,7 @@ public sealed class EmployeeCompensationServiceTests
                 contextSource,
                 persistence,
                 authorizationPolicy,
+                financialPeriodLockSource,
                 currentUserContext);
 
         return new TestContext(
@@ -401,6 +464,7 @@ public sealed class EmployeeCompensationServiceTests
             contextSource,
             persistence,
             authorizationPolicy,
+            financialPeriodLockSource,
             currentUserContext);
     }
 
@@ -438,6 +502,7 @@ public sealed class EmployeeCompensationServiceTests
         StubContextSource ContextSource,
         StubPersistence Persistence,
         StubAuthorizationPolicy AuthorizationPolicy,
+        StubFinancialPeriodLockSource FinancialPeriodLockSource,
         StubCurrentUserContext CurrentUserContext);
 
     private sealed class StubContextSource
@@ -598,6 +663,51 @@ public sealed class EmployeeCompensationServiceTests
             CancellationToken cancellationToken = default)
         {
             throw new NotSupportedException();
+        }
+    }
+
+    private sealed class StubFinancialPeriodLockSource
+    : IPayrollFinancialPeriodLockSource
+    {
+        public bool Result
+        {
+            get;
+            set;
+        }
+
+        public int CallCount
+        {
+            get;
+            private set;
+        }
+
+        public DateOnly? LastEffectiveFrom
+        {
+            get;
+            private set;
+        }
+
+        public DateOnly? LastEffectiveTo
+        {
+            get;
+            private set;
+        }
+
+        public Task<bool> IsLockedAsync(
+            DateOnly effectiveFrom,
+            DateOnly? effectiveTo = null,
+            CancellationToken cancellationToken = default)
+        {
+            CallCount++;
+
+            LastEffectiveFrom =
+                effectiveFrom;
+
+            LastEffectiveTo =
+                effectiveTo;
+
+            return Task.FromResult(
+                Result);
         }
     }
 }

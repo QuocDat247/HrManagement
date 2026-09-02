@@ -295,6 +295,10 @@ public static class ServiceCollectionExtensions
             IClosePayrollPeriodService,
             ClosePayrollPeriodService>();
 
+        services.AddSingleton<
+            IPayrollFinancialPeriodLockSource,
+            EfPayrollFinancialPeriodLockSource>();
+
         services.AddScoped<
             IPayrollCalculationInputService,
             PayrollCalculationInputService>();

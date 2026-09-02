@@ -1,3 +1,4 @@
+using HrManagement.Domain.Payroll.Periods;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Overtime.Requests;
 using HrManagement.Domain.Auditing;
@@ -401,6 +402,174 @@ public sealed class OvertimeRequestStatusTransitionPersistenceTests
                 .ToArrayAsync());
     }
 
+    [Fact]
+    public async Task ApplyAsync_WhenPayrollPeriodIsClosed_RejectsApprovalWithoutWrites()
+    {
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await database.SeedPendingRequestAsync();
+
+        await database.ClosePayrollPeriodAsync(
+            seed.Request.WorkDate);
+
+        OvertimeRequestStatusChange statusChange =
+            seed.Request.TransitionTo(
+                Guid.NewGuid(),
+                OvertimeRequestStatus.Approved,
+                Utc(
+                    14),
+                "user-1",
+                "admin",
+                approvedMinutes:
+                    120);
+
+        InvalidOperationException exception =
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () =>
+                    database.Persistence.ApplyAsync(
+                        statusChange,
+                        "user-1",
+                        "admin"));
+
+        Assert.Contains(
+            "kỳ lương",
+            exception.Message);
+
+        await using HrManagementDbContext verification =
+            await database.Factory.CreateDbContextAsync();
+
+        OvertimeRequest saved =
+            await verification
+                .OvertimeRequests
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            OvertimeRequestStatus.Pending,
+            saved.Status);
+
+        Assert.Null(
+            saved.ApprovedMinutes);
+
+        Assert.Empty(
+            await verification
+                .OvertimeRequestStatusChanges
+                .ToArrayAsync());
+
+        Assert.Empty(
+            await verification
+                .AuditEntries
+                .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenPayrollPeriodIsClosed_RejectsApprovedCancellationWithoutWrites()
+    {
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await database.SeedApprovedRequestAsync();
+
+        await database.ClosePayrollPeriodAsync(
+            seed.Request.WorkDate);
+
+        OvertimeRequestStatusChange cancellation =
+            seed.Request.TransitionTo(
+                Guid.NewGuid(),
+                OvertimeRequestStatus.Cancelled,
+                Utc(
+                    15),
+                "user-1",
+                "admin");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () =>
+                database.Persistence.ApplyAsync(
+                    cancellation,
+                    "user-1",
+                    "admin"));
+
+        await using HrManagementDbContext verification =
+            await database.Factory.CreateDbContextAsync();
+
+        OvertimeRequest saved =
+            await verification
+                .OvertimeRequests
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            OvertimeRequestStatus.Approved,
+            saved.Status);
+
+        Assert.Equal(
+            120,
+            saved.ApprovedMinutes);
+
+        Assert.Empty(
+            await verification
+                .OvertimeRequestStatusChanges
+                .ToArrayAsync());
+
+        Assert.Empty(
+            await verification
+                .AuditEntries
+                .ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenPayrollPeriodIsClosed_AllowsPendingRejection()
+    {
+        await using TestDatabase database =
+            await TestDatabase.CreateAsync();
+
+        SeedResult seed =
+            await database.SeedPendingRequestAsync();
+
+        await database.ClosePayrollPeriodAsync(
+            seed.Request.WorkDate);
+
+        OvertimeRequestStatusChange rejection =
+            seed.Request.TransitionTo(
+                Guid.NewGuid(),
+                OvertimeRequestStatus.Rejected,
+                Utc(
+                    14),
+                "user-1",
+                "admin");
+
+        await database.Persistence.ApplyAsync(
+            rejection,
+            "user-1",
+            "admin");
+
+        await using HrManagementDbContext verification =
+            await database.Factory.CreateDbContextAsync();
+
+        OvertimeRequest saved =
+            await verification
+                .OvertimeRequests
+                .AsNoTracking()
+                .SingleAsync();
+
+        Assert.Equal(
+            OvertimeRequestStatus.Rejected,
+            saved.Status);
+
+        Assert.Single(
+            await verification
+                .OvertimeRequestStatusChanges
+                .ToArrayAsync());
+
+        Assert.Single(
+            await verification
+                .AuditEntries
+                .ToArrayAsync());
+    }
+
     private sealed record SeedResult(
         Guid EmployeeId,
         OvertimeRequest Request);
@@ -419,6 +588,49 @@ public sealed class OvertimeRequestStatusTransitionPersistenceTests
         public EfOvertimeRequestStatusTransitionPersistence Persistence
         {
             get;
+        }
+
+        public async Task ClosePayrollPeriodAsync(
+    DateOnly workDate)
+        {
+            Guid timesheetPeriodId =
+                Guid.NewGuid();
+
+            var timesheetPeriod =
+                new HrManagement.Domain.Attendance.Timesheets.TimesheetPeriod(
+                    timesheetPeriodId,
+                    workDate.Year,
+                    workDate.Month);
+
+            timesheetPeriod.Close(
+                Utc(
+                    17),
+                "user-1",
+                "admin");
+
+            var payrollPeriod =
+                new PayrollPeriod(
+                    Guid.NewGuid(),
+                    timesheetPeriodId,
+                    workDate.Year,
+                    workDate.Month);
+
+            payrollPeriod.Close(
+                Utc(
+                    18),
+                "user-1",
+                "admin");
+
+            await using HrManagementDbContext dbContext =
+                await Factory.CreateDbContextAsync();
+
+            dbContext.TimesheetPeriods.Add(
+                timesheetPeriod);
+
+            dbContext.PayrollPeriods.Add(
+                payrollPeriod);
+
+            await dbContext.SaveChangesAsync();
         }
 
         private TestDatabase(
