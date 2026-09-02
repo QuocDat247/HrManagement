@@ -22,4 +22,7 @@ public static class AuditEntityTypes
 
     public const string OvertimeRequest =
         "OvertimeRequest";
+
+    public const string EmployeeCompensation =
+        "EmployeeCompensation";
 }

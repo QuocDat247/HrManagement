@@ -1,3 +1,5 @@
+using HrManagement.Application.Payroll.Compensation;
+using HrManagement.Infrastructure.Payroll.Compensation;
 using HrManagement.Application.Attendance.Corrections;
 using HrManagement.Infrastructure.Attendance.Corrections;
 using HrManagement.Application.Workspaces.HolidayExceptions;
@@ -217,6 +219,26 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IOvertimeRequestStatusService,
             OvertimeRequestStatusService>();
+
+        services.AddSingleton<
+            IEmployeeCompensationContextSource,
+            EfEmployeeCompensationContextSource>();
+
+        services.AddSingleton<
+            IEmployeeCompensationPersistence,
+            EfEmployeeCompensationPersistence>();
+
+        services.AddSingleton<
+            IEmployeeCompensationQuerySource,
+            EfEmployeeCompensationQuerySource>();
+
+        services.AddSingleton<
+            IEmployeeCompensationAuthorizationPolicy,
+            AuthenticatedEmployeeCompensationAuthorizationPolicy>();
+
+        services.AddScoped<
+            IEmployeeCompensationService,
+            EmployeeCompensationService>();
 
         services.AddSingleton<
             ITimesheetPeriodClosingAuthorizationPolicy,
