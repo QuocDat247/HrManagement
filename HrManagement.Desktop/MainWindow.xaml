@@ -49,6 +49,10 @@ WindowStartupLocation="CenterScreen">
             <views:OvertimeWorkspaceView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:PayrollWorkspaceViewModel}">
+            <views:PayrollWorkspaceView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:AttendanceLeaveWorkspaceViewModel}">
             <views:AttendanceLeaveWorkspaceView />
         </DataTemplate>

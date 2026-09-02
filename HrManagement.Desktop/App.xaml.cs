@@ -155,6 +155,8 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<OvertimeWorkspaceViewModel>();
 
+        services.AddTransient<PayrollWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();

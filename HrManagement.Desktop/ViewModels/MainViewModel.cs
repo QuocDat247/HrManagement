@@ -73,6 +73,10 @@ public sealed partial class MainViewModel : ObservableObject
                 typeof(OvertimeWorkspaceViewModel)),
 
             new NavigationItem(
+                "Bảng lương",
+                typeof(PayrollWorkspaceViewModel)),
+
+            new NavigationItem(
                 "Chấm công & Nghỉ phép",
                 typeof(AttendanceLeaveWorkspaceViewModel))
 
