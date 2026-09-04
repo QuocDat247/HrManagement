@@ -694,7 +694,8 @@
                                   Background="Transparent">
 
                             <DataGrid.Style>
-                                <Style TargetType="DataGrid">
+                                <Style TargetType="{x:Type DataGrid}"
+                                       BasedOn="{StaticResource {x:Type DataGrid}}">
                                     <Setter Property="Visibility"
                                             Value="Visible" />
 
@@ -793,7 +794,8 @@
                                   Background="Transparent">
 
                             <DataGrid.Style>
-                                <Style TargetType="DataGrid">
+                                <Style TargetType="{x:Type DataGrid}"
+                                       BasedOn="{StaticResource {x:Type DataGrid}}">
                                     <Setter Property="Visibility"
                                             Value="Visible" />
 
