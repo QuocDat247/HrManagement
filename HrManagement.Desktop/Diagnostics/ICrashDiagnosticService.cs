@@ -9,7 +9,8 @@ public enum CrashOrigin
 
 public sealed record CrashDiagnosticResult(
     string CrashId,
-    string FilePath);
+    string FilePath,
+    CrashDiagnosticDocument Document);
 
 public interface ICrashDiagnosticService
 {

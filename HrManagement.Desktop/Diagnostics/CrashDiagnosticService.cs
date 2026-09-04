@@ -96,8 +96,10 @@ public sealed class CrashDiagnosticService :
                         _options.CrashDirectory,
                         $"{crashId}.json");
 
-                CrashReport report =
+                CrashDiagnosticDocument report =
                     new(
+                        SchemaVersion:
+                            1,
                         CrashId:
                             crashId,
                         TimestampUtc:
@@ -127,7 +129,8 @@ public sealed class CrashDiagnosticService :
 
                 return new CrashDiagnosticResult(
                     crashId,
-                    filePath);
+                    filePath,
+                    report);
             }
         }
         catch
@@ -152,7 +155,7 @@ public sealed class CrashDiagnosticService :
             $"CRASH-{utcNow:yyyyMMdd}-{suffix}";
     }
 
-    private static SafeExceptionMetadata
+    private static SafeExceptionDiagnostic
         CreateExceptionMetadata(
             Exception exception)
     {
@@ -172,7 +175,7 @@ public sealed class CrashDiagnosticService :
                 current.InnerException;
         }
 
-        return new SafeExceptionMetadata(
+        return new SafeExceptionDiagnostic(
             Type:
                 exception.GetType().FullName
                 ?? exception.GetType().Name,
@@ -294,20 +297,4 @@ public sealed class CrashDiagnosticService :
                 WriteIndented =
                     true
             };
-
-    private sealed record CrashReport(
-        string CrashId,
-        DateTime TimestampUtc,
-        string Origin,
-        bool ProcessTerminating,
-        string ApplicationVersion,
-        string OperatingSystem,
-        string Framework,
-        SafeExceptionMetadata Exception);
-
-    private sealed record SafeExceptionMetadata(
-        string Type,
-        int HResult,
-        string? StackTrace,
-        IReadOnlyList<string> InnerExceptionTypes);
 }

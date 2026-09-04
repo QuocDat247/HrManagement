@@ -67,6 +67,10 @@ public partial class App : System.Windows.Application
             _serviceProvider.GetRequiredService<
                 ICrashDiagnosticService>();
 
+        services.AddSingleton<
+            IDiagnosticEnvelopeFactory,
+            DiagnosticEnvelopeFactory>();
+
         DispatcherUnhandledException +=
             OnDispatcherUnhandledException;
 
