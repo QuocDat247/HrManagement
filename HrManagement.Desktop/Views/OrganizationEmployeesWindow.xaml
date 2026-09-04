@@ -7,7 +7,8 @@
         MinWidth="760"
         MinHeight="480"
         WindowStartupLocation="CenterOwner"
-        Loaded="OrganizationEmployeesWindow_Loaded">
+        Loaded="OrganizationEmployeesWindow_Loaded"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
 
@@ -22,23 +23,18 @@
         <StackPanel>
 
             <TextBlock Text="{Binding Heading}"
-                       FontSize="24"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,6,0,0"
                        Text="Danh sách được lấy từ phân công phòng ban và chức danh hiện tại."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
 
         </StackPanel>
 
         <!-- Selected organization -->
         <Border Grid.Row="1"
                 Margin="0,20,0,16"
-                Padding="16"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <StackPanel>
 
@@ -79,7 +75,8 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Auto">
 
                     <DataGrid.Style>
-                        <Style TargetType="DataGrid">
+                        <Style TargetType="{x:Type DataGrid}"
+                               BasedOn="{StaticResource {x:Type DataGrid}}">
 
                             <Setter Property="Visibility"
                                     Value="Collapsed" />
@@ -239,7 +236,8 @@
                 Margin="0,18,0,0"
                 HorizontalAlignment="Right"
                 Content="Đóng"
-                IsCancel="True" />
+                IsCancel="True"
+                Style="{StaticResource DialogSecondaryButtonStyle}" />
 
     </Grid>
 

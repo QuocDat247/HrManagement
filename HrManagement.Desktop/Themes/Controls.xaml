@@ -434,6 +434,105 @@
         </Setter>
     </Style>
 
+    <!-- Shared ListBox -->
+    <Style TargetType="{x:Type ListBox}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource ControlBackgroundBrush}" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+        <Setter Property="BorderBrush"
+            Value="{DynamicResource BorderBrush}" />
+
+        <Setter Property="BorderThickness"
+            Value="1" />
+
+    </Style>
+
+
+    <Style TargetType="{x:Type ListBoxItem}">
+
+        <Setter Property="Background"
+            Value="Transparent" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+        <Setter Property="BorderBrush"
+            Value="Transparent" />
+
+        <Setter Property="BorderThickness"
+            Value="1" />
+
+        <Setter Property="HorizontalContentAlignment"
+            Value="Stretch" />
+
+        <Setter Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Setter Property="Template">
+            <Setter.Value>
+
+                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+
+                    <Border x:Name="ItemBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        Padding="{TemplateBinding Padding}"
+                        SnapsToDevicePixels="True">
+
+                        <ContentPresenter
+                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+
+                        <Trigger Property="IsMouseOver"
+                             Value="True">
+
+                            <Setter TargetName="ItemBorder"
+                                Property="Background"
+                                Value="{DynamicResource DataGridAlternateRowBackgroundBrush}" />
+
+                        </Trigger>
+
+                        <Trigger Property="IsSelected"
+                             Value="True">
+
+                            <Setter TargetName="ItemBorder"
+                                Property="Background"
+                                Value="{DynamicResource DataGridHeaderBackgroundBrush}" />
+
+                            <Setter TargetName="ItemBorder"
+                                Property="BorderBrush"
+                                Value="{DynamicResource PrimaryBrush}" />
+
+                            <Setter Property="Foreground"
+                                Value="{DynamicResource PrimaryTextBrush}" />
+
+                        </Trigger>
+
+                        <Trigger Property="IsEnabled"
+                             Value="False">
+
+                            <Setter Property="Foreground"
+                                Value="{DynamicResource ControlDisabledTextBrush}" />
+
+                        </Trigger>
+
+                    </ControlTemplate.Triggers>
+
+                </ControlTemplate>
+
+            </Setter.Value>
+        </Setter>
+
+    </Style>
     <!-- Shared DataGrid -->
     <Style TargetType="{x:Type DataGrid}">
         <Setter Property="Background"
@@ -485,14 +584,32 @@
     </Style>
 
     <Style TargetType="{x:Type DataGridRow}">
+
         <Setter Property="Foreground"
             Value="{DynamicResource PrimaryTextBrush}" />
 
         <Setter Property="BorderBrush"
             Value="{DynamicResource BorderBrush}" />
+
+        <Style.Triggers>
+
+            <Trigger Property="IsSelected"
+                 Value="True">
+
+                <Setter Property="Background"
+                    Value="{DynamicResource PrimaryBrush}" />
+
+                <Setter Property="Foreground"
+                    Value="White" />
+
+            </Trigger>
+
+        </Style.Triggers>
+
     </Style>
 
     <Style TargetType="{x:Type DataGridCell}">
+
         <Setter Property="Foreground"
             Value="{DynamicResource PrimaryTextBrush}" />
 
@@ -501,6 +618,22 @@
 
         <Setter Property="Padding"
             Value="5,3" />
+
+        <Style.Triggers>
+
+            <Trigger Property="IsSelected"
+                 Value="True">
+
+                <Setter Property="Background"
+                    Value="{DynamicResource PrimaryBrush}" />
+
+                <Setter Property="Foreground"
+                    Value="White" />
+
+            </Trigger>
+
+        </Style.Triggers>
+
     </Style>
 
     <!-- Shared DatePicker -->
@@ -948,6 +1081,141 @@
 
             </Setter.Value>
         </Setter>
+
+    </Style>
+
+    <!-- =========================================================
+     Dialog / Secondary Window foundation
+     ========================================================= -->
+
+    <Style x:Key="DialogWindowStyle"
+       TargetType="{x:Type Window}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource PageBackgroundBrush}" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+        <Setter Property="UseLayoutRounding"
+            Value="True" />
+
+        <Setter Property="SnapsToDevicePixels"
+            Value="True" />
+
+    </Style>
+
+
+    <Style x:Key="DialogTitleTextStyle"
+       TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontSize"
+            Value="22" />
+
+        <Setter Property="FontWeight"
+            Value="SemiBold" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+    </Style>
+
+
+    <Style x:Key="DialogSubtitleTextStyle"
+       TargetType="{x:Type TextBlock}">
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource SecondaryTextBrush}" />
+
+        <Setter Property="TextWrapping"
+            Value="Wrap" />
+
+    </Style>
+
+
+    <Style x:Key="DialogLabelTextStyle"
+       TargetType="{x:Type TextBlock}">
+
+        <Setter Property="FontWeight"
+            Value="SemiBold" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+    </Style>
+
+
+    <Style x:Key="DialogSectionBorderStyle"
+       TargetType="{x:Type Border}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource CardBackgroundBrush}" />
+
+        <Setter Property="BorderBrush"
+            Value="{DynamicResource BorderBrush}" />
+
+        <Setter Property="BorderThickness"
+            Value="1" />
+
+        <Setter Property="CornerRadius"
+            Value="8" />
+
+        <Setter Property="Padding"
+            Value="16" />
+
+    </Style>
+
+
+    <Style x:Key="DialogPrimaryButtonStyle"
+       TargetType="{x:Type Button}"
+       BasedOn="{StaticResource {x:Type Button}}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource PrimaryBrush}" />
+
+        <Setter Property="Foreground"
+            Value="White" />
+
+        <Setter Property="BorderBrush"
+            Value="{DynamicResource PrimaryBrush}" />
+
+        <Setter Property="FontWeight"
+            Value="SemiBold" />
+
+        <Setter Property="MinHeight"
+            Value="34" />
+
+    </Style>
+
+
+    <Style x:Key="DialogSecondaryButtonStyle"
+       TargetType="{x:Type Button}"
+       BasedOn="{StaticResource {x:Type Button}}">
+
+        <Setter Property="MinHeight"
+            Value="34" />
+
+    </Style>
+
+
+    <Style x:Key="DialogDangerButtonStyle"
+       TargetType="{x:Type Button}"
+       BasedOn="{StaticResource {x:Type Button}}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource SeparationBrush}" />
+
+        <Setter Property="Foreground"
+            Value="White" />
+
+        <Setter Property="BorderBrush"
+            Value="{DynamicResource SeparationBrush}" />
+
+        <Setter Property="FontWeight"
+            Value="SemiBold" />
+
+        <Setter Property="MinHeight"
+            Value="34" />
 
     </Style>
     <!-- Tạo Card style -->

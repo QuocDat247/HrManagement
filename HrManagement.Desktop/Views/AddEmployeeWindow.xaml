@@ -5,7 +5,8 @@
         Width="520"
         Height="650"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Style="{StaticResource DialogWindowStyle}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <Grid Margin="24">
@@ -15,63 +16,81 @@
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock Text="Thêm nhân viên"
-                       Style="{StaticResource PageTitleTextStyle}" />
+            <StackPanel>
+
+                <TextBlock Text="Thêm nhân viên"
+                           Style="{StaticResource DialogTitleTextStyle}" />
+
+                <TextBlock Margin="0,6,0,0"
+                           Text="Tạo hồ sơ nhân viên mới trong hệ thống."
+                           Style="{StaticResource DialogSubtitleTextStyle}" />
+
+            </StackPanel>
 
             <StackPanel Grid.Row="1"
                         Margin="0,24,0,0">
 
-                <TextBlock Text="Mã nhân viên" />
+                <TextBlock Text="Mã nhân viên"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <TextBox Margin="0,6,0,12"
                          Text="{Binding EmployeeCode,
                                         UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Text="Họ và tên" />
+                <TextBlock Text="Họ và tên"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <TextBox Margin="0,6,0,12"
                          Text="{Binding FullName,
                                         UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Text="Email" />
+                <TextBlock Text="Email"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <TextBox Margin="0,6,0,12"
                          Text="{Binding Email,
                                         UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Text="Số điện thoại" />
+                <TextBlock Text="Số điện thoại"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <TextBox Margin="0,6,0,12"
                          Text="{Binding PhoneNumber,
                                         UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBlock Text="Ngày sinh" />
+                <TextBlock Text="Ngày sinh"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <DatePicker Margin="0,6,0,12"
                             SelectedDate="{Binding DateOfBirth}" />
 
-                <TextBlock Text="Ngày vào làm" />
+                <TextBlock Text="Ngày vào làm"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <DatePicker Margin="0,6,0,12"
                             SelectedDate="{Binding HireDate}" />
 
-                <TextBlock Text="Phòng ban" />
+                <TextBlock Text="Phòng ban"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <ComboBox Margin="0,6,0,12"
                     ItemsSource="{Binding DepartmentOptions}"
                     SelectedItem="{Binding SelectedDepartment}"
                     DisplayMemberPath="Name" />
 
-                <TextBlock Text="Chức vụ" />
+                <TextBlock Text="Chức vụ"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <ComboBox Margin="0,6,0,12"
                     ItemsSource="{Binding PositionOptions}"
                     SelectedItem="{Binding SelectedPosition}"
                     DisplayMemberPath="Name" />
 
-                <TextBlock Text="Trạng thái" />
+                <TextBlock Text="Trạng thái"
+                           Style="{StaticResource DialogLabelTextStyle}" />
                 <ComboBox Margin="0,6,0,12"
                           ItemsSource="{Binding StatusOptions}"
                           SelectedItem="{Binding SelectedStatus}" />
 
                 <TextBlock Text="{Binding ErrorMessage}"
-                           Foreground="IndianRed"
+                           Foreground="{DynamicResource SeparationBrush}"
                            Margin="0,0,0,12" />
                 <Button Content="Lưu"
                         Height="38"
-                        Command="{Binding SaveCommand}" />
+                        Command="{Binding SaveCommand}"
+                        Style="{StaticResource DialogPrimaryButtonStyle}" />
 
             </StackPanel>
         </Grid>

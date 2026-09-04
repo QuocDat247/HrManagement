@@ -7,7 +7,8 @@
         MinWidth="480"
         MinHeight="520"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -25,13 +26,13 @@
                     Margin="0,0,0,20">
 
             <TextBlock Text="Điều chuyển nhân viên"
-                       FontSize="24"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,6,0,0"
                        Text="{Binding EmployeeDisplayName}"
                        FontSize="15"
-                       FontWeight="SemiBold" />
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
 
         </StackPanel>
 
@@ -39,25 +40,25 @@
         <Border Grid.Row="1"
                 Margin="0,0,0,18"
                 Padding="14"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <StackPanel>
 
                 <TextBlock Text="Phân công hiện tại"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,8" />
+                           Margin="0,0,0,8"
+                           Style="{StaticResource DialogLabelTextStyle}" />
 
                 <TextBlock>
                     <Run Text="Phòng ban: " />
                     <Run Text="{Binding CurrentDepartmentName}"
+                         Foreground="{DynamicResource SecondaryTextBrush}"
                          FontWeight="SemiBold" />
                 </TextBlock>
 
                 <TextBlock Margin="0,5,0,0">
                     <Run Text="Chức danh: " />
                     <Run Text="{Binding CurrentPositionName}"
+                         Foreground="{DynamicResource SecondaryTextBrush}"
                          FontWeight="SemiBold" />
                 </TextBlock>
 
@@ -70,7 +71,8 @@
                     Margin="0,0,0,14">
 
             <TextBlock Text="Phòng ban mới"
-                       Margin="0,0,0,6" />
+                       Margin="0,0,0,6"
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <ComboBox MinHeight="36"
                       ItemsSource="{Binding DepartmentOptions}"
@@ -85,6 +87,7 @@
                     Margin="0,0,0,14">
 
             <TextBlock Text="Chức danh mới"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        Margin="0,0,0,6" />
 
             <ComboBox MinHeight="36"
@@ -100,6 +103,7 @@
                     Margin="0,0,0,14">
 
             <TextBlock Text="Ngày hiệu lực"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        Margin="0,0,0,6" />
 
             <DatePicker SelectedDate="{Binding EffectiveDate,
@@ -131,12 +135,14 @@
                     Width="90"
                     MinHeight="36"
                     Margin="0,0,10,0"
-                    IsCancel="True" />
+                    IsCancel="True"
+                    Style="{StaticResource DialogSecondaryButtonStyle}" />
 
             <Button Content="Điều chuyển"
                     Width="120"
                     MinHeight="36"
-                    Command="{Binding SaveCommand}" />
+                    Command="{Binding SaveCommand}"
+                    Style="{StaticResource DialogPrimaryButtonStyle}" />
 
         </StackPanel>
 

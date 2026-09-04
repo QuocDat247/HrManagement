@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Tái tuyển dụng"
         Width="480"
-        Height="470"
+        Height="544"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
 
@@ -17,37 +18,43 @@
 
         <StackPanel>
             <TextBlock Text="Tái tuyển dụng"
-                       FontSize="20"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,8,0,0"
                        Text="Tạo một giai đoạn làm việc mới cho nhân viên đã nghỉ việc."
-                       TextWrapping="Wrap" />
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1"
                     Margin="0,22,0,0">
 
             <TextBlock Text="Mã nhân viên"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        FontWeight="SemiBold" />
 
             <TextBlock Text="{Binding EmployeeCode}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Họ tên"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        FontWeight="SemiBold" />
 
             <TextBlock Text="{Binding FullName}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Ngày nghỉ gần nhất"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        FontWeight="SemiBold" />
 
             <TextBlock Text="{Binding TerminationDate,
                                      StringFormat={}{0:dd/MM/yyyy}}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Ngày tái tuyển dụng"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        FontWeight="SemiBold" />
 
             <DatePicker SelectedDate="{Binding RehireDate,
@@ -56,6 +63,7 @@
                         Margin="0,6,0,14" />
 
             <TextBlock Text="Trạng thái sau tái tuyển dụng"
+                       Style="{StaticResource DialogLabelTextStyle}"
                        FontWeight="SemiBold" />
 
             <ComboBox Margin="0,6,0,0"
@@ -84,11 +92,13 @@
             <Button Width="90"
                     Margin="0,0,10,0"
                     Content="Hủy"
-                    IsCancel="True" />
+                    IsCancel="True"
+                    Style="{StaticResource DialogSecondaryButtonStyle}" />
 
             <Button Width="110"
                     Content="Tái tuyển"
-                    Command="{Binding ConfirmCommand}" />
+                    Command="{Binding ConfirmCommand}"
+                    Style="{StaticResource DialogPrimaryButtonStyle}" />
 
         </StackPanel>
 

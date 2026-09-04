@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Hủy ngừng hoạt động"
         Width="480"
-        Height="410"
+        Height="466"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
 
@@ -17,38 +18,40 @@
 
         <StackPanel>
             <TextBlock Text="Hủy ngừng hoạt động"
-                       FontSize="20"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,8,0,0"
                        Text="Khôi phục quan hệ lao động do sự kiện nghỉ việc trước đó được ghi nhận nhầm."
-                       TextWrapping="Wrap" />
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
         </StackPanel>
 
         <StackPanel Grid.Row="1"
                     Margin="0,22,0,0">
 
             <TextBlock Text="Mã nhân viên"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <TextBlock Text="{Binding EmployeeCode}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Họ tên"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <TextBlock Text="{Binding FullName}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Ngày nghỉ đã ghi nhận"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <TextBlock Text="{Binding TerminationDate,
                                      StringFormat={}{0:dd/MM/yyyy}}"
+                       Foreground="{DynamicResource SecondaryTextBrush}"
                        Margin="0,4,0,14" />
 
             <TextBlock Text="Trạng thái khôi phục"
-                       FontWeight="SemiBold" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <ComboBox Margin="0,6,0,0"
                       ItemsSource="{Binding StatusOptions}"
@@ -76,11 +79,13 @@
             <Button Width="90"
                     Margin="0,0,10,0"
                     Content="Hủy"
-                    IsCancel="True" />
+                    IsCancel="True"
+                    Style="{StaticResource DialogSecondaryButtonStyle}" />
 
             <Button Width="110"
                     Content="Xác nhận"
-                    Command="{Binding ConfirmCommand}" />
+                    Command="{Binding ConfirmCommand}"
+                    Style="{StaticResource DialogPrimaryButtonStyle}" />
 
         </StackPanel>
 

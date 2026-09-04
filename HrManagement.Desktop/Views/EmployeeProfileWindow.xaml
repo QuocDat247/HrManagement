@@ -7,7 +7,8 @@
         MinWidth="680"
         MinHeight="580"
         WindowStartupLocation="CenterOwner"
-        Loaded="EmployeeProfileWindow_Loaded">
+        Loaded="EmployeeProfileWindow_Loaded"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
         <Grid.ColumnDefinitions>
@@ -28,23 +29,18 @@
         <StackPanel Grid.ColumnSpan="2" Margin="0,0,0,128" Grid.RowSpan="2">
 
             <TextBlock Text="Hồ sơ nhân viên"
-                       FontSize="24"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,6,0,0"
                        Text="Thông tin hồ sơ nhân sự và các dữ liệu liên quan."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
-
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
         </StackPanel>
 
         <Border Grid.Row="3"
-        Margin="0,0,0,12"
-        Padding="8"
-        BorderBrush="{DynamicResource BorderBrush}"
-        BorderThickness="1"
-        CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
+                Margin="0,0,0,12"
+                Padding="8"
+                Grid.ColumnSpan="2"
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <Grid>
 
@@ -56,89 +52,40 @@
                 </Grid.ColumnDefinitions>
 
                 <Button Grid.Column="0"
-                Margin="0,0,4,0"
-                Padding="10,7"
-                Content="Cá nhân"
-                Tag="Personal"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
+                        Margin="0,0,4,0"
+                        Padding="10,7"
+                        Content="Cá nhân"
+                        Tag="Personal"
+                        IsEnabled="{Binding IsLoaded}"
+                        Click="ProfileSectionNavigation_Click"
+                        Style="{StaticResource DialogSecondaryButtonStyle}" />
 
                 <Button Grid.Column="1"
-                Margin="4,0"
-                Padding="10,7"
-                Content="Địa chỉ"
-                Tag="Addresses"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
+                        Margin="4,0"
+                        Padding="10,7"
+                        Content="Địa chỉ"
+                        Tag="Addresses"
+                        IsEnabled="{Binding IsLoaded}"
+                        Click="ProfileSectionNavigation_Click"
+                        Style="{StaticResource DialogSecondaryButtonStyle}" />
 
                 <Button Grid.Column="2"
-                Margin="4,0"
-                Padding="10,7"
-                Content="Liên hệ khẩn cấp"
-                Tag="Emergency"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
+                        Margin="4,0"
+                        Padding="10,7"
+                        Content="Liên hệ khẩn cấp"
+                        Tag="Emergency"
+                        IsEnabled="{Binding IsLoaded}"
+                        Click="ProfileSectionNavigation_Click"
+                        Style="{StaticResource DialogSecondaryButtonStyle}" />
 
                 <Button Grid.Column="3"
-                Margin="4,0,0,0"
-                Padding="10,7"
-                Content="Giấy tờ"
-                Tag="Identification"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
-
-            </Grid>
-
-        </Border>
-
-        <Border Grid.Row="2"
-        Margin="0,0,0,12"
-        Padding="8"
-        BorderBrush="{DynamicResource BorderBrush}"
-        BorderThickness="1"
-        CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
-
-            <Grid>
-
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <Button Grid.Column="0"
-                Margin="0,0,4,0"
-                Padding="10,7"
-                Content="Cá nhân"
-                Tag="Personal"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
-
-                <Button Grid.Column="1"
-                Margin="4,0"
-                Padding="10,7"
-                Content="Địa chỉ"
-                Tag="Addresses"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
-
-                <Button Grid.Column="2"
-                Margin="4,0"
-                Padding="10,7"
-                Content="Liên hệ khẩn cấp"
-                Tag="Emergency"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
-
-                <Button Grid.Column="3"
-                Margin="4,0,0,0"
-                Padding="10,7"
-                Content="Giấy tờ"
-                Tag="Identification"
-                IsEnabled="{Binding IsLoaded}"
-                Click="ProfileSectionNavigation_Click" />
+                        Margin="4,0,0,0"
+                        Padding="10,7"
+                        Content="Giấy tờ"
+                        Tag="Identification"
+                        IsEnabled="{Binding IsLoaded}"
+                        Click="ProfileSectionNavigation_Click"
+                        Style="{StaticResource DialogSecondaryButtonStyle}" />
 
             </Grid>
 
@@ -147,11 +94,8 @@
         <!-- Employee summary -->
         <Border Grid.Row="1"
                 Margin="0,38,0,18"
-                Padding="16"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="6"
-                Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
+                Grid.ColumnSpan="2"
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <Grid>
 
@@ -179,7 +123,8 @@
 
                     <TextBlock Text="{Binding Department}"
                                FontWeight="SemiBold"
-                               TextWrapping="Wrap" />
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
 
                     <TextBlock Margin="0,4,0,0"
                                Text="{Binding Position}"
@@ -197,12 +142,10 @@
         </Border>
 
         <Border Grid.Row="2"
-        Margin="0,0,0,12"
-        Padding="14"
-        BorderBrush="{DynamicResource BorderBrush}"
-        BorderThickness="1"
-        CornerRadius="6"
-        Background="{DynamicResource PageBackgroundBrush}" Grid.ColumnSpan="2">
+                Margin="0,0,0,12"
+                Padding="14"
+                Grid.ColumnSpan="2"
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <StackPanel>
 
@@ -357,9 +300,7 @@
                 <!-- Personal information -->
                 <Border x:Name="PersonalSection"
                         Padding="18"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6">
+                        Style="{StaticResource DialogSectionBorderStyle}">
 
                     <StackPanel
                         DataContext="{Binding PersonalInformation}">
@@ -452,7 +393,8 @@
                                 Padding="12,8"
                                 HorizontalAlignment="Right"
                                 Content="Lưu thông tin"
-                                Command="{Binding SaveCommand}" />
+                                Command="{Binding SaveCommand}"
+                                Style="{StaticResource DialogPrimaryButtonStyle}" />
 
                     </StackPanel>
 
@@ -462,10 +404,8 @@
                 <Border x:Name="AddressesSection"
                         Margin="0,18,0,0"
                         Padding="18"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        DataContext="{Binding Addresses}">
+                        DataContext="{Binding Addresses}"
+                        Style="{StaticResource DialogSectionBorderStyle}">
 
                     <StackPanel>
 
@@ -488,20 +428,21 @@
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="5"
-                                DataContext="{Binding PermanentAddress}">
+                                DataContext="{Binding PermanentAddress}"
+                                Background="{DynamicResource PageBackgroundBrush}">
 
                             <StackPanel>
 
                                 <TextBlock Text="{Binding Title}"
-                           FontWeight="SemiBold"
-                           FontSize="15" />
+                                           FontWeight="SemiBold"
+                                           FontSize="15" />
 
                                 <TextBlock Margin="0,14,0,0"
-                           Text="Địa chỉ chi tiết" />
+                                           Text="Địa chỉ chi tiết" />
 
                                 <TextBox Margin="0,6,0,0"
-                         Text="{Binding AddressLine,
-                                UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding AddressLine,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
                                 <Grid Margin="0,14,0,0">
 
@@ -539,8 +480,8 @@
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Grid.Column="2"
-                                Margin="0,14,0,0">
+                                                Grid.Column="2"
+                                                Margin="0,14,0,0">
                                         <TextBlock Text="Mã bưu chính" />
                                         <TextBox Margin="0,6,0,0"
                                  Text="{Binding PostalCode,
@@ -550,34 +491,36 @@
                                 </Grid>
 
                                 <TextBlock Margin="0,14,0,0"
-                           Text="Quốc gia" />
+                                           Text="Quốc gia" />
 
                                 <TextBox Margin="0,6,0,0"
-                         Text="{Binding Country,
-                                UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding Country,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
                                 <TextBlock Margin="0,12,0,0"
-                           Text="{Binding ErrorMessage}"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource WarningBrush}" />
+                                           Text="{Binding ErrorMessage}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningBrush}" />
 
                                 <TextBlock Margin="0,6,0,0"
-                           Text="{Binding SuccessMessage}"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                           Text="{Binding SuccessMessage}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                 <StackPanel Margin="0,14,0,0"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right">
 
                                     <Button Width="90"
-                            Margin="0,0,8,0"
-                            Content="Xóa"
-                            Command="{Binding DeleteCommand}" />
+                                            Margin="0,0,8,0"
+                                            Content="Xóa"
+                                            Command="{Binding DeleteCommand}"
+                                            Style="{StaticResource DialogDangerButtonStyle}" />
 
                                     <Button Width="110"
-                            Content="Lưu địa chỉ"
-                            Command="{Binding SaveCommand}" />
+                                            Content="Lưu địa chỉ"
+                                            Command="{Binding SaveCommand}"
+                                            Style="{StaticResource DialogPrimaryButtonStyle}" />
 
                                 </StackPanel>
 
@@ -591,20 +534,21 @@
                                 BorderBrush="{DynamicResource BorderBrush}"
                                 BorderThickness="1"
                                 CornerRadius="5"
-                                DataContext="{Binding CurrentAddress}">
+                                DataContext="{Binding CurrentAddress}"
+                                Background="{DynamicResource PageBackgroundBrush}">
 
                             <StackPanel>
 
                                 <TextBlock Text="{Binding Title}"
-                           FontWeight="SemiBold"
-                           FontSize="15" />
+                                           FontWeight="SemiBold"
+                                           FontSize="15" />
 
                                 <TextBlock Margin="0,14,0,0"
-                           Text="Địa chỉ chi tiết" />
+                                           Text="Địa chỉ chi tiết" />
 
                                 <TextBox Margin="0,6,0,0"
-                         Text="{Binding AddressLine,
-                                UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding AddressLine,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
                                 <Grid Margin="0,14,0,0">
 
@@ -622,65 +566,67 @@
                                     <StackPanel>
                                         <TextBlock Text="Phường/Xã" />
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding Ward,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding Ward,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Quận/Huyện" />
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding District,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding District,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Margin="0,14,0,0">
+                                                Margin="0,14,0,0">
                                         <TextBlock Text="Tỉnh/Thành phố" />
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding Province,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding Province,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Grid.Column="2"
-                                Margin="0,14,0,0">
+                                                Grid.Column="2"
+                                                Margin="0,14,0,0">
                                         <TextBlock Text="Mã bưu chính" />
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding PostalCode,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding PostalCode,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                 </Grid>
 
                                 <TextBlock Margin="0,14,0,0"
-                           Text="Quốc gia" />
+                                           Text="Quốc gia" />
 
                                 <TextBox Margin="0,6,0,0"
-                         Text="{Binding Country,
-                                UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding Country,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
                                 <TextBlock Margin="0,12,0,0"
-                           Text="{Binding ErrorMessage}"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource WarningBrush}" />
+                                           Text="{Binding ErrorMessage}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource WarningBrush}" />
 
                                 <TextBlock Margin="0,6,0,0"
-                           Text="{Binding SuccessMessage}"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource SecondaryTextBrush}" />
+                                           Text="{Binding SuccessMessage}"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                 <StackPanel Margin="0,14,0,0"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right">
 
                                     <Button Width="90"
-                            Margin="0,0,8,0"
-                            Content="Xóa"
-                            Command="{Binding DeleteCommand}" />
+                                            Margin="0,0,8,0"
+                                            Content="Xóa"
+                                            Command="{Binding DeleteCommand}"
+                                            Style="{StaticResource DialogDangerButtonStyle}" />
 
                                     <Button Width="110"
-                            Content="Lưu địa chỉ"
-                            Command="{Binding SaveCommand}" />
+                                            Content="Lưu địa chỉ"
+                                            Command="{Binding SaveCommand}"
+                                            Style="{StaticResource DialogPrimaryButtonStyle}" />
 
                                 </StackPanel>
 
@@ -696,10 +642,8 @@
                 <Border x:Name="EmergencyContactsSection"
                         Margin="0,18,0,0"
                         Padding="18"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        DataContext="{Binding EmergencyContacts}">
+                        DataContext="{Binding EmergencyContacts}"
+                        Style="{StaticResource DialogSectionBorderStyle}">
 
                     <StackPanel>
 
@@ -724,7 +668,8 @@
                                     Width="110"
                                     Height="32"
                                     Content="Thêm mới"
-                                    Command="{Binding NewCommand}" />
+                                    Command="{Binding NewCommand}"
+                                    Style="{StaticResource DialogSecondaryButtonStyle}" />
                         </Grid>
 
                         <TextBlock Margin="0,12,0,0"
@@ -741,6 +686,7 @@
                         <Grid Margin="0,16,0,0">
 
                             <Border MinHeight="80"
+                                    Background="{DynamicResource PageBackgroundBrush}"
                                     Padding="18"
                                     BorderBrush="{DynamicResource BorderBrush}"
                                     BorderThickness="1"
@@ -786,16 +732,17 @@
                             </Border>
 
                             <ListBox Margin="0,16,0,0"
-                                 MinHeight="80"
-                                 MaxHeight="220"
-                                 ItemsSource="{Binding Contacts}"
-                                 SelectedItem="{Binding SelectedContact,
-                                                        Mode=TwoWay}"
-                                 HorizontalContentAlignment="Stretch"
-                                 PreviewMouseWheel="EmergencyContactsList_PreviewMouseWheel">
+                                     MinHeight="80"
+                                     MaxHeight="220"
+                                     ItemsSource="{Binding Contacts}"
+                                     SelectedItem="{Binding SelectedContact,
+                                                            Mode=TwoWay}"
+                                     HorizontalContentAlignment="Stretch"
+                                     PreviewMouseWheel="EmergencyContactsList_PreviewMouseWheel">
 
                                 <ListBox.Style>
-                                    <Style TargetType="ListBox">
+                                    <Style TargetType="{x:Type ListBox}"
+                                           BasedOn="{StaticResource {x:Type ListBox}}">
 
                                         <Setter Property="Visibility"
                                                 Value="Visible" />
@@ -816,12 +763,13 @@
                                 </ListBox.Style>
 
                                 <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
+                                    <Style TargetType="{x:Type ListBoxItem}"
+                                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                         <Setter Property="HorizontalContentAlignment"
-                                            Value="Stretch" />
+                                                Value="Stretch" />
 
                                         <Setter Property="Padding"
-                                            Value="0" />
+                                                Value="0" />
                                     </Style>
                                 </ListBox.ItemContainerStyle>
 
@@ -986,11 +934,13 @@
                                     <Button Width="90"
                                             Margin="0,0,8,0"
                                             Content="Xóa"
-                                            Command="{Binding DeleteCommand}" />
+                                            Command="{Binding DeleteCommand}"
+                                            Style="{StaticResource DialogDangerButtonStyle}" />
 
                                     <Button Width="120"
                                             Content="Lưu liên hệ"
-                                            Command="{Binding SaveCommand}" />
+                                            Command="{Binding SaveCommand}"
+                                            Style="{StaticResource DialogPrimaryButtonStyle}" />
 
                                 </StackPanel>
 
@@ -1006,10 +956,8 @@
                 <Border x:Name="IdentificationRecordsSection"
                         Margin="0,18,0,0"
                         Padding="18"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="6"
-                        DataContext="{Binding IdentificationRecords}">
+                        DataContext="{Binding IdentificationRecords}"
+                        Style="{StaticResource DialogSectionBorderStyle}">
 
                     <StackPanel>
 
@@ -1034,7 +982,8 @@
                                     Width="110"
                                     Height="32"
                                     Content="Thêm mới"
-                                    Command="{Binding NewCommand}" />
+                                    Command="{Binding NewCommand}"
+                                    Style="{StaticResource DialogSecondaryButtonStyle}" />
                         </Grid>
 
                         <TextBlock Margin="0,12,0,0"
@@ -1050,10 +999,11 @@
                         <Grid Margin="0,16,0,0">
 
                             <Border MinHeight="80"
-            Padding="18"
-            BorderBrush="{DynamicResource BorderBrush}"
-            BorderThickness="1"
-            CornerRadius="5">
+                                    Background="{DynamicResource PageBackgroundBrush}"
+                                    Padding="18"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="5">
 
                                 <Border.Style>
                                     <Style TargetType="Border">
@@ -1077,19 +1027,19 @@
                                 </Border.Style>
 
                                 <StackPanel HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
+                                            VerticalAlignment="Center">
 
                                     <TextBlock Text="Chưa có giấy tờ định danh"
-                       HorizontalAlignment="Center"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                               HorizontalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                     <TextBlock Margin="0,5,0,0"
-                       Text="Chọn “Thêm mới” để bổ sung CCCD/CMND, hộ chiếu hoặc giấy tờ khác."
-                       HorizontalAlignment="Center"
-                       TextAlignment="Center"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                               Text="Chọn “Thêm mới” để bổ sung CCCD/CMND, hộ chiếu hoặc giấy tờ khác."
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SecondaryTextBrush}" />
 
                                 </StackPanel>
 
@@ -1105,18 +1055,19 @@
                                                  PreviewMouseWheel="IdentificationRecordsList_PreviewMouseWheel">
 
                                 <ListBox.Style>
-                                    <Style TargetType="ListBox">
+                                    <Style TargetType="{x:Type ListBox}"
+                                           BasedOn="{StaticResource {x:Type ListBox}}">
 
                                         <Setter Property="Visibility"
-                        Value="Visible" />
+                                                Value="Visible" />
 
                                         <Style.Triggers>
 
                                             <DataTrigger Binding="{Binding Records.Count}"
-                                 Value="0">
+                                                         Value="0">
 
                                                 <Setter Property="Visibility"
-                                Value="Collapsed" />
+                                                        Value="Collapsed" />
 
                                             </DataTrigger>
 
@@ -1126,11 +1077,12 @@
                                 </ListBox.Style>
 
                                 <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
+                                    <Style TargetType="{x:Type ListBoxItem}"
+                                           BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                         <Setter Property="HorizontalContentAlignment"
-                            Value="Stretch" />
+                                                Value="Stretch" />
                                         <Setter Property="Padding"
-                            Value="0" />
+                                                Value="0" />
                                     </Style>
                                 </ListBox.ItemContainerStyle>
 
@@ -1229,16 +1181,17 @@
 
                         <!-- Editor -->
                         <Border Margin="0,16,0,0"
-                Padding="14"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="5">
+                                Padding="14"
+                                Background="{DynamicResource PageBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="5">
 
                             <StackPanel>
 
                                 <TextBlock Text="Thông tin giấy tờ"
-                           FontSize="15"
-                           FontWeight="SemiBold" />
+                                           FontSize="15"
+                                           FontWeight="SemiBold" />
 
                                 <Grid Margin="0,14,0,0">
 
@@ -1258,83 +1211,85 @@
                                         <TextBlock Text="Loại giấy tờ" />
 
                                         <ComboBox Margin="0,6,0,0"
-                                  ItemsSource="{Binding TypeOptions}"
-                                  SelectedItem="{Binding SelectedType,
-                                                       Mode=TwoWay}"
-                                  DisplayMemberPath="DisplayName" />
+                                                  ItemsSource="{Binding TypeOptions}"
+                                                  SelectedItem="{Binding SelectedType,
+                                                                       Mode=TwoWay}"
+                                                  DisplayMemberPath="DisplayName" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Số giấy tờ" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding DocumentNumber,
-                                                UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding DocumentNumber,
+                                                                UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Margin="0,14,0,0">
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Ngày cấp" />
 
                                         <DatePicker Margin="0,6,0,0"
-                                    SelectedDate="{Binding IssueDate,
-                                                           Mode=TwoWay}" />
+                                                    SelectedDate="{Binding IssueDate,
+                                                                           Mode=TwoWay}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="1"
-                                Grid.Column="2"
-                                Margin="0,14,0,0">
+                                                Grid.Column="2"
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Ngày hết hạn" />
 
                                         <DatePicker Margin="0,6,0,0"
-                                    SelectedDate="{Binding ExpiryDate,
-                                                           Mode=TwoWay}" />
+                                                    SelectedDate="{Binding ExpiryDate,
+                                                                           Mode=TwoWay}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2"
-                                Margin="0,14,0,0">
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Cơ quan cấp" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding IssuingAuthority,
-                                                UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding IssuingAuthority,
+                                                                UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                     <StackPanel Grid.Row="2"
-                                Grid.Column="2"
-                                Margin="0,14,0,0">
+                                                Grid.Column="2"
+                                                Margin="0,14,0,0">
 
                                         <TextBlock Text="Nơi cấp" />
 
                                         <TextBox Margin="0,6,0,0"
-                                 Text="{Binding PlaceOfIssue,
-                                                UpdateSourceTrigger=PropertyChanged}" />
+                                                 Text="{Binding PlaceOfIssue,
+                                                                UpdateSourceTrigger=PropertyChanged}" />
                                     </StackPanel>
 
                                 </Grid>
 
                                 <TextBlock Margin="0,14,0,0"
-                           Text="Quốc gia cấp" />
+                                           Text="Quốc gia cấp" />
 
                                 <TextBox Margin="0,6,0,0"
-                         Text="{Binding IssuingCountry,
-                                        UpdateSourceTrigger=PropertyChanged}" />
+                                         Text="{Binding IssuingCountry,
+                                                        UpdateSourceTrigger=PropertyChanged}" />
 
                                 <StackPanel Margin="0,16,0,0"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Right">
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Right">
 
                                     <Button Width="90"
-                            Margin="0,0,8,0"
-                            Content="Xóa"
-                            Command="{Binding DeleteCommand}" />
+                                            Margin="0,0,8,0"
+                                            Content="Xóa"
+                                            Command="{Binding DeleteCommand}"
+                                            Style="{StaticResource DialogDangerButtonStyle}" />
 
                                     <Button Width="120"
-                            Content="Lưu giấy tờ"
-                            Command="{Binding SaveCommand}" />
+                                            Content="Lưu giấy tờ"
+                                            Command="{Binding SaveCommand}"
+                                            Style="{StaticResource DialogPrimaryButtonStyle}" />
 
                                 </StackPanel>
 
@@ -1355,7 +1310,8 @@
                 Margin="0,18,0,0"
                 HorizontalAlignment="Right"
                 Content="Đóng"
-                IsCancel="True" Grid.ColumnSpan="2" />
+                IsCancel="True" Grid.ColumnSpan="2"
+                Style="{StaticResource DialogSecondaryButtonStyle}" />
 
     </Grid>
 

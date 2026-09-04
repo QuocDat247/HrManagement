@@ -7,7 +7,8 @@
         MinWidth="580"
         MinHeight="520"
         WindowStartupLocation="CenterOwner"
-        Loaded="EmployeeOrganizationHistoryWindow_Loaded">
+        Loaded="EmployeeOrganizationHistoryWindow_Loaded"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
 
@@ -22,24 +23,18 @@
         <StackPanel>
 
             <TextBlock Text="Lịch sử phân công"
-                       FontSize="22"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,6,0,0"
                        Text="Các phòng ban và chức danh được lưu theo thứ tự thời gian."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
 
         </StackPanel>
 
         <!-- Employee -->
         <Border Grid.Row="1"
                 Margin="0,20,0,16"
-                Padding="16"
-                Background="{DynamicResource PageBackgroundBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="1"
-                CornerRadius="6">
+                Style="{StaticResource DialogSectionBorderStyle}">
 
             <StackPanel>
 
@@ -186,10 +181,7 @@
                         <DataTemplate>
 
                             <Border Margin="0,0,0,12"
-                                    Padding="16"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="6">
+                                    Style="{StaticResource DialogSectionBorderStyle}">
 
                                 <Grid>
 
@@ -211,11 +203,13 @@
 
                                         <TextBlock Margin="0,10,0,0"
                                                    Text="{Binding DepartmentText}"
-                                                   TextWrapping="Wrap" />
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                         <TextBlock Margin="0,5,0,0"
                                                    Text="{Binding PositionText}"
-                                                   TextWrapping="Wrap" />
+                                                   TextWrapping="Wrap"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                                         <TextBlock Margin="0,10,0,0"
                                                    Text="{Binding BaselineNote}"
@@ -270,7 +264,8 @@
                 Margin="0,18,0,0"
                 HorizontalAlignment="Right"
                 Content="Đóng"
-                IsCancel="True" />
+                IsCancel="True"
+                Style="{StaticResource DialogSecondaryButtonStyle}" />
 
     </Grid>
 

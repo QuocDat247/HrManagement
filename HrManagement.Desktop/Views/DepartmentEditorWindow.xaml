@@ -5,7 +5,8 @@
         Width="460"
         Height="360"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource DialogWindowStyle}">
 
     <Grid Margin="24">
 
@@ -18,14 +19,11 @@
         <StackPanel>
 
             <TextBlock Text="{Binding Title}"
-                       FontSize="22"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogTitleTextStyle}" />
 
             <TextBlock Margin="0,7,0,0"
                        Text="Thông tin phòng ban được dùng làm dữ liệu danh mục trong hệ thống."
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                       Style="{StaticResource DialogSubtitleTextStyle}" />
 
         </StackPanel>
 
@@ -33,8 +31,7 @@
                     Margin="0,24,0,0">
 
             <TextBlock Text="Mã phòng ban"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <TextBox Margin="0,6,0,16"
                      Text="{Binding Code,
@@ -43,8 +40,7 @@
                      MaxLength="32" />
 
             <TextBlock Text="Tên phòng ban"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                       Style="{StaticResource DialogLabelTextStyle}" />
 
             <TextBox Margin="0,6,0,0"
                      Text="{Binding Name,
@@ -67,11 +63,13 @@
             <Button Width="90"
                     Margin="0,0,10,0"
                     Content="Hủy"
-                    IsCancel="True" />
+                    IsCancel="True"
+                    Style="{StaticResource DialogSecondaryButtonStyle}" />
 
             <Button Width="100"
                     Content="Lưu"
-                    Command="{Binding ConfirmCommand}" />
+                    Command="{Binding ConfirmCommand}"
+                    Style="{StaticResource DialogPrimaryButtonStyle}" />
 
         </StackPanel>
 
