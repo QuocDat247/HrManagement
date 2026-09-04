@@ -1,4 +1,4 @@
-﻿using HrManagement.Desktop.ViewModels;
+using HrManagement.Desktop.ViewModels;
 using System.Windows;
 
 namespace HrManagement.Desktop.Views;
@@ -16,6 +16,15 @@ public partial class LoginWindow : Window
 
         _viewModel.LoginSucceeded += OnLoginSucceeded;
         Closed += OnWindowClosed;
+
+        Loaded += OnWindowLoaded;
+    }
+
+    private void OnWindowLoaded(
+    object sender,
+    RoutedEventArgs e)
+    {
+        UsernameTextBox.Focus();
     }
 
     private void LoginButton_Click(
@@ -41,5 +50,7 @@ public partial class LoginWindow : Window
     {
         _viewModel.LoginSucceeded -= OnLoginSucceeded;
         Closed -= OnWindowClosed;
+
+        Loaded -= OnWindowLoaded;
     }
 }

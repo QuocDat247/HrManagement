@@ -1,48 +1,127 @@
-﻿<Window x:Class="HrManagement.Desktop.Views.LoginWindow"
+<Window x:Class="HrManagement.Desktop.Views.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Đăng nhập - Quản trị nhân sự"
-        Width="420"
-        Height="460"
+        Title="Đăng nhập - HR Management"
+        Width="480"
+        Height="600"
+        MinWidth="480"
+        MinHeight="600"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Background="{DynamicResource PageBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
 
-    <Grid Margin="40">
-        <StackPanel VerticalAlignment="Center">
+    <Grid>
 
-            <TextBlock Text="QUẢN TRỊ NHÂN SỰ"
-                   FontSize="24"
-                   FontWeight="SemiBold"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- LOGIN CARD -->
+        <Border Grid.Row="0"
+                Width="390"
+                Padding="32"
+                Margin="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+
+            <StackPanel>
+
+                <!-- BRAND -->
+                <Border Width="56"
+                        Height="56"
+                        HorizontalAlignment="Center"
+                        Background="{DynamicResource PrimaryBrush}"
+                        CornerRadius="12">
+
+                    <TextBlock Text="HR"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="White" />
+
+                </Border>
+
+                <TextBlock Margin="0,18,0,0"
+                           Text="HR MANAGEMENT"
+                           HorizontalAlignment="Center"
+                           FontSize="24"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBlock Margin="0,7,0,28"
+                           Text="Quản trị nhân sự tập trung"
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <!-- USERNAME -->
+                <TextBlock Text="Tên đăng nhập"
+                           Margin="0,0,0,7"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBox x:Name="UsernameTextBox"
+                         MinHeight="40"
+                         Margin="0,0,0,18"
+                         VerticalContentAlignment="Center"
+                         Text="{Binding Username,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- PASSWORD -->
+                <TextBlock Text="Mật khẩu"
+                           Margin="0,0,0,7"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <PasswordBox x:Name="PasswordBox"
+                             MinHeight="40"
+                             Margin="0,0,0,12" />
+
+                <!-- ERROR -->
+                <Border MinHeight="44"
+                        Margin="0,0,0,12">
+
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SeparationBrush}" />
+
+                </Border>
+
+                <!-- LOGIN -->
+                <Button x:Name="LoginButton"
+                        Height="42"
+                        Content="Đăng nhập"
+                        Click="LoginButton_Click"
+                        IsDefault="True"
+                        Background="{DynamicResource PrimaryBrush}"
+                        Foreground="White"
+                        FontWeight="SemiBold"
+                        BorderBrush="{DynamicResource PrimaryBrush}" />
+
+                <TextBlock Margin="0,18,0,0"
+                           Text="Đăng nhập để tiếp tục vào hệ thống."
+                           HorizontalAlignment="Center"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+            </StackPanel>
+
+        </Border>
+
+        <!-- FOOTER -->
+        <TextBlock Grid.Row="1"
+                   Margin="0,0,0,18"
+                   Text="HR Management • Preview"
                    HorizontalAlignment="Center"
-                   Margin="0,0,0,28"/>
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-            <TextBlock Text="Tên đăng nhập"
-                   Margin="0,0,0,6"/>
-
-            <TextBox Height="36"
-                 Padding="10,5"
-                 Margin="0,0,0,18"
-                 Text="{Binding Username,
-                                UpdateSourceTrigger=PropertyChanged}"/>
-
-            <TextBlock Text="Mật khẩu"
-                   Margin="0,0,0,6"/>
-
-            <PasswordBox x:Name="PasswordBox"
-                     Height="36"
-                     Padding="10,5"
-                     Margin="0,0,0,12"/>
-
-            <TextBlock Text="{Binding ErrorMessage}"
-                   Foreground="Red"
-                   TextWrapping="Wrap"
-                   MinHeight="20"
-                   Margin="0,0,0,8"/>
-
-            <Button Height="40"
-                Content="Đăng nhập"
-                Click="LoginButton_Click"/>
-
-        </StackPanel>
     </Grid>
+
 </Window>

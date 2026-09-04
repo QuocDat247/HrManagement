@@ -54,6 +54,57 @@
         </Style.Triggers>
     </Style>
 
+    <!-- Shared PasswordBox -->
+    <Style TargetType="{x:Type PasswordBox}">
+
+        <Setter Property="Background"
+            Value="{DynamicResource ControlBackgroundBrush}" />
+
+        <Setter Property="Foreground"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+        <Setter Property="BorderBrush"
+            Value="{DynamicResource BorderBrush}" />
+
+        <Setter Property="BorderThickness"
+            Value="1" />
+
+        <Setter Property="Padding"
+            Value="10,6" />
+
+        <Setter Property="CaretBrush"
+            Value="{DynamicResource PrimaryTextBrush}" />
+
+        <Setter Property="SelectionBrush"
+            Value="{DynamicResource AccentBrush}" />
+
+        <Setter Property="VerticalContentAlignment"
+            Value="Center" />
+
+        <Style.Triggers>
+
+            <Trigger Property="IsKeyboardFocusWithin"
+                 Value="True">
+
+                <Setter Property="BorderBrush"
+                    Value="{DynamicResource PrimaryBrush}" />
+
+            </Trigger>
+
+            <Trigger Property="IsEnabled"
+                 Value="False">
+
+                <Setter Property="Background"
+                    Value="{DynamicResource ControlDisabledBackgroundBrush}" />
+
+                <Setter Property="Foreground"
+                    Value="{DynamicResource ControlDisabledTextBrush}" />
+
+            </Trigger>
+
+        </Style.Triggers>
+
+    </Style>
     <!-- Shared TextBox -->
     <Style TargetType="{x:Type TextBox}">
         <Setter Property="Background"
