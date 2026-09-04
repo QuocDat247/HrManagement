@@ -1,4 +1,7 @@
 using System.Windows;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Threading;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
@@ -13,6 +16,7 @@ using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.Departments;
 using HrManagement.Desktop.Services.Positions;
 using HrManagement.Desktop.Theming;
+using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
@@ -26,12 +30,20 @@ using HrManagement.Infrastructure.Organization.Positions;
 using HrManagement.Infrastructure.Persistence;
 using HrManagement.Application.Auditing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace HrManagement.Desktop;
 
 public partial class App : System.Windows.Application
 {
     private ServiceProvider? _serviceProvider;
+
+    private ILogger<App>? _logger;
+
+    private ICrashDiagnosticService?
+        _crashDiagnosticService;
+
+    private int _fatalExceptionHandling;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -42,6 +54,27 @@ public partial class App : System.Windows.Application
         ConfigureServices(services);
 
         _serviceProvider = services.BuildServiceProvider();
+
+        _logger =
+        _serviceProvider.GetRequiredService<
+        ILogger<App>>();
+
+        _logger.LogInformation(
+            DiagnosticEventIds.ApplicationStarted,
+            "Application started.");
+
+        _crashDiagnosticService =
+            _serviceProvider.GetRequiredService<
+                ICrashDiagnosticService>();
+
+        DispatcherUnhandledException +=
+            OnDispatcherUnhandledException;
+
+        AppDomain.CurrentDomain.UnhandledException +=
+            OnAppDomainUnhandledException;
+
+        TaskScheduler.UnobservedTaskException +=
+            OnUnobservedTaskException;
 
         IApplicationThemeService applicationThemeService =
             _serviceProvider.GetRequiredService<
@@ -55,9 +88,18 @@ public partial class App : System.Windows.Application
         try
         {
             await databaseInitializer.InitializeAsync();
+
+            _logger.LogInformation(
+                DiagnosticEventIds.DatabaseInitialized,
+                "Database initialized.");
         }
         catch (Exception ex)
         {
+            _logger.LogError(
+                DiagnosticEventIds.DatabaseInitializationFailed,
+                ex,
+                "Database initialization failed.");
+
             MessageBox.Show(
                 $"Không thể khởi tạo cơ sở dữ liệu.\n\n{ex.Message}",
                 "Lỗi cơ sở dữ liệu",
@@ -73,10 +115,18 @@ public partial class App : System.Windows.Application
         var loginWindow =
             _serviceProvider.GetRequiredService<LoginWindow>();
 
+        _logger.LogInformation(
+            DiagnosticEventIds.LoginWindowOpened,
+            "Login window opened.");
+
         bool? loginResult = loginWindow.ShowDialog();
 
         if (loginResult != true)
         {
+            _logger.LogInformation(
+                DiagnosticEventIds.LoginCancelled,
+                "Login was not completed.");
+
             Shutdown();
             return;
         }
@@ -89,11 +139,44 @@ public partial class App : System.Windows.Application
         ShutdownMode = ShutdownMode.OnMainWindowClose;
 
         mainWindow.Show();
+
+        _logger.LogInformation(
+            DiagnosticEventIds.MainWindowOpened,
+            "Main window opened.");
     }
 
     private static void ConfigureServices(
     IServiceCollection services)
     {
+        DiagnosticLogOptions diagnosticLogOptions =
+            DiagnosticLogOptions.CreateDefault();
+
+        services.AddSingleton(
+            diagnosticLogOptions);
+
+        services.AddLogging(
+            builder =>
+            {
+                builder.ClearProviders();
+
+                builder.SetMinimumLevel(
+                    LogLevel.Information);
+
+                builder.AddProvider(
+                    new SafeFileLoggerProvider(
+                        diagnosticLogOptions));
+            });
+
+        CrashDiagnosticOptions crashDiagnosticOptions =
+            CrashDiagnosticOptions.CreateDefault();
+
+        services.AddSingleton(
+            crashDiagnosticOptions);
+
+        services.AddSingleton<
+            ICrashDiagnosticService,
+            CrashDiagnosticService>();
+
         services.AddSingleton<
             IAuthenticationService,
             FakeAuthenticationService>();
@@ -314,9 +397,138 @@ public partial class App : System.Windows.Application
             WpfUserConfirmationService>();
     }
 
+    private void OnDispatcherUnhandledException(
+    object sender,
+    DispatcherUnhandledExceptionEventArgs e)
+    {
+        if (Interlocked.Exchange(
+                ref _fatalExceptionHandling,
+                1)
+            != 0)
+        {
+            return;
+        }
+
+        CrashDiagnosticResult? report =
+            _crashDiagnosticService?.TryCapture(
+                e.Exception,
+                CrashOrigin.DispatcherUnhandledException,
+                processTerminating:
+                    false);
+
+        _logger?.LogCritical(
+            DiagnosticEventIds.DispatcherUnhandledException,
+            e.Exception,
+            "Unhandled dispatcher exception.");
+
+        /*
+         * Do not let WPF continue execution in an
+         * unknown state. We handle the exception only
+         * so that we can show the crash id and perform
+         * an orderly shutdown.
+         */
+        e.Handled =
+            true;
+
+        TryShowFatalError(
+            report?.CrashId);
+
+        Shutdown(
+            -1);
+    }
+
+    private void OnAppDomainUnhandledException(
+        object? sender,
+        UnhandledExceptionEventArgs e)
+    {
+        if (e.ExceptionObject
+            is not Exception exception)
+        {
+            return;
+        }
+
+        _crashDiagnosticService?.TryCapture(
+            exception,
+            CrashOrigin.AppDomainUnhandledException,
+            processTerminating:
+                e.IsTerminating);
+
+        _logger?.LogCritical(
+            DiagnosticEventIds.AppDomainUnhandledException,
+            exception,
+            "Unhandled AppDomain exception.");
+
+        /*
+         * The runtime may already be terminating here,
+         * so displaying UI is intentionally avoided.
+         */
+    }
+
+    private void OnUnobservedTaskException(
+        object? sender,
+        UnobservedTaskExceptionEventArgs e)
+    {
+        _crashDiagnosticService?.TryCapture(
+            e.Exception,
+            CrashOrigin.UnobservedTaskException,
+            processTerminating:
+                false);
+
+        _logger?.LogError(
+            DiagnosticEventIds.UnobservedTaskException,
+            e.Exception,
+            "Unobserved task exception.");
+
+        /*
+         * This event does not mean the whole application
+         * is corrupted. Record it and mark it observed.
+         */
+        e.SetObserved();
+    }
+
+    private static void TryShowFatalError(
+        string? crashId)
+    {
+        try
+        {
+            string crashReference =
+                string.IsNullOrWhiteSpace(
+                    crashId)
+                    ? "Không thể tạo mã sự cố."
+                    : $"Mã sự cố: {crashId}";
+
+            MessageBox.Show(
+                "Ứng dụng gặp lỗi nghiêm trọng "
+                + "và cần đóng.\n\n"
+                + crashReference
+                + "\n\nVui lòng cung cấp mã này "
+                + "cho bộ phận hỗ trợ.",
+                "HR Management - Lỗi nghiêm trọng",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        catch
+        {
+            // Never throw from the fatal-error UI.
+        }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        DispatcherUnhandledException -=
+            OnDispatcherUnhandledException;
+
+        AppDomain.CurrentDomain.UnhandledException -=
+            OnAppDomainUnhandledException;
+
+        TaskScheduler.UnobservedTaskException -=
+            OnUnobservedTaskException;
+
         _serviceProvider?.Dispose();
+
+        _logger?.LogInformation(
+            DiagnosticEventIds.ApplicationExited,
+            "Application exited.");
 
         base.OnExit(e);
     }
