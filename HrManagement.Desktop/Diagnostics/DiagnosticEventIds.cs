@@ -56,4 +56,16 @@ public static class DiagnosticEventIds
             new(
                 9002,
                 nameof(UnobservedTaskException));
+
+    public static readonly EventId
+        DiagnosticQueued =
+            new(
+                9100,
+                nameof(DiagnosticQueued));
+
+    public static readonly EventId
+        DiagnosticQueueFailed =
+            new(
+                9101,
+                nameof(DiagnosticQueueFailed));
 }

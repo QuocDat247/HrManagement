@@ -43,6 +43,12 @@ public partial class App : System.Windows.Application
     private ICrashDiagnosticService?
         _crashDiagnosticService;
 
+    private IDiagnosticEnvelopeFactory?
+        _diagnosticEnvelopeFactory;
+
+    private IDiagnosticOutbox?
+        _diagnosticOutbox;
+
     private int _fatalExceptionHandling;
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -67,9 +73,13 @@ public partial class App : System.Windows.Application
             _serviceProvider.GetRequiredService<
                 ICrashDiagnosticService>();
 
-        services.AddSingleton<
-            IDiagnosticEnvelopeFactory,
-            DiagnosticEnvelopeFactory>();
+        _diagnosticEnvelopeFactory =
+            _serviceProvider.GetRequiredService<
+                IDiagnosticEnvelopeFactory>();
+
+        _diagnosticOutbox =
+            _serviceProvider.GetRequiredService<
+                IDiagnosticOutbox>();
 
         DispatcherUnhandledException +=
             OnDispatcherUnhandledException;
@@ -180,6 +190,20 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             ICrashDiagnosticService,
             CrashDiagnosticService>();
+
+        services.AddSingleton<
+            IDiagnosticEnvelopeFactory,
+            DiagnosticEnvelopeFactory>();
+
+        DiagnosticOutboxOptions diagnosticOutboxOptions =
+            DiagnosticOutboxOptions.CreateDefault();
+
+        services.AddSingleton(
+            diagnosticOutboxOptions);
+
+        services.AddSingleton<
+            IDiagnosticOutbox,
+            DiagnosticOutbox>();
 
         services.AddSingleton<
             IAuthenticationService,
@@ -401,6 +425,62 @@ public partial class App : System.Windows.Application
             WpfUserConfirmationService>();
     }
 
+    private CrashDiagnosticResult?
+    CaptureAndQueueDiagnostic(
+        Exception exception,
+        CrashOrigin origin,
+        bool processTerminating)
+    {
+        CrashDiagnosticResult? report =
+            _crashDiagnosticService?.TryCapture(
+                exception,
+                origin,
+                processTerminating);
+
+        if (report is null)
+        {
+            return null;
+        }
+
+        try
+        {
+            if (_diagnosticEnvelopeFactory is null
+                || _diagnosticOutbox is null)
+            {
+                return report;
+            }
+
+            DiagnosticEnvelope envelope =
+                _diagnosticEnvelopeFactory.Create(
+                    report.Document);
+
+            DiagnosticOutboxItem? queuedItem =
+                _diagnosticOutbox.TryEnqueue(
+                    envelope);
+
+            _logger?.Log(
+                queuedItem is null
+                    ? LogLevel.Warning
+                    : LogLevel.Information,
+                queuedItem is null
+                    ? DiagnosticEventIds.DiagnosticQueueFailed
+                    : DiagnosticEventIds.DiagnosticQueued,
+                "Diagnostic queue operation completed.");
+        }
+        catch
+        {
+            /*
+             * Diagnostics must never cause a second
+             * failure while handling the first one.
+             */
+            _logger?.LogWarning(
+                DiagnosticEventIds.DiagnosticQueueFailed,
+                "Diagnostic queue operation failed.");
+        }
+
+        return report;
+    }
+
     private void OnDispatcherUnhandledException(
     object sender,
     DispatcherUnhandledExceptionEventArgs e)
@@ -414,7 +494,7 @@ public partial class App : System.Windows.Application
         }
 
         CrashDiagnosticResult? report =
-            _crashDiagnosticService?.TryCapture(
+            CaptureAndQueueDiagnostic(
                 e.Exception,
                 CrashOrigin.DispatcherUnhandledException,
                 processTerminating:
@@ -451,7 +531,7 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        _crashDiagnosticService?.TryCapture(
+        CaptureAndQueueDiagnostic(
             exception,
             CrashOrigin.AppDomainUnhandledException,
             processTerminating:
@@ -472,7 +552,7 @@ public partial class App : System.Windows.Application
         object? sender,
         UnobservedTaskExceptionEventArgs e)
     {
-        _crashDiagnosticService?.TryCapture(
+        CaptureAndQueueDiagnostic(
             e.Exception,
             CrashOrigin.UnobservedTaskException,
             processTerminating:
@@ -528,11 +608,11 @@ public partial class App : System.Windows.Application
         TaskScheduler.UnobservedTaskException -=
             OnUnobservedTaskException;
 
-        _serviceProvider?.Dispose();
-
         _logger?.LogInformation(
             DiagnosticEventIds.ApplicationExited,
             "Application exited.");
+
+        _serviceProvider?.Dispose();
 
         base.OnExit(e);
     }
