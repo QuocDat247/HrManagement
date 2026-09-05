@@ -150,17 +150,10 @@ public sealed class DatabaseInitializer
             .SeedAsync(
                 cancellationToken);
 
-        await _workScheduleSeedService
-            .SeedAsync(
-                cancellationToken);
-
         await _employmentHistoryBackfillService
             .BackfillAsync(
                 cancellationToken);
 
-        await _employmentHistoryBackfillService
-            .BackfillAsync(
-                cancellationToken);
         await _employeeOrganizationBackfillService
             .BackfillAsync(
                 cancellationToken);
