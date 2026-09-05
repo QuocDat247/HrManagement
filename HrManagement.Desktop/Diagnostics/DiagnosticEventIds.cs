@@ -104,4 +104,10 @@ public static class DiagnosticEventIds
             new(
                 9205,
                 nameof(DiagnosticProcessorFailed));
+
+    public static readonly EventId
+        DiagnosticDeliveryNotAuthorized =
+            new(
+                9206,
+                nameof(DiagnosticDeliveryNotAuthorized));
 }

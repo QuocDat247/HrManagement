@@ -27,6 +27,10 @@ public sealed class DiagnosticOutboxProcessorTests
 
             Assert.Equal(
                 1,
+                context.Sender.SendCallCount);
+
+            Assert.Equal(
+                1,
                 result.SentCount);
 
             Assert.False(
@@ -185,8 +189,57 @@ public sealed class DiagnosticOutboxProcessorTests
         }
     }
 
+    [Fact]
+    public async Task ProcessPendingAsync_WhenConsentIsOff_DoesNotSend()
+    {
+        TestContext context =
+            CreateContext(
+                new DiagnosticSendResult(
+                    DiagnosticSendOutcome.Sent,
+                    202),
+                allowDiagnosticUpload:
+                    false);
+
+        try
+        {
+            context.Outbox.TryEnqueue(
+                CreateEnvelope(
+                    "DIAG-20260905-NOCONS01"));
+
+            DiagnosticProcessingResult result =
+                await context.Processor
+                    .ProcessPendingAsync();
+
+            Assert.True(
+                result.Deferred);
+
+            Assert.Equal(
+                0,
+                result.ExaminedCount);
+
+            Assert.Equal(
+                0,
+                result.SentCount);
+
+            Assert.Equal(
+                0,
+                context.Sender.SendCallCount);
+
+            Assert.Single(
+                context.Outbox
+                    .GetPendingItems());
+        }
+        finally
+        {
+            DeleteDirectory(
+                context.Root);
+        }
+    }
+
     private static TestContext CreateContext(
-        DiagnosticSendResult sendResult)
+        DiagnosticSendResult sendResult,
+        bool allowDiagnosticUpload =
+            true)
     {
         string root =
             Path.Combine(
@@ -218,10 +271,15 @@ public sealed class DiagnosticOutboxProcessorTests
             new StubDiagnosticReportSender(
                 sendResult);
 
+        var consentService =
+            new StubDiagnosticConsentService(
+                allowDiagnosticUpload);
+
         var processor =
             new DiagnosticOutboxProcessor(
                 outbox,
                 sender,
+                consentService,
                 new DiagnosticOutboxProcessorOptions(
                     MaxItemsPerRun:
                         10),
@@ -233,7 +291,8 @@ public sealed class DiagnosticOutboxProcessorTests
             root,
             quarantineDirectory,
             outbox,
-            processor);
+            processor,
+            sender);
     }
 
     private static DiagnosticEnvelope CreateEnvelope(
@@ -293,11 +352,55 @@ public sealed class DiagnosticOutboxProcessorTests
         string Root,
         string Quarantine,
         DiagnosticOutbox Outbox,
-        DiagnosticOutboxProcessor Processor);
+        DiagnosticOutboxProcessor Processor,
+        StubDiagnosticReportSender Sender);
+
+    private sealed class StubDiagnosticConsentService :
+    IDiagnosticConsentService
+    {
+        public StubDiagnosticConsentService(
+            bool allowDiagnosticUpload)
+        {
+            CurrentPreference =
+                new DiagnosticConsentPreference(
+                    allowDiagnosticUpload);
+        }
+
+        public DiagnosticConsentPreference
+            CurrentPreference
+        {
+            get;
+            private set;
+        }
+
+        public Task InitializeAsync(
+            CancellationToken cancellationToken =
+                default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyAsync(
+            DiagnosticConsentPreference preference,
+            CancellationToken cancellationToken =
+                default)
+        {
+            CurrentPreference =
+                preference;
+
+            return Task.CompletedTask;
+        }
+    }
 
     private sealed class StubDiagnosticReportSender :
         IDiagnosticReportSender
     {
+        public int SendCallCount
+        {
+            get;
+            private set;
+        }
+
         private readonly DiagnosticSendResult
             _result;
 
@@ -314,6 +417,8 @@ public sealed class DiagnosticOutboxProcessorTests
                 CancellationToken cancellationToken =
                     default)
         {
+            SendCallCount++;
+
             cancellationToken
                 .ThrowIfCancellationRequested();
 

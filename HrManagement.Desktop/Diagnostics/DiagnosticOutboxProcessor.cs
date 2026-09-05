@@ -9,6 +9,9 @@ public sealed class DiagnosticOutboxProcessor :
 
     private readonly IDiagnosticReportSender _sender;
 
+    private readonly IDiagnosticConsentService
+        _diagnosticConsentService;
+
     private readonly DiagnosticOutboxProcessorOptions
         _options;
 
@@ -18,6 +21,7 @@ public sealed class DiagnosticOutboxProcessor :
     public DiagnosticOutboxProcessor(
         IDiagnosticOutbox outbox,
         IDiagnosticReportSender sender,
+        IDiagnosticConsentService diagnosticConsentService,
         DiagnosticOutboxProcessorOptions options,
         ILogger<DiagnosticOutboxProcessor> logger)
     {
@@ -26,6 +30,9 @@ public sealed class DiagnosticOutboxProcessor :
 
         ArgumentNullException.ThrowIfNull(
             sender);
+
+        ArgumentNullException.ThrowIfNull(
+            diagnosticConsentService);
 
         ArgumentNullException.ThrowIfNull(
             options);
@@ -45,6 +52,9 @@ public sealed class DiagnosticOutboxProcessor :
         _sender =
             sender;
 
+        _diagnosticConsentService =
+            diagnosticConsentService;
+
         _options =
             options;
 
@@ -57,6 +67,24 @@ public sealed class DiagnosticOutboxProcessor :
             CancellationToken cancellationToken =
                 default)
     {
+        if (!IsDiagnosticUploadAllowed())
+        {
+            _logger.LogInformation(
+                DiagnosticEventIds
+                    .DiagnosticDeliveryNotAuthorized,
+                "Diagnostic delivery is not authorized.");
+
+            return new DiagnosticProcessingResult(
+                ExaminedCount:
+                    0,
+                SentCount:
+                    0,
+                RejectedCount:
+                    0,
+                Deferred:
+                    true);
+        }
+
         IReadOnlyList<DiagnosticOutboxItem>
             pendingItems =
                 _outbox
@@ -79,6 +107,21 @@ public sealed class DiagnosticOutboxProcessor :
         {
             cancellationToken
                 .ThrowIfCancellationRequested();
+
+            if (!IsDiagnosticUploadAllowed())
+            {
+                _logger.LogInformation(
+                    DiagnosticEventIds
+                        .DiagnosticDeliveryNotAuthorized,
+                    "Diagnostic delivery authorization was revoked.");
+
+                return new DiagnosticProcessingResult(
+                    examinedCount,
+                    sentCount,
+                    rejectedCount,
+                    Deferred:
+                        true);
+            }
 
             examinedCount++;
 
@@ -215,5 +258,12 @@ public sealed class DiagnosticOutboxProcessor :
             rejectedCount,
             Deferred:
                 false);
+    }
+
+    private bool IsDiagnosticUploadAllowed()
+    {
+        return _diagnosticConsentService
+            .CurrentPreference
+            .AllowDiagnosticUpload;
     }
 }
