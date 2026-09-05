@@ -29,7 +29,7 @@
                     Margin="0,20,0,16">
 
             <Button Content="Thêm phòng ban"
-                    Command="{Binding AddDepartmentCommand}" Height="36" Width="124" />
+                    Command="{Binding AddDepartmentCommand}" Height="30" Width="120" />
 
             <Button Content="Sửa"
                     Command="{Binding EditDepartmentCommand}"
@@ -37,11 +37,11 @@
 
             <Button Content="Ngừng sử dụng"
                     Command="{Binding DeactivateDepartmentCommand}"
-                    Margin="8,0,0,0" Width="122" />
+                    Margin="8,0,0,0" Width="120" />
 
             <Button Content="Kích hoạt lại"
                     Command="{Binding ReactivateDepartmentCommand}"
-                    Margin="8,0,0,0" Width="104" />
+                    Margin="8,0,0,0" Width="100" />
 
             <Button Content="Xem nhân viên"
                     Command="{Binding ViewEmployeesCommand}"

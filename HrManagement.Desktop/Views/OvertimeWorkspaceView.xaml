@@ -669,11 +669,11 @@
 
                     <!-- HISTORY GRID -->
                     <DataGrid Grid.Row="4"
-              ItemsSource="{Binding HistoryRows}"
-              AutoGenerateColumns="False"
-              IsReadOnly="True"
-              CanUserAddRows="False"
-              SelectionMode="Single">
+                              ItemsSource="{Binding HistoryRows}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Single">
 
                         <DataGrid.Columns>
 
@@ -690,16 +690,16 @@
                                 Binding="{Binding NewStatusText}" />
 
                             <DataGridTextColumn Header="Phút"
-                                Width="65"
+                                Width="80"
                                 Binding="{Binding ApprovedMinutesText}" />
 
                             <DataGridTextColumn Header="Người xử lý"
-                                Width="110"
+                                Width="130"
                                 Binding="{Binding ChangedByUsername}" />
 
                             <DataGridTextColumn Header="Ghi chú"
                                 Width="2*"
-                                MinWidth="130"
+                                MinWidth="100"
                                 Binding="{Binding NoteText}" />
 
                         </DataGrid.Columns>

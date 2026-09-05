@@ -33,15 +33,15 @@
 
             <Button Content="Sửa"
                     Command="{Binding EditPositionCommand}"
-                    Margin="8,0,0,0" Width="58" />
+                    Margin="8,0,0,0" Width="60" />
 
             <Button Content="Ngừng sử dụng"
                     Command="{Binding DeactivatePositionCommand}"
-                    Margin="8,0,0,0" Width="117" />
+                    Margin="8,0,0,0" Width="120" />
 
             <Button Content="Kích hoạt lại"
                     Command="{Binding ReactivatePositionCommand}"
-                    Margin="8,0,0,0" Width="99" />
+                    Margin="8,0,0,0" Width="100" />
 
             <Button Content="Xem nhân viên"
                     Command="{Binding ViewEmployeesCommand}"
