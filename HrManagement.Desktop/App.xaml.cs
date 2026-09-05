@@ -1,7 +1,9 @@
-using System.Windows;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Threading;
+using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
@@ -11,12 +13,12 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.Departments;
 using HrManagement.Desktop.Services.Positions;
 using HrManagement.Desktop.Theming;
-using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Desktop.Views;
 using HrManagement.Infrastructure.Authentication;
@@ -28,7 +30,6 @@ using HrManagement.Infrastructure.Organization.Assignments;
 using HrManagement.Infrastructure.Organization.Departments;
 using HrManagement.Infrastructure.Organization.Positions;
 using HrManagement.Infrastructure.Persistence;
-using HrManagement.Application.Auditing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -204,6 +205,34 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             IDiagnosticOutbox,
             DiagnosticOutbox>();
+
+        DiagnosticTransportOptions
+            diagnosticTransportOptions =
+                DiagnosticTransportOptions
+                    .CreateDisabledDefault();
+
+        services.AddSingleton(
+            diagnosticTransportOptions);
+
+        services.AddSingleton(
+            _ =>
+            {
+                var httpClient =
+                    new HttpClient();
+
+                /*
+                 * Timeout is controlled per diagnostic
+                 * request by DiagnosticTransportOptions.
+                 */
+                httpClient.Timeout =
+                    Timeout.InfiniteTimeSpan;
+
+                return httpClient;
+            });
+
+        services.AddSingleton<
+            IDiagnosticReportSender,
+            HttpDiagnosticReportSender>();
 
         services.AddSingleton<
             IAuthenticationService,
