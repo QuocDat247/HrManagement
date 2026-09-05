@@ -233,6 +233,7 @@ public sealed class DiagnosticOutboxProcessor :
                     }
 
                 case DiagnosticSendOutcome.Disabled:
+                case DiagnosticSendOutcome.NotAuthorized:
                 case DiagnosticSendOutcome.RetryableFailure:
                 case DiagnosticSendOutcome.ConfigurationFailure:
                 default:

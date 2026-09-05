@@ -154,6 +154,62 @@ public sealed class SettingsViewModelTests
             viewModel.HasChanges);
     }
 
+    [Fact]
+    public async Task ApplyAsync_WhenDiagnosticConsentChanges_AppliesConsent()
+    {
+        var themeService =
+            new StubApplicationThemeService
+            {
+                CurrentPreferenceValue =
+                    new ApplicationThemePreference(
+                        ApplicationAppearance.Light,
+                        ApplicationAccent.Blue),
+
+                EffectiveAppearanceValue =
+                    ApplicationAppearance.Light
+            };
+
+        var diagnosticConsentService =
+            new StubDiagnosticConsentService();
+
+        var viewModel =
+            new SettingsViewModel(
+                themeService,
+                diagnosticConsentService);
+
+        Assert.False(
+            viewModel.SelectedAllowDiagnosticUpload);
+
+        viewModel.SelectedAllowDiagnosticUpload =
+            true;
+
+        Assert.True(
+            viewModel.HasChanges);
+
+        await viewModel.ApplyCommand.ExecuteAsync(
+            null);
+
+        Assert.Equal(
+            0,
+            themeService.ApplyCallCount);
+
+        Assert.Equal(
+            1,
+            diagnosticConsentService.ApplyCallCount);
+
+        Assert.True(
+            diagnosticConsentService
+                .CurrentPreference
+                .AllowDiagnosticUpload);
+
+        Assert.False(
+            viewModel.HasChanges);
+
+        Assert.Equal(
+            "Đã áp dụng và lưu cài đặt.",
+            viewModel.SuccessMessage);
+    }
+
     private sealed class StubDiagnosticConsentService
     : IDiagnosticConsentService
     {

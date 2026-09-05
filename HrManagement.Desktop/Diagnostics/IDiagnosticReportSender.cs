@@ -16,7 +16,13 @@ public enum DiagnosticSendOutcome
      * Transport/client configuration is invalid.
      * The envelope itself must remain pending.
      */
-    ConfigurationFailure = 5
+    ConfigurationFailure = 5,
+
+    /*
+     * Diagnostic upload is not authorized by the
+     * current privacy preference.
+     */
+    NotAuthorized = 6
 }
 
 public sealed record DiagnosticSendResult(

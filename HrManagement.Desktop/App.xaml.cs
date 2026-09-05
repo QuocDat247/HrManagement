@@ -262,8 +262,11 @@ public partial class App : System.Windows.Application
             });
 
         services.AddSingleton<
-            IDiagnosticReportSender,
             HttpDiagnosticReportSender>();
+
+        services.AddSingleton<
+            IDiagnosticReportSender,
+            ConsentAwareDiagnosticReportSender>();
 
         DiagnosticOutboxProcessorOptions
             diagnosticOutboxProcessorOptions =
