@@ -85,6 +85,14 @@ public partial class App : System.Windows.Application
             _serviceProvider.GetRequiredService<
                 IDiagnosticOutbox>();
 
+        IDiagnosticConsentService
+            diagnosticConsentService =
+                _serviceProvider.GetRequiredService<
+                    IDiagnosticConsentService>();
+
+        await diagnosticConsentService
+            .InitializeAsync();
+
         IDiagnosticOutboxProcessor
             diagnosticOutboxProcessor =
                 _serviceProvider.GetRequiredService<
@@ -216,6 +224,14 @@ public partial class App : System.Windows.Application
 
         services.AddSingleton(
             diagnosticOutboxOptions);
+
+        services.AddSingleton<
+            IDiagnosticConsentPreferenceStore,
+            JsonDiagnosticConsentPreferenceStore>();
+
+        services.AddSingleton<
+            IDiagnosticConsentService,
+            DiagnosticConsentService>();
 
         services.AddSingleton<
             IDiagnosticOutbox,

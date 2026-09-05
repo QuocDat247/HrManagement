@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.ViewModels;
 
@@ -20,9 +21,13 @@ public sealed class SettingsViewModelTests
                     ApplicationAppearance.Dark
             };
 
+        var diagnosticConsentService =
+            new StubDiagnosticConsentService();
+
         var viewModel =
             new SettingsViewModel(
-                themeService);
+                themeService,
+                diagnosticConsentService);
 
         Assert.Equal(
             ApplicationAppearance.Dark,
@@ -62,9 +67,13 @@ public sealed class SettingsViewModelTests
                     ApplicationAppearance.Light
             };
 
+        var diagnosticConsentService =
+            new StubDiagnosticConsentService();
+
         var viewModel =
             new SettingsViewModel(
-                themeService);
+                themeService,
+                diagnosticConsentService);
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -97,7 +106,7 @@ public sealed class SettingsViewModelTests
             viewModel.CanApplyChanges);
 
         Assert.Equal(
-            "Đã áp dụng và lưu cài đặt giao diện.",
+            "Đã áp dụng và lưu cài đặt.",
             viewModel.SuccessMessage);
     }
 
@@ -116,9 +125,13 @@ public sealed class SettingsViewModelTests
                     ApplicationAppearance.Light
             };
 
+        var diagnosticConsentService =
+            new StubDiagnosticConsentService();
+
         var viewModel =
             new SettingsViewModel(
-                themeService);
+                themeService,
+                diagnosticConsentService);
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -139,6 +152,48 @@ public sealed class SettingsViewModelTests
 
         Assert.False(
             viewModel.HasChanges);
+    }
+
+    private sealed class StubDiagnosticConsentService
+    : IDiagnosticConsentService
+    {
+        public DiagnosticConsentPreference
+            CurrentPreferenceValue
+        {
+            get;
+            set;
+        } =
+            DiagnosticConsentPreference.Default;
+
+        public DiagnosticConsentPreference
+            CurrentPreference =>
+                CurrentPreferenceValue;
+
+        public int ApplyCallCount
+        {
+            get;
+            private set;
+        }
+
+        public Task InitializeAsync(
+            CancellationToken cancellationToken =
+                default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyAsync(
+            DiagnosticConsentPreference preference,
+            CancellationToken cancellationToken =
+                default)
+        {
+            ApplyCallCount++;
+
+            CurrentPreferenceValue =
+                preference;
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubApplicationThemeService

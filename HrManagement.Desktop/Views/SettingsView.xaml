@@ -21,7 +21,7 @@
 
                     <TextBlock Margin="0,8,0,0"
                                TextWrapping="Wrap"
-                               Text="Tùy chỉnh giao diện ứng dụng. Các lựa chọn được lưu riêng trên máy hiện tại và sẽ được sử dụng lại ở lần mở tiếp theo."
+                               Text="Tùy chỉnh giao diện và quyền riêng tư của ứng dụng. Các lựa chọn được lưu riêng trên máy hiện tại và sẽ được sử dụng lại ở lần mở tiếp theo."
                                Foreground="{DynamicResource SecondaryTextBrush}" />
 
                     <Border Margin="0,18,0,0"
@@ -191,6 +191,58 @@
 
             </Border>
 
+            <!-- DIAGNOSTICS & PRIVACY -->
+            <Border Style="{DynamicResource CardBorderStyle}"
+                    Margin="0,0,0,16">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0"
+                                Margin="0,0,30,0">
+
+                        <TextBlock Text="Chẩn đoán &amp; quyền riêng tư"
+                                   FontSize="17"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,7,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="Kiểm soát việc gửi báo cáo kỹ thuật để hỗ trợ phân tích sự cố."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+
+                        <CheckBox Content="Cho phép gửi báo cáo lỗi và dữ liệu chẩn đoán"
+                                  IsChecked="{Binding SelectedAllowDiagnosticUpload,
+                                                      Mode=TwoWay}" />
+
+                        <TextBlock Margin="0,12,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="Mặc định tắt. Khi bật, ứng dụng chỉ được phép gửi báo cáo chẩn đoán kỹ thuật đã được giới hạn và kiểm soát."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="Không gửi dữ liệu nhân sự, mật khẩu, nội dung nghiệp vụ hoặc thông tin định danh của nhân viên."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="Khi tắt, báo cáo lỗi vẫn có thể được lưu cục bộ trên máy để phục vụ hỗ trợ kỹ thuật."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                </Grid>
+
+            </Border>
             <!-- APPLY -->
             <Border Style="{DynamicResource CardBorderStyle}">
 

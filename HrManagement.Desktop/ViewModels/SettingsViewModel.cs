@@ -2,6 +2,7 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Theming;
+using HrManagement.Desktop.Diagnostics;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -11,11 +12,17 @@ public sealed partial class SettingsViewModel
     private readonly IApplicationThemeService
         _themeService;
 
+    private readonly IDiagnosticConsentService
+        _diagnosticConsentService;
+
     [ObservableProperty]
     private ApplicationAppearance selectedAppearance;
 
     [ObservableProperty]
     private ApplicationAccent selectedAccent;
+
+    [ObservableProperty]
+    private bool selectedAllowDiagnosticUpload;
 
     [ObservableProperty]
     private bool isApplying;
@@ -27,10 +34,14 @@ public sealed partial class SettingsViewModel
     private string? successMessage;
 
     public SettingsViewModel(
-        IApplicationThemeService themeService)
+        IApplicationThemeService themeService,
+        IDiagnosticConsentService diagnosticConsentService)
     {
         _themeService =
             themeService;
+
+        _diagnosticConsentService =
+            diagnosticConsentService;
 
         AppearanceOptions =
         [
@@ -101,7 +112,11 @@ public sealed partial class SettingsViewModel
         SelectedAppearance !=
             _themeService.CurrentPreference.Appearance
         || SelectedAccent !=
-            _themeService.CurrentPreference.Accent;
+            _themeService.CurrentPreference.Accent
+        || SelectedAllowDiagnosticUpload !=
+            _diagnosticConsentService
+                .CurrentPreference
+                .AllowDiagnosticUpload;
 
     public bool CanApplyChanges =>
         CanApply();
@@ -166,6 +181,12 @@ public sealed partial class SettingsViewModel
         NotifySelectionState();
     }
 
+    partial void OnSelectedAllowDiagnosticUploadChanged(
+        bool value)
+    {
+        NotifySelectionState();
+    }
+
     private void Load()
     {
         ApplicationThemePreference preference =
@@ -176,6 +197,11 @@ public sealed partial class SettingsViewModel
 
         SelectedAccent =
             preference.Accent;
+
+        SelectedAllowDiagnosticUpload =
+            _diagnosticConsentService
+                .CurrentPreference
+                .AllowDiagnosticUpload;
 
         ErrorMessage =
             null;
@@ -206,16 +232,39 @@ public sealed partial class SettingsViewModel
 
         try
         {
-            var preference =
+            var themePreference =
                 new ApplicationThemePreference(
                     SelectedAppearance,
                     SelectedAccent);
 
-            await _themeService.ApplyAsync(
-                preference);
+            var diagnosticPreference =
+                new DiagnosticConsentPreference(
+                    SelectedAllowDiagnosticUpload);
+
+            bool themeChanged =
+                themePreference !=
+                    _themeService.CurrentPreference;
+
+            bool diagnosticConsentChanged =
+                diagnosticPreference !=
+                    _diagnosticConsentService
+                        .CurrentPreference;
+
+            if (themeChanged)
+            {
+                await _themeService.ApplyAsync(
+                    themePreference);
+            }
+
+            if (diagnosticConsentChanged)
+            {
+                await _diagnosticConsentService
+                    .ApplyAsync(
+                        diagnosticPreference);
+            }
 
             SuccessMessage =
-                "Đã áp dụng và lưu cài đặt giao diện.";
+                "Đã áp dụng và lưu cài đặt.";
 
             OnPropertyChanged(
                 nameof(CurrentThemeText));
@@ -237,12 +286,12 @@ public sealed partial class SettingsViewModel
         catch (IOException exception)
         {
             ErrorMessage =
-                $"Không thể lưu cài đặt giao diện: {exception.Message}";
+                $"Không thể lưu cài đặt ứng dụng: {exception.Message}";
         }
         catch (UnauthorizedAccessException)
         {
             ErrorMessage =
-                "Ứng dụng không có quyền lưu cài đặt giao diện.";
+                "Ứng dụng không có quyền lưu cài đặt.";
         }
         finally
         {
