@@ -430,8 +430,42 @@ public sealed class EmployeeService : IEmployeeService
     EmployeeFilter? filter = null,
     CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Employee> employees =
-            await _employeeRepository.GetAllAsync(cancellationToken);
+        IReadOnlyList<Employee> storedEmployees =
+            await _employeeRepository
+                .GetAllAsync(
+                    cancellationToken);
+
+        IReadOnlyList<Department> departments =
+            await _departmentRepository
+                .GetAllAsync(
+                    cancellationToken);
+
+        IReadOnlyList<Position> positions =
+            await _positionRepository
+                .GetAllAsync(
+                    cancellationToken);
+
+        IReadOnlyDictionary<Guid, string>
+            departmentNamesById =
+                departments.ToDictionary(
+                    department => department.Id,
+                    department => department.Name);
+
+        IReadOnlyDictionary<Guid, string>
+            positionNamesById =
+                positions.ToDictionary(
+                    position => position.Id,
+                    position => position.Name);
+
+        Employee[] employees =
+            storedEmployees
+                .Select(
+                    employee =>
+                        ResolveCurrentOrganizationNames(
+                            employee,
+                            departmentNamesById,
+                            positionNamesById))
+                .ToArray();
 
         if (filter is null)
         {
@@ -441,7 +475,8 @@ public sealed class EmployeeService : IEmployeeService
         IEnumerable<Employee> filteredEmployees =
             employees;
 
-        if (!string.IsNullOrWhiteSpace(filter.SearchText))
+        if (!string.IsNullOrWhiteSpace(
+                filter.SearchText))
         {
             string searchText =
                 filter.SearchText.Trim();
@@ -468,10 +503,71 @@ public sealed class EmployeeService : IEmployeeService
             filteredEmployees =
                 filteredEmployees.Where(
                     employee =>
-                        employee.Status == filter.Status.Value);
+                        employee.Status ==
+                        filter.Status.Value);
         }
 
         return filteredEmployees.ToList();
+    }
+
+    private static Employee
+    ResolveCurrentOrganizationNames(
+        Employee employee,
+        IReadOnlyDictionary<Guid, string>
+            departmentNamesById,
+        IReadOnlyDictionary<Guid, string>
+            positionNamesById)
+    {
+        string departmentName =
+            employee.Department;
+
+        if (employee.DepartmentId is Guid departmentId
+            && departmentNamesById.TryGetValue(
+                departmentId,
+                out string? currentDepartmentName))
+        {
+            departmentName =
+                currentDepartmentName;
+        }
+
+        string positionName =
+            employee.Position;
+
+        if (employee.PositionId is Guid positionId
+            && positionNamesById.TryGetValue(
+                positionId,
+                out string? currentPositionName))
+        {
+            positionName =
+                currentPositionName;
+        }
+
+        if (string.Equals(
+                departmentName,
+                employee.Department,
+                StringComparison.Ordinal)
+            && string.Equals(
+                positionName,
+                employee.Position,
+                StringComparison.Ordinal))
+        {
+            return employee;
+        }
+
+        return new Employee(
+            employee.Id,
+            employee.EmployeeCode,
+            employee.FullName,
+            employee.Email,
+            employee.PhoneNumber,
+            employee.DateOfBirth,
+            employee.HireDate,
+            departmentName,
+            positionName,
+            employee.Status,
+            employee.TerminationDate,
+            employee.DepartmentId,
+            employee.PositionId);
     }
 
     public async Task<CreateEmployeeResult> CreateEmployeeAsync(

@@ -184,6 +184,142 @@ public sealed class EmployeeServiceTests
     ];
 
     [Fact]
+    public async Task
+    GetEmployeesAsync_UsesCurrentOrganizationNames()
+    {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP100",
+                "Nguyễn Minh Anh",
+                null,
+                null,
+                null,
+                new DateOnly(2025, 1, 10),
+                "Tên phòng ban cũ",
+                "Tên chức danh cũ",
+                EmployeeStatus.Active,
+                departmentId: departmentId,
+                positionId: positionId);
+
+        departmentRepository.Departments.Add(
+            new Department(
+                departmentId,
+                "DEV",
+                "Phát triển sản phẩm"));
+
+        positionRepository.Positions.Add(
+            new Position(
+                positionId,
+                "DEV-SR",
+                "Kỹ sư phần mềm cao cấp"));
+
+        var repository =
+            new StubEmployeeRepository(
+                [employee]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        IReadOnlyList<Employee> result =
+            await service.GetEmployeesAsync();
+
+        Employee loadedEmployee =
+            Assert.Single(result);
+
+        Assert.Equal(
+            "Phát triển sản phẩm",
+            loadedEmployee.Department);
+
+        Assert.Equal(
+            "Kỹ sư phần mềm cao cấp",
+            loadedEmployee.Position);
+
+        Assert.Equal(
+            departmentId,
+            loadedEmployee.DepartmentId);
+
+        Assert.Equal(
+            positionId,
+            loadedEmployee.PositionId);
+    }
+
+    [Fact]
+    public async Task
+        GetEmployeesAsync_SearchUsesCurrentOrganizationNames()
+    {
+        Guid departmentId =
+            Guid.NewGuid();
+
+        Guid positionId =
+            Guid.NewGuid();
+
+        var employee =
+            new Employee(
+                Guid.NewGuid(),
+                "EMP101",
+                "Trần Quốc Minh",
+                null,
+                null,
+                null,
+                new DateOnly(2025, 2, 1),
+                "Tên cũ",
+                "Chức danh cũ",
+                EmployeeStatus.Active,
+                departmentId: departmentId,
+                positionId: positionId);
+
+        departmentRepository.Departments.Add(
+            new Department(
+                departmentId,
+                "PLATFORM",
+                "Nền tảng"));
+
+        positionRepository.Positions.Add(
+            new Position(
+                positionId,
+                "ARCH",
+                "Kiến trúc sư phần mềm"));
+
+        var repository =
+            new StubEmployeeRepository(
+                [employee]);
+
+        var service =
+            new EmployeeService(
+                repository,
+                historyRepository,
+                organizationHistoryRepository,
+                lifecyclePersistence,
+                departmentRepository,
+                positionRepository);
+
+        IReadOnlyList<Employee> result =
+            await service.GetEmployeesAsync(
+                new EmployeeFilter(
+                    SearchText: "Nền tảng"));
+
+        Employee loadedEmployee =
+            Assert.Single(result);
+
+        Assert.Equal(
+            "EMP101",
+            loadedEmployee.EmployeeCode);
+    }
+
+    [Fact]
     public async Task GetEmployeesAsync_WithNoFilter_ReturnsAllEmployees()
     {
         var repository = new StubEmployeeRepository(TestEmployees);
