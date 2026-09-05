@@ -17,4 +17,7 @@ public interface IDiagnosticOutbox
 
     bool TryDelete(
         DiagnosticOutboxItem item);
+
+    bool TryQuarantine(
+        DiagnosticOutboxItem item);
 }

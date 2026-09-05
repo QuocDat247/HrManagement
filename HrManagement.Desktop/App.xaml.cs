@@ -50,6 +50,9 @@ public partial class App : System.Windows.Application
     private IDiagnosticOutbox?
         _diagnosticOutbox;
 
+    private CancellationTokenSource?
+        _diagnosticProcessingCancellation;
+
     private int _fatalExceptionHandling;
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -81,6 +84,18 @@ public partial class App : System.Windows.Application
         _diagnosticOutbox =
             _serviceProvider.GetRequiredService<
                 IDiagnosticOutbox>();
+
+        IDiagnosticOutboxProcessor
+            diagnosticOutboxProcessor =
+                _serviceProvider.GetRequiredService<
+                    IDiagnosticOutboxProcessor>();
+
+        _diagnosticProcessingCancellation =
+            new CancellationTokenSource();
+
+        _ = RunDiagnosticProcessingAsync(
+            diagnosticOutboxProcessor,
+            _diagnosticProcessingCancellation.Token);
 
         DispatcherUnhandledException +=
             OnDispatcherUnhandledException;
@@ -233,6 +248,18 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             IDiagnosticReportSender,
             HttpDiagnosticReportSender>();
+
+        DiagnosticOutboxProcessorOptions
+            diagnosticOutboxProcessorOptions =
+                DiagnosticOutboxProcessorOptions
+                    .CreateDefault();
+
+        services.AddSingleton(
+            diagnosticOutboxProcessorOptions);
+
+        services.AddSingleton<
+            IDiagnosticOutboxProcessor,
+            DiagnosticOutboxProcessor>();
 
         services.AddSingleton<
             IAuthenticationService,
@@ -454,6 +481,33 @@ public partial class App : System.Windows.Application
             WpfUserConfirmationService>();
     }
 
+    private async Task RunDiagnosticProcessingAsync(
+        IDiagnosticOutboxProcessor processor,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Run(
+                () =>
+                    processor.ProcessPendingAsync(
+                        cancellationToken),
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken
+                .IsCancellationRequested)
+        {
+            // Normal application shutdown.
+        }
+        catch
+        {
+            _logger?.LogWarning(
+                DiagnosticEventIds
+                    .DiagnosticProcessorFailed,
+                "Diagnostic processor failed.");
+        }
+    }
+
     private CrashDiagnosticResult?
     CaptureAndQueueDiagnostic(
         Exception exception,
@@ -636,6 +690,16 @@ public partial class App : System.Windows.Application
 
         TaskScheduler.UnobservedTaskException -=
             OnUnobservedTaskException;
+
+        try
+        {
+            _diagnosticProcessingCancellation?
+                .Cancel();
+        }
+        catch
+        {
+            // Shutdown must continue.
+        }
 
         _logger?.LogInformation(
             DiagnosticEventIds.ApplicationExited,

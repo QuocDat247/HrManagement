@@ -68,4 +68,40 @@ public static class DiagnosticEventIds
             new(
                 9101,
                 nameof(DiagnosticQueueFailed));
+
+    public static readonly EventId
+        DiagnosticDeliverySent =
+            new(
+                9200,
+                nameof(DiagnosticDeliverySent));
+
+    public static readonly EventId
+        DiagnosticDeliveryDeferred =
+            new(
+                9201,
+                nameof(DiagnosticDeliveryDeferred));
+
+    public static readonly EventId
+        DiagnosticDeliveryRejected =
+            new(
+                9202,
+                nameof(DiagnosticDeliveryRejected));
+
+    public static readonly EventId
+        DiagnosticDeliveryQuarantineFailed =
+            new(
+                9203,
+                nameof(DiagnosticDeliveryQuarantineFailed));
+
+    public static readonly EventId
+        DiagnosticDeliveryDeleteFailed =
+            new(
+                9204,
+                nameof(DiagnosticDeliveryDeleteFailed));
+
+    public static readonly EventId
+        DiagnosticProcessorFailed =
+            new(
+                9205,
+                nameof(DiagnosticProcessorFailed));
 }

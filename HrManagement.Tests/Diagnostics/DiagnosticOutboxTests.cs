@@ -166,6 +166,44 @@ public sealed class DiagnosticOutboxTests
         }
     }
 
+    [Fact]
+    public void TryQuarantine_MovesPendingItem()
+    {
+        TestDirectories directories =
+            CreateDirectories();
+
+        try
+        {
+            var outbox =
+                CreateOutbox(
+                    directories);
+
+            DiagnosticOutboxItem? item =
+                outbox.TryEnqueue(
+                    CreateEnvelope(
+                        "DIAG-20260905-QUARANT1"));
+
+            Assert.NotNull(item);
+
+            Assert.True(
+                outbox.TryQuarantine(
+                    item));
+
+            Assert.Empty(
+                outbox.GetPendingItems());
+
+            Assert.Single(
+                Directory.GetFiles(
+                    directories.Quarantine,
+                    "*.json"));
+        }
+        finally
+        {
+            DeleteDirectory(
+                directories.Root);
+        }
+    }
+
     private static DiagnosticOutbox CreateOutbox(
         TestDirectories directories)
     {

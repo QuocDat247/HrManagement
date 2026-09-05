@@ -204,7 +204,7 @@ public sealed class DiagnosticOutbox :
                         item.DiagnosticId,
                         StringComparison.Ordinal))
                 {
-                    TryMoveToQuarantine(
+                    TryMoveToQuarantineCore(
                         item);
 
                     return null;
@@ -217,7 +217,7 @@ public sealed class DiagnosticOutbox :
         {
             lock (_syncRoot)
             {
-                TryMoveToQuarantine(
+                TryMoveToQuarantineCore(
                     item);
             }
 
@@ -249,6 +249,32 @@ public sealed class DiagnosticOutbox :
                 }
 
                 return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public bool TryQuarantine(
+    DiagnosticOutboxItem item)
+    {
+        ArgumentNullException.ThrowIfNull(
+            item);
+
+        try
+        {
+            lock (_syncRoot)
+            {
+                if (!IsExpectedOutboxItem(
+                        item))
+                {
+                    return false;
+                }
+
+                return TryMoveToQuarantineCore(
+                    item);
             }
         }
         catch
@@ -289,15 +315,15 @@ public sealed class DiagnosticOutbox :
             $"{diagnosticId}.json");
     }
 
-    private void TryMoveToQuarantine(
-        DiagnosticOutboxItem item)
+    private bool TryMoveToQuarantineCore(
+    DiagnosticOutboxItem item)
     {
         try
         {
             if (!File.Exists(
                     item.FilePath))
             {
-                return;
+                return true;
             }
 
             Directory.CreateDirectory(
@@ -321,10 +347,12 @@ public sealed class DiagnosticOutbox :
             File.Move(
                 item.FilePath,
                 destinationPath);
+
+            return true;
         }
         catch
         {
-            // Best-effort quarantine.
+            return false;
         }
     }
 
