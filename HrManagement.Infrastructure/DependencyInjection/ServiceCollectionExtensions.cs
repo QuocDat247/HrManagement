@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Credentials;
+using HrManagement.Infrastructure.Authentication.Credentials;
 using HrManagement.Application.Payroll.Periods;
 using HrManagement.Infrastructure.Payroll.Periods;
 using HrManagement.Application.Payroll.Calculations;
@@ -73,6 +75,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IUserAccountRepository,
             EfUserAccountRepository>();
+
+        services.AddSingleton<
+            IPasswordHasher,
+            Pbkdf2PasswordHasher>();
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 
