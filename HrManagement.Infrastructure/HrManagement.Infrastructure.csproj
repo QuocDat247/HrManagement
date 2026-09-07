@@ -15,4 +15,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource
+      Include="Authentication\Credentials\CommonPasswordBlocklist.txt">
+      <LogicalName>HrManagement.Infrastructure.Authentication.Credentials.CommonPasswordBlocklist.txt</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

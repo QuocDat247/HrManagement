@@ -80,6 +80,14 @@ public static class ServiceCollectionExtensions
             IPasswordHasher,
             Pbkdf2PasswordHasher>();
 
+        services.AddSingleton<
+            IPasswordBlocklist,
+            BundledPasswordBlocklist>();
+
+        services.AddSingleton<
+            IPasswordPolicy,
+            DefaultPasswordPolicy>();
+
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 
         services.AddScoped<IEmployeeService, EmployeeService>();
