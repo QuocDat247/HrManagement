@@ -1,4 +1,5 @@
 using HrManagement.Domain.Authentication.Accounts;
+using HrManagement.Domain.Authentication.Credentials;
 using HrManagement.Domain.Employees;
 using Microsoft.EntityFrameworkCore;
 using HrManagement.Infrastructure.Persistence.Configurations;
@@ -25,6 +26,9 @@ public sealed class HrManagementDbContext : DbContext
 {
     public DbSet<UserAccount> UserAccounts =>
         Set<UserAccount>();
+
+    public DbSet<UserCredential> UserCredentials =>
+        Set<UserCredential>();
 
     public DbSet<EmployeeCompensation>
         EmployeeCompensations =>
@@ -138,6 +142,9 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new UserAccountConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new UserCredentialConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new EmployeeConfiguration());

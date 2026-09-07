@@ -76,6 +76,10 @@ public static class ServiceCollectionExtensions
             IUserAccountRepository,
             EfUserAccountRepository>();
 
+        services.AddScoped<
+            IUserCredentialRepository,
+            EfUserCredentialRepository>();
+
         services.AddSingleton<
             IPasswordHasher,
             Pbkdf2PasswordHasher>();
