@@ -42,6 +42,8 @@ using HrManagement.Infrastructure.Attendance.Timesheets;
 using HrManagement.Infrastructure.Attendance.Schedules.Overrides;
 using HrManagement.Infrastructure.Dashboard;
 using HrManagement.Infrastructure.Dashboard.Analytics;
+using HrManagement.Application.Authentication.Accounts;
+using HrManagement.Infrastructure.Authentication.Accounts;
 using HrManagement.Infrastructure.Employees;
 using HrManagement.Infrastructure.Employees.Profiles;
 using HrManagement.Infrastructure.Leave.Requests;
@@ -67,6 +69,10 @@ public static class ServiceCollectionExtensions
                     DatabasePath.GetConnectionString()));
 
         services.AddSingleton<IDashboardService, EfDashboardService>();
+
+        services.AddScoped<
+            IUserAccountRepository,
+            EfUserAccountRepository>();
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 

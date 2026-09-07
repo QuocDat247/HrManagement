@@ -1,3 +1,4 @@
+using HrManagement.Domain.Authentication.Accounts;
 using HrManagement.Domain.Employees;
 using Microsoft.EntityFrameworkCore;
 using HrManagement.Infrastructure.Persistence.Configurations;
@@ -22,6 +23,9 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class HrManagementDbContext : DbContext
 {
+    public DbSet<UserAccount> UserAccounts =>
+        Set<UserAccount>();
+
     public DbSet<EmployeeCompensation>
         EmployeeCompensations =>
             Set<EmployeeCompensation>();
@@ -131,6 +135,9 @@ public sealed class HrManagementDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfiguration(
+            new UserAccountConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new EmployeeConfiguration());
