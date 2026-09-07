@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Security;
+using HrManagement.Domain.Authentication.Security;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Application.Authentication.Credentials;
 using HrManagement.Domain.Authentication.Credentials;
@@ -9,6 +11,19 @@ public sealed class RealAuthenticationService
 {
     private const string InvalidCredentialsMessage =
         "Tên đăng nhập hoặc mật khẩu không đúng.";
+
+    private const int LockoutFailureThreshold =
+        5;
+
+    private static readonly TimeSpan LockoutDuration =
+        TimeSpan.FromMinutes(
+            15);
+
+    private readonly IUserLoginSecurityStateRepository
+        _securityStateRepository;
+
+    private readonly TimeProvider
+        _timeProvider;
 
     private readonly IUserAccountRepository
         _accountRepository;
@@ -25,9 +40,17 @@ public sealed class RealAuthenticationService
     public RealAuthenticationService(
         IUserAccountRepository accountRepository,
         IUserCredentialRepository credentialRepository,
+        IUserLoginSecurityStateRepository securityStateRepository,
         IPasswordHasher passwordHasher,
-        IUserSession userSession)
+        IUserSession userSession,
+        TimeProvider timeProvider)
     {
+        _securityStateRepository =
+            securityStateRepository;
+
+        _timeProvider =
+            timeProvider;
+
         _accountRepository =
             accountRepository;
 
@@ -70,6 +93,26 @@ public sealed class RealAuthenticationService
             return InvalidCredentials();
         }
 
+        DateTimeOffset nowUtc =
+            _timeProvider.GetUtcNow();
+
+        UserLoginSecurityState? securityState =
+            await _securityStateRepository
+                .GetByAccountIdAsync(
+                    account.Id,
+                    cancellationToken);
+
+        if (securityState?.IsLockedOut(
+                nowUtc) == true)
+        {
+            return InvalidCredentials();
+        }
+
+        bool hadExpiredLockout =
+            securityState?.LockoutEndUtc is not null
+            && !securityState.IsLockedOut(
+                nowUtc);
+
         UserCredential? credential =
             await _credentialRepository
                 .GetByAccountIdAsync(
@@ -90,6 +133,44 @@ public sealed class RealAuthenticationService
         if (verificationResult ==
             PasswordVerificationResult.Failed)
         {
+            int currentFailureCount =
+                hadExpiredLockout
+                    ? 0
+                    : securityState?
+                        .FailedLoginCount
+                        ?? 0;
+
+            int nextFailureCount =
+                currentFailureCount + 1;
+
+            DateTimeOffset? lockoutEndUtc =
+                nextFailureCount >=
+                    LockoutFailureThreshold
+                    ? nowUtc.Add(
+                        LockoutDuration)
+                    : null;
+
+            var updatedSecurityState =
+                new UserLoginSecurityState(
+                    account.Id,
+                    nextFailureCount,
+                    lockoutEndUtc);
+
+            if (securityState is null)
+            {
+                await _securityStateRepository
+                    .AddAsync(
+                        updatedSecurityState,
+                        cancellationToken);
+            }
+            else
+            {
+                await _securityStateRepository
+                    .UpdateAsync(
+                        updatedSecurityState,
+                        cancellationToken);
+            }
+
             return InvalidCredentials();
         }
 
@@ -110,6 +191,18 @@ public sealed class RealAuthenticationService
             await _credentialRepository
                 .UpdateAsync(
                     credential,
+                    cancellationToken);
+        }
+
+        if (securityState is not null
+            && (securityState.FailedLoginCount > 0
+                || securityState.LockoutEndUtc
+                    is not null))
+        {
+            await _securityStateRepository
+                .UpdateAsync(
+                    new UserLoginSecurityState(
+                        account.Id),
                     cancellationToken);
         }
 

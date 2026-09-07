@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Security;
+using HrManagement.Domain.Authentication.Security;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Application.Authentication.Credentials;
@@ -46,8 +48,10 @@ public sealed class RealAuthenticationServiceTests
             new RealAuthenticationService(
                 accountRepository,
                 credentialRepository,
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                userSession);
+                userSession,
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -100,8 +104,10 @@ public sealed class RealAuthenticationServiceTests
                     new UserCredential(
                         account.Id,
                         CurrentPasswordHash)),
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                userSession);
+                userSession,
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -132,8 +138,10 @@ public sealed class RealAuthenticationServiceTests
                     account: null),
                 new TestUserCredentialRepository(
                     credential: null),
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                userSession);
+                userSession,
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -170,8 +178,10 @@ public sealed class RealAuthenticationServiceTests
                     new UserCredential(
                         account.Id,
                         CurrentPasswordHash)),
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                userSession);
+                userSession,
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -205,8 +215,10 @@ public sealed class RealAuthenticationServiceTests
                     account),
                 new TestUserCredentialRepository(
                     credential: null),
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                userSession);
+                userSession,
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -239,8 +251,10 @@ public sealed class RealAuthenticationServiceTests
                 new TestUserAccountRepository(
                     account),
                 credentialRepository,
+                new TestUserLoginSecurityStateRepository(),
                 new TestPasswordHasher(),
-                new CurrentUserSession());
+                new CurrentUserSession(),
+                TimeProvider.System);
 
         AuthenticationResult result =
             await service.LoginAsync(
@@ -411,6 +425,64 @@ public sealed class RealAuthenticationServiceTests
 
             UpdatedCredential =
                 credential;
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class
+        TestUserLoginSecurityStateRepository
+        : IUserLoginSecurityStateRepository
+    {
+        private UserLoginSecurityState?
+            _state;
+
+        public TestUserLoginSecurityStateRepository(
+            UserLoginSecurityState? state = null)
+        {
+            _state =
+                state;
+        }
+
+        public UserLoginSecurityState?
+            CurrentState =>
+                _state;
+
+        public Task<UserLoginSecurityState?>
+            GetByAccountIdAsync(
+                Guid accountId,
+                CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult<
+                UserLoginSecurityState?>(
+                    _state?.AccountId ==
+                    accountId
+                        ? _state
+                        : null);
+        }
+
+        public Task AddAsync(
+            UserLoginSecurityState state,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _state =
+                state;
+
+            return Task.CompletedTask;
+        }
+
+        public Task UpdateAsync(
+            UserLoginSecurityState state,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _state =
+                state;
 
             return Task.CompletedTask;
         }
