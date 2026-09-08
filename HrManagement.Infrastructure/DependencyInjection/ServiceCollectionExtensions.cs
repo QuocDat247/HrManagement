@@ -232,8 +232,16 @@ public static class ServiceCollectionExtensions
             EfWorkScheduleManagementPersistence>();
 
         services.AddScoped<
-            IWorkScheduleManagementService,
             WorkScheduleManagementService>();
+
+        services.AddScoped<
+            IWorkScheduleManagementService>(
+                provider =>
+                    new AuthorizedWorkScheduleManagementService(
+                        provider.GetRequiredService<
+                            WorkScheduleManagementService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IEmployeeWorkScheduleAssignmentRepository,
@@ -244,8 +252,16 @@ public static class ServiceCollectionExtensions
             EfEmployeeWorkScheduleAssignmentPersistence>();
 
         services.AddScoped<
-            IEmployeeWorkScheduleAssignmentService,
             EmployeeWorkScheduleAssignmentService>();
+
+        services.AddScoped<
+            IEmployeeWorkScheduleAssignmentService>(
+                provider =>
+                    new AuthorizedEmployeeWorkScheduleAssignmentService(
+                        provider.GetRequiredService<
+                            EmployeeWorkScheduleAssignmentService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<WorkScheduleSeedService>();
 
@@ -484,16 +500,32 @@ public static class ServiceCollectionExtensions
             EfAttendanceLeaveWorkspaceQueryService>();
 
         services.AddSingleton<
-            IWorkScheduleWorkspaceQueryService,
             EfWorkScheduleWorkspaceQueryService>();
+
+        services.AddScoped<
+            IWorkScheduleWorkspaceQueryService>(
+                provider =>
+                    new AuthorizedWorkScheduleWorkspaceQueryService(
+                        provider.GetRequiredService<
+                            EfWorkScheduleWorkspaceQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IWorkScheduleDayManagementPersistence,
             EfWorkScheduleDayManagementPersistence>();
 
         services.AddScoped<
-            IWorkScheduleDayManagementService,
             WorkScheduleDayManagementService>();
+
+        services.AddScoped<
+            IWorkScheduleDayManagementService>(
+                provider =>
+                    new AuthorizedWorkScheduleDayManagementService(
+                        provider.GetRequiredService<
+                            WorkScheduleDayManagementService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddScoped<
             IDailyAttendanceGenerationService,

@@ -12,6 +12,9 @@ public sealed class PermissionTests
     [InlineData(PermissionCodes.SettingsManage)]
     [InlineData(PermissionCodes.DepartmentView)]
     [InlineData(PermissionCodes.PositionManageLifecycle)]
+    [InlineData(PermissionCodes.WorkScheduleView)]
+    [InlineData(PermissionCodes.WorkScheduleDelete)]
+    [InlineData(PermissionCodes.WorkScheduleAssign)]
     public void
         Constructor_WithKnownPermission_CreatesPermission(
             string code)
@@ -70,7 +73,7 @@ public sealed class PermissionTests
         All_ContainsExpectedPermissionCount()
     {
         Assert.Equal(
-            28,
+            34,
             PermissionCodes.All.Count);
     }
 }

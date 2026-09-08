@@ -38,6 +38,24 @@ public static class PermissionCodes
     public const string PositionManageLifecycle =
         "Position.ManageLifecycle";
 
+    public const string WorkScheduleView =
+        "WorkSchedule.View";
+
+    public const string WorkScheduleCreate =
+        "WorkSchedule.Create";
+
+    public const string WorkScheduleEdit =
+        "WorkSchedule.Edit";
+
+    public const string WorkScheduleManageLifecycle =
+        "WorkSchedule.ManageLifecycle";
+
+    public const string WorkScheduleDelete =
+        "WorkSchedule.Delete";
+
+    public const string WorkScheduleAssign =
+        "WorkSchedule.Assign";
+
     public const string AttendanceView =
         "Attendance.View";
 
@@ -102,6 +120,12 @@ public static class PermissionCodes
                 PositionCreate,
                 PositionEdit,
                 PositionManageLifecycle,
+                WorkScheduleView,
+                WorkScheduleCreate,
+                WorkScheduleEdit,
+                WorkScheduleManageLifecycle,
+                WorkScheduleDelete,
+                WorkScheduleAssign,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,
