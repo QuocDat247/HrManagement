@@ -114,13 +114,20 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(PositionsViewModel)));
         }
 
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.WorkScheduleView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Lịch làm việc",
+                    typeof(WorkScheduleWorkspaceViewModel)));
+        }
+
         navigationItems.AddRange(
             new[]
             {
-                new NavigationItem(
-                    "Lịch làm việc",
-                    typeof(WorkScheduleWorkspaceViewModel)),
-
                 new NavigationItem(
                     "Ngày lễ & Ngoại lệ",
                     typeof(HolidayExceptionWorkspaceViewModel)),

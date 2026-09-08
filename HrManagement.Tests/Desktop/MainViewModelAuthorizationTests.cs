@@ -63,6 +63,12 @@ public sealed class MainViewModelAuthorizationTests
                 item.ViewModelType ==
                 typeof(PositionsViewModel));
 
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(WorkScheduleWorkspaceViewModel));
+
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
@@ -80,7 +86,8 @@ public sealed class MainViewModelAuthorizationTests
                 navigationService,
                 PermissionCodes.EmployeeView,
                 PermissionCodes.DepartmentView,
-                PermissionCodes.PositionView);
+                PermissionCodes.PositionView,
+                PermissionCodes.WorkScheduleView);
 
         await viewModel.InitializeAsync();
 
@@ -101,6 +108,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(PositionsViewModel));
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(WorkScheduleWorkspaceViewModel));
     }
 
     [Fact]
@@ -134,6 +147,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(PositionsViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(WorkScheduleWorkspaceViewModel));
     }
 
     [Fact]
