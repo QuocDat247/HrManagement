@@ -133,7 +133,17 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 
-        services.AddScoped<IEmployeeService, EmployeeService>();
+        services.AddScoped<
+            EmployeeService>();
+
+        services.AddScoped<
+            IEmployeeService>(
+                provider =>
+                    new AuthorizedEmployeeService(
+                        provider.GetRequiredService<
+                            EmployeeService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<DatabaseInitializer>();
 

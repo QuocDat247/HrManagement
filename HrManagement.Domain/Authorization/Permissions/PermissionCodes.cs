@@ -11,8 +11,8 @@ public static class PermissionCodes
     public const string EmployeeEdit =
         "Employee.Edit";
 
-    public const string EmployeeDelete =
-        "Employee.Delete";
+    public const string EmployeeManageLifecycle =
+        "Employee.ManageLifecycle";
 
     public const string AttendanceView =
         "Attendance.View";
@@ -69,7 +69,7 @@ public static class PermissionCodes
                 EmployeeView,
                 EmployeeCreate,
                 EmployeeEdit,
-                EmployeeDelete,
+                EmployeeManageLifecycle,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,
