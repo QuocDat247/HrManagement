@@ -1,3 +1,5 @@
+using HrManagement.Application.Authorization;
+using HrManagement.Domain.Authorization.Permissions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Navigation;
@@ -9,15 +11,25 @@ public sealed partial class MainViewModel : ObservableObject
 {
     private readonly INavigationService _navigationService;
 
+    private readonly IAuthorizationService
+        _authorizationService;
+
+    private bool _isInitialized;
+
     [ObservableProperty]
     private NavigationItem? _selectedNavigationItem;
 
     // Constructor>
     public MainViewModel(
-        INavigationService navigationService,
-        ICurrentUserContext currentUserContext)
+    INavigationService navigationService,
+    ICurrentUserContext currentUserContext,
+    IAuthorizationService authorizationService)
     {
-        _navigationService = navigationService;
+        _navigationService =
+            navigationService;
+
+        _authorizationService =
+            authorizationService;
 
         CurrentUserDisplayName =
             currentUserContext.CurrentUser?.DisplayName
@@ -27,66 +39,12 @@ public sealed partial class MainViewModel : ObservableObject
         _navigationService.CurrentViewModelChanged +=
             OnCurrentViewModelChanged;
 
-        // Sau này chỉ cần thêm:
-        // new NavigationItem(
-        // "Phòng ban",
-        // typeof(DepartmentsViewModel))
-        // chứ không cần viết thêm một command riêng.
         NavigationItems =
-        [
-            new NavigationItem(
-                "Tổng quan",
-                typeof(DashboardViewModel)),
-
-            new NavigationItem(
-                "Nhân viên",
-                typeof(EmployeesViewModel)),
-
-            new NavigationItem(
-                "Phòng ban",
-                typeof(DepartmentsViewModel)),
-
-            new NavigationItem(
-                "Chức danh",
-                typeof(PositionsViewModel)),
-
-            new NavigationItem(
-                "Lịch làm việc",
-                typeof(WorkScheduleWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Ngày lễ & Ngoại lệ",
-                typeof(HolidayExceptionWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Bảng công tháng",
-                typeof(MonthlyTimesheetWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Tăng ca",
-                typeof(OvertimeWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Bảng lương",
-                typeof(PayrollWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Chấm công & Nghỉ phép",
-                typeof(AttendanceLeaveWorkspaceViewModel)),
-
-            new NavigationItem(
-                "Cài đặt",
-                typeof(SettingsViewModel))
-
-        ];
+            Array.Empty<NavigationItem>();
 
         NavigateCommand =
-            new RelayCommand<NavigationItem>(Navigate);
-
-        SelectedNavigationItem = NavigationItems[0];
-
-        _navigationService.NavigateTo(
-            SelectedNavigationItem.ViewModelType);
+            new RelayCommand<NavigationItem>(
+                Navigate);
     }
 
     // Command>
@@ -95,13 +53,114 @@ public sealed partial class MainViewModel : ObservableObject
         get;
     }
 
-    public IReadOnlyList<NavigationItem> NavigationItems { get; }
+    public IReadOnlyList<NavigationItem> NavigationItems
+    {
+        get;
+        private set;
+    }
 
     public object? CurrentViewModel =>
         _navigationService.CurrentViewModel;
 
     public IRelayCommand<NavigationItem> NavigateCommand { get; }
     // <
+
+    public async Task InitializeAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        var navigationItems =
+            new List<NavigationItem>
+            {
+                new(
+                    "Tổng quan",
+                    typeof(DashboardViewModel))
+            };
+
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.EmployeeView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Nhân viên",
+                    typeof(EmployeesViewModel)));
+        }
+
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.DepartmentView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Phòng ban",
+                    typeof(DepartmentsViewModel)));
+        }
+
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.PositionView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Chức danh",
+                    typeof(PositionsViewModel)));
+        }
+
+        navigationItems.AddRange(
+            new[]
+            {
+                new NavigationItem(
+                    "Lịch làm việc",
+                    typeof(WorkScheduleWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Ngày lễ & Ngoại lệ",
+                    typeof(HolidayExceptionWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Bảng công tháng",
+                    typeof(MonthlyTimesheetWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Tăng ca",
+                    typeof(OvertimeWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Bảng lương",
+                    typeof(PayrollWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Chấm công & Nghỉ phép",
+                    typeof(AttendanceLeaveWorkspaceViewModel)),
+
+                new NavigationItem(
+                    "Cài đặt",
+                    typeof(SettingsViewModel))
+            });
+
+        NavigationItems =
+            navigationItems;
+
+        OnPropertyChanged(
+            nameof(NavigationItems));
+
+        SelectedNavigationItem =
+            NavigationItems[0];
+
+        _navigationService.NavigateTo(
+            SelectedNavigationItem.ViewModelType);
+
+        _isInitialized =
+            true;
+    }
 
     private void Navigate(NavigationItem? item)
     {

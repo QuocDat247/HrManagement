@@ -212,10 +212,37 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        var mainWindow =
-            _serviceProvider.GetRequiredService<MainWindow>();
+        var mainViewModel =
+            _serviceProvider.GetRequiredService<
+                MainViewModel>();
 
-        MainWindow = mainWindow;
+        try
+        {
+            await mainViewModel
+                .InitializeAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Navigation authorization initialization failed.");
+
+            MessageBox.Show(
+                "Không thể tải quyền truy cập của tài khoản.",
+                "Lỗi phân quyền",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            Shutdown();
+            return;
+        }
+
+        var mainWindow =
+            new MainWindow(
+                mainViewModel);
+
+        MainWindow =
+            mainWindow;
 
         ShutdownMode = ShutdownMode.OnMainWindowClose;
 
@@ -365,8 +392,6 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             OwnerSetupWindow>();
-
-        services.AddTransient<MainWindow>();
 
         services.AddTransient<DashboardViewModel>();
 
