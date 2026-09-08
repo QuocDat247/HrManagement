@@ -14,6 +14,30 @@ public static class PermissionCodes
     public const string EmployeeManageLifecycle =
         "Employee.ManageLifecycle";
 
+    public const string DepartmentView =
+        "Department.View";
+
+    public const string DepartmentCreate =
+        "Department.Create";
+
+    public const string DepartmentEdit =
+        "Department.Edit";
+
+    public const string DepartmentManageLifecycle =
+        "Department.ManageLifecycle";
+
+    public const string PositionView =
+        "Position.View";
+
+    public const string PositionCreate =
+        "Position.Create";
+
+    public const string PositionEdit =
+        "Position.Edit";
+
+    public const string PositionManageLifecycle =
+        "Position.ManageLifecycle";
+
     public const string AttendanceView =
         "Attendance.View";
 
@@ -70,6 +94,14 @@ public static class PermissionCodes
                 EmployeeCreate,
                 EmployeeEdit,
                 EmployeeManageLifecycle,
+                DepartmentView,
+                DepartmentCreate,
+                DepartmentEdit,
+                DepartmentManageLifecycle,
+                PositionView,
+                PositionCreate,
+                PositionEdit,
+                PositionManageLifecycle,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,

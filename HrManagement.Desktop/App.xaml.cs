@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using HrManagement.Application.Authorization;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authentication.Bootstrap;
@@ -443,9 +444,17 @@ public partial class App : System.Windows.Application
             IDepartmentRepository,
             EfDepartmentRepository>();
 
-        services.AddSingleton<
-            IDepartmentService,
+        services.AddTransient<
             DepartmentService>();
+
+        services.AddTransient<
+            IDepartmentService>(
+                provider =>
+                    new AuthorizedDepartmentService(
+                        provider.GetRequiredService<
+                            DepartmentService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddTransient<
             DepartmentEditorViewModel>();
@@ -463,9 +472,17 @@ public partial class App : System.Windows.Application
             IPositionRepository,
             EfPositionRepository>();
 
-        services.AddSingleton<
-            IPositionService,
+        services.AddTransient<
             PositionService>();
+
+        services.AddTransient<
+            IPositionService>(
+                provider =>
+                    new AuthorizedPositionService(
+                        provider.GetRequiredService<
+                            PositionService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddTransient<
             PositionEditorViewModel>();
