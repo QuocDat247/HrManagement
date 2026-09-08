@@ -322,9 +322,9 @@ public partial class App : System.Windows.Application
             IDiagnosticOutboxProcessor,
             DiagnosticOutboxProcessor>();
 
-        services.AddSingleton<
+        services.AddTransient<
             IAuthenticationService,
-            FakeAuthenticationService>();
+            RealAuthenticationService>();
 
         services.AddSingleton<
             CurrentUserSession>();
