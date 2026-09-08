@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Threading;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
+using HrManagement.Application.Authentication.Bootstrap;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
@@ -152,6 +153,47 @@ public partial class App : System.Windows.Application
 
         var loginWindow =
             _serviceProvider.GetRequiredService<LoginWindow>();
+
+        IInitialOwnerBootstrapService
+            ownerBootstrapService =
+                _serviceProvider.GetRequiredService<
+                    IInitialOwnerBootstrapService>();
+
+        bool bootstrapRequired;
+
+        try
+        {
+            bootstrapRequired =
+                await ownerBootstrapService
+                    .IsBootstrapRequiredAsync();
+        }
+        catch (Exception)
+        {
+            MessageBox.Show(
+                "Không thể kiểm tra trạng thái thiết lập tài khoản.",
+                "Lỗi tài khoản",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+
+            Shutdown();
+            return;
+        }
+
+        if (bootstrapRequired)
+        {
+            var ownerSetupWindow =
+                _serviceProvider.GetRequiredService<
+                    OwnerSetupWindow>();
+
+            bool? setupResult =
+                ownerSetupWindow.ShowDialog();
+
+            if (setupResult != true)
+            {
+                Shutdown();
+                return;
+            }
+        }
 
         _logger.LogInformation(
             DiagnosticEventIds.LoginWindowOpened,
@@ -312,10 +354,16 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<LoginViewModel>();
 
+        services.AddTransient<
+            OwnerSetupViewModel>();
+
         services.AddTransient<MainViewModel>();
 
 
         services.AddTransient<LoginWindow>();
+
+        services.AddTransient<
+            OwnerSetupWindow>();
 
         services.AddTransient<MainWindow>();
 
