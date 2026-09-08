@@ -1,6 +1,7 @@
 using HrManagement.Domain.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Credentials;
 using HrManagement.Domain.Authentication.Security;
+using HrManagement.Domain.Authorization.Roles;
 using HrManagement.Domain.Employees;
 using Microsoft.EntityFrameworkCore;
 using HrManagement.Infrastructure.Persistence.Configurations;
@@ -34,6 +35,15 @@ public sealed class HrManagementDbContext : DbContext
     public DbSet<UserLoginSecurityState>
         UserLoginSecurityStates =>
             Set<UserLoginSecurityState>();
+
+    public DbSet<Role> Roles =>
+        Set<Role>();
+
+    public DbSet<RolePermission> RolePermissions =>
+        Set<RolePermission>();
+
+    public DbSet<UserAccountRole> UserAccountRoles =>
+        Set<UserAccountRole>();
 
     public DbSet<EmployeeCompensation>
         EmployeeCompensations =>
@@ -153,6 +163,15 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new UserLoginSecurityStateConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new RoleConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new RolePermissionConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new UserAccountRoleConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new EmployeeConfiguration());
