@@ -212,8 +212,16 @@ public static class ServiceCollectionExtensions
             EfHolidayCalendarManagementPersistence>();
 
         services.AddScoped<
-            IHolidayCalendarManagementService,
             HolidayCalendarManagementService>();
+
+        services.AddScoped<
+            IHolidayCalendarManagementService>(
+                provider =>
+                    new AuthorizedHolidayCalendarManagementService(
+                        provider.GetRequiredService<
+                            HolidayCalendarManagementService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IWorkScheduleRepository,
@@ -560,8 +568,16 @@ public static class ServiceCollectionExtensions
             AttendanceCorrectionWorkspaceQueryService>();
 
         services.AddSingleton<
-            IHolidayExceptionWorkspaceQueryService,
             EfHolidayExceptionWorkspaceQueryService>();
+
+        services.AddScoped<
+            IHolidayExceptionWorkspaceQueryService>(
+                provider =>
+                    new AuthorizedHolidayExceptionWorkspaceQueryService(
+                        provider.GetRequiredService<
+                            EfHolidayExceptionWorkspaceQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         return services;
     }

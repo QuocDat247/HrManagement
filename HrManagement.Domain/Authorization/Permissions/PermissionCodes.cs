@@ -56,6 +56,18 @@ public static class PermissionCodes
     public const string WorkScheduleAssign =
         "WorkSchedule.Assign";
 
+    public const string HolidayExceptionView =
+        "HolidayException.View";
+
+    public const string HolidayExceptionCreate =
+        "HolidayException.Create";
+
+    public const string HolidayExceptionEdit =
+        "HolidayException.Edit";
+
+    public const string HolidayExceptionManageLifecycle =
+        "HolidayException.ManageLifecycle";
+
     public const string AttendanceView =
         "Attendance.View";
 
@@ -126,6 +138,10 @@ public static class PermissionCodes
                 WorkScheduleManageLifecycle,
                 WorkScheduleDelete,
                 WorkScheduleAssign,
+                HolidayExceptionView,
+                HolidayExceptionCreate,
+                HolidayExceptionEdit,
+                HolidayExceptionManageLifecycle,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,
