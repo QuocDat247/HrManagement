@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Bootstrap;
+using HrManagement.Infrastructure.Authentication.Bootstrap;
 using HrManagement.Application.Authentication.Security;
 using HrManagement.Infrastructure.Authentication.Security;
 using HrManagement.Application.Authentication.Credentials;
@@ -85,6 +87,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IUserLoginSecurityStateRepository,
             EfUserLoginSecurityStateRepository>();
+
+        services.AddScoped<
+            IInitialOwnerBootstrapPersistence,
+            EfInitialOwnerBootstrapPersistence>();
+
+        services.AddScoped<
+            IInitialOwnerBootstrapService,
+            InitialOwnerBootstrapService>();
 
         services.AddSingleton<
             IPasswordHasher,
