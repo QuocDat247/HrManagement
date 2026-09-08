@@ -1,3 +1,5 @@
+using HrManagement.Application.Authorization.Roles;
+using HrManagement.Infrastructure.Authorization.Roles;
 using HrManagement.Application.Authentication.Bootstrap;
 using HrManagement.Infrastructure.Authentication.Bootstrap;
 using HrManagement.Application.Authentication.Security;
@@ -87,6 +89,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<
             IUserLoginSecurityStateRepository,
             EfUserLoginSecurityStateRepository>();
+
+        services.AddScoped<
+            IRoleRepository,
+            EfRoleRepository>();
+
+        services.AddScoped<
+            IRolePermissionRepository,
+            EfRolePermissionRepository>();
+
+        services.AddScoped<
+            IUserAccountRoleRepository,
+            EfUserAccountRoleRepository>();
 
         services.AddScoped<
             IInitialOwnerBootstrapPersistence,
