@@ -108,6 +108,10 @@ public static class ServiceCollectionExtensions
             AuthorizationService>();
 
         services.AddScoped<
+            IAuthorizationGuard,
+            AuthorizationGuard>();
+
+        services.AddScoped<
             IInitialOwnerBootstrapPersistence,
             EfInitialOwnerBootstrapPersistence>();
 
