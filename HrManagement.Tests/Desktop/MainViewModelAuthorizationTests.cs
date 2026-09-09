@@ -81,6 +81,12 @@ public sealed class MainViewModelAuthorizationTests
                 item.ViewModelType ==
                 typeof(MonthlyTimesheetWorkspaceViewModel));
 
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(OvertimeWorkspaceViewModel));
+
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
@@ -101,7 +107,8 @@ public sealed class MainViewModelAuthorizationTests
                 PermissionCodes.PositionView,
                 PermissionCodes.WorkScheduleView,
                 PermissionCodes.HolidayExceptionView,
-                PermissionCodes.TimesheetView);
+                PermissionCodes.TimesheetView,
+                PermissionCodes.OvertimeView);
 
         await viewModel.InitializeAsync();
 
@@ -140,6 +147,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(MonthlyTimesheetWorkspaceViewModel));
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(OvertimeWorkspaceViewModel));
     }
 
     [Fact]
@@ -191,6 +204,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(MonthlyTimesheetWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(OvertimeWorkspaceViewModel));
     }
 
     [Fact]
