@@ -75,6 +75,12 @@ public sealed class MainViewModelAuthorizationTests
                 item.ViewModelType ==
                 typeof(HolidayExceptionWorkspaceViewModel));
 
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(MonthlyTimesheetWorkspaceViewModel));
+
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
@@ -94,7 +100,8 @@ public sealed class MainViewModelAuthorizationTests
                 PermissionCodes.DepartmentView,
                 PermissionCodes.PositionView,
                 PermissionCodes.WorkScheduleView,
-                PermissionCodes.HolidayExceptionView);
+                PermissionCodes.HolidayExceptionView,
+                PermissionCodes.TimesheetView);
 
         await viewModel.InitializeAsync();
 
@@ -127,6 +134,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(HolidayExceptionWorkspaceViewModel));
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(MonthlyTimesheetWorkspaceViewModel));
     }
 
     [Fact]
@@ -172,6 +185,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(HolidayExceptionWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(MonthlyTimesheetWorkspaceViewModel));
     }
 
     [Fact]

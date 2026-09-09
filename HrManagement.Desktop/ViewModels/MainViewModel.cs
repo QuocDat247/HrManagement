@@ -136,13 +136,20 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(HolidayExceptionWorkspaceViewModel)));
         }
 
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.TimesheetView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Bảng công tháng",
+                    typeof(MonthlyTimesheetWorkspaceViewModel)));
+        }
+
         navigationItems.AddRange(
             new[]
             {
-                new NavigationItem(
-                    "Bảng công tháng",
-                    typeof(MonthlyTimesheetWorkspaceViewModel)),
-
                 new NavigationItem(
                     "Tăng ca",
                     typeof(OvertimeWorkspaceViewModel)),
