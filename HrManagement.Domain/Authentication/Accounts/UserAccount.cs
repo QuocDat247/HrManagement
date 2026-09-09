@@ -8,9 +8,17 @@ public sealed class UserAccount
 
     public string NormalizedUsername { get; }
 
-    public string DisplayName { get; }
+    public string DisplayName
+    {
+        get;
+        private set;
+    }
 
-    public Guid? EmployeeId { get; }
+    public Guid? EmployeeId
+    {
+        get;
+        private set;
+    }
 
     public UserAccountKind Kind { get; }
 
@@ -106,5 +114,41 @@ public sealed class UserAccount
 
         IsActive =
             isActive;
+    }
+
+    public void UpdateProfile(
+        string displayName,
+        Guid? employeeId = null)
+    {
+        if (string.IsNullOrWhiteSpace(
+                displayName))
+        {
+            throw new ArgumentException(
+                "Tên hiển thị không được để trống.",
+                nameof(displayName));
+        }
+
+        string trimmedDisplayName =
+            displayName.Trim();
+
+        if (trimmedDisplayName.Length > 200)
+        {
+            throw new ArgumentException(
+                "Tên hiển thị không được vượt quá 200 ký tự.",
+                nameof(displayName));
+        }
+
+        if (employeeId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã nhân viên liên kết không hợp lệ.",
+                nameof(employeeId));
+        }
+
+        DisplayName =
+            trimmedDisplayName;
+
+        EmployeeId =
+            employeeId;
     }
 }

@@ -144,4 +144,79 @@ public sealed class UserAccountTests
         Assert.False(
             account.IsActive);
     }
+
+    [Fact]
+    public void
+        UpdateProfile_WithValidValues_ChangesOnlyProfileFields()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var account =
+            new UserAccount(
+                Guid.NewGuid(),
+                "manager",
+                "Tên cũ",
+                UserAccountKind.Standard,
+                isActive:
+                    false);
+
+        account.UpdateProfile(
+            "  Tên mới  ",
+            employeeId);
+
+        Assert.Equal(
+            "Tên mới",
+            account.DisplayName);
+
+        Assert.Equal(
+            employeeId,
+            account.EmployeeId);
+
+        Assert.Equal(
+            "manager",
+            account.Username);
+
+        Assert.Equal(
+            UserAccountKind.Standard,
+            account.Kind);
+
+        Assert.False(
+            account.IsActive);
+    }
+
+    [Fact]
+    public void
+        UpdateProfile_WithBlankDisplayName_Throws()
+    {
+        var account =
+            new UserAccount(
+                Guid.NewGuid(),
+                "manager",
+                "Quản lý",
+                UserAccountKind.Standard);
+
+        Assert.Throws<ArgumentException>(
+            () =>
+                account.UpdateProfile(
+                    "   "));
+    }
+
+    [Fact]
+    public void
+        UpdateProfile_WithEmptyEmployeeId_Throws()
+    {
+        var account =
+            new UserAccount(
+                Guid.NewGuid(),
+                "manager",
+                "Quản lý",
+                UserAccountKind.Standard);
+
+        Assert.Throws<ArgumentException>(
+            () =>
+                account.UpdateProfile(
+                    "Quản lý mới",
+                    Guid.Empty));
+    }
 }

@@ -132,6 +132,22 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddScoped<
+            IAccountProfileUpdatePersistence,
+            EfAccountProfileUpdatePersistence>();
+
+        services.AddScoped<
+            AccountProfileUpdateService>();
+
+        services.AddScoped<
+            IAccountProfileUpdateService>(
+                provider =>
+                    new AuthorizedAccountProfileUpdateService(
+                        provider.GetRequiredService<
+                            AccountProfileUpdateService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IAuthorizationService,
             AuthorizationService>();
 
