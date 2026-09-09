@@ -225,6 +225,16 @@
 
                             <Button Content="Sửa vai trò"
                                     Command="{Binding EditRoleCommand}"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0" />
+
+                            <Button Content="Ngừng sử dụng"
+                                    Command="{Binding DeactivateRoleCommand}"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0" />
+
+                            <Button Content="Kích hoạt lại"
+                                    Command="{Binding ReactivateRoleCommand}"
                                     Padding="12,6" />
 
                         </StackPanel>

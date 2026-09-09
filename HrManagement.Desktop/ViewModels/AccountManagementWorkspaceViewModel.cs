@@ -21,6 +21,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private readonly IAccountActiveStateService
         _activeStateService;
 
+    private readonly IRoleActiveStateService
+        _roleActiveStateService;
+
     private readonly IUserConfirmationService
         _confirmationService;
 
@@ -83,11 +86,22 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand DeactivateRoleCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ReactivateRoleCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
         IAccountManagementQueryService queryService,
         IAccountManagementDialogService dialogService,
         IAccountActiveStateService activeStateService,
-        IUserConfirmationService confirmationService)
+        IUserConfirmationService confirmationService,
+        IRoleActiveStateService roleActiveStateService)
     {
         _queryService =
             queryService;
@@ -100,6 +114,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
         _confirmationService =
             confirmationService;
+
+        _roleActiveStateService =
+            roleActiveStateService;
 
         RefreshCommand =
             new AsyncRelayCommand(
@@ -133,6 +150,16 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 EditRoleAsync,
                 CanEditRole);
+
+        DeactivateRoleCommand =
+            new AsyncRelayCommand(
+                DeactivateRoleAsync,
+                CanDeactivateRole);
+
+        ReactivateRoleCommand =
+            new AsyncRelayCommand(
+                ReactivateRoleAsync,
+                CanReactivateRole);
     }
 
     public async Task LoadAsync()
@@ -217,6 +244,12 @@ public sealed partial class AccountManagementWorkspaceViewModel
     {
         EditRoleCommand
             .NotifyCanExecuteChanged();
+
+        DeactivateRoleCommand
+            .NotifyCanExecuteChanged();
+
+        ReactivateRoleCommand
+            .NotifyCanExecuteChanged();
     }
 
     partial void OnIsLoadingChanged(
@@ -235,6 +268,12 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
 
         EditRoleCommand
+            .NotifyCanExecuteChanged();
+
+        DeactivateRoleCommand
+            .NotifyCanExecuteChanged();
+
+        ReactivateRoleCommand
             .NotifyCanExecuteChanged();
     }
 
@@ -481,6 +520,113 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Không thể mở màn hình sửa vai trò.";
+        }
+    }
+
+    private bool CanDeactivateRole()
+    {
+        return !IsLoading
+            && SelectedRole is
+            {
+                IsActive: true
+            };
+    }
+
+    private bool CanReactivateRole()
+    {
+        return !IsLoading
+            && SelectedRole is
+            {
+                IsActive: false
+            };
+    }
+
+    private Task DeactivateRoleAsync()
+    {
+        return SetSelectedRoleActiveStateAsync(
+            isActive:
+                false);
+    }
+
+    private Task ReactivateRoleAsync()
+    {
+        return SetSelectedRoleActiveStateAsync(
+            isActive:
+                true);
+    }
+
+    private async Task SetSelectedRoleActiveStateAsync(
+        bool isActive)
+    {
+        AccountManagementRoleItem? selected =
+            SelectedRole;
+
+        if (selected is null
+            || IsLoading
+            || selected.IsActive ==
+                isActive)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        string title =
+            isActive
+                ? "Kích hoạt lại vai trò"
+                : "Ngừng sử dụng vai trò";
+
+        string message =
+            isActive
+                ? $"Kích hoạt lại vai trò \"{selected.Name}\"?\n\n"
+                    + "Các tài khoản đã được gán vai trò này "
+                    + "có thể nhận lại các quyền tương ứng."
+                : $"Ngừng sử dụng vai trò \"{selected.Name}\"?\n\n"
+                    + "Các gán vai trò vẫn được giữ lại, "
+                    + "nhưng quyền từ vai trò này sẽ không còn hiệu lực.";
+
+        if (!_confirmationService
+                .Confirm(
+                    title,
+                    message))
+        {
+            return;
+        }
+
+        try
+        {
+            RoleManagementResult result =
+                await _roleActiveStateService
+                    .SetAsync(
+                        selected.RoleId,
+                        isActive);
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể thay đổi trạng thái vai trò.";
+
+                return;
+            }
+
+            await LoadAsync();
+        }
+        catch (AuthorizationDeniedException)
+        {
+            ErrorMessage =
+                "Bạn không có quyền thay đổi trạng thái vai trò.";
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage =
+                "Thao tác thay đổi trạng thái vai trò đã bị hủy.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Đã xảy ra lỗi khi thay đổi trạng thái vai trò.";
         }
     }
 

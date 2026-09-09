@@ -1,5 +1,6 @@
-using HrManagement.Desktop.Services;
+using HrManagement.Application.Authorization.Roles;
 using HrManagement.Application.Authentication.Accounts;
+using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Authentication.Accounts;
 
@@ -55,7 +56,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 new TestDialogService(),
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -125,7 +127,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 new TestDialogService(),
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -154,7 +157,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                             "Database failure.")),
                 new TestDialogService(),
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -206,7 +210,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 dialogService,
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -272,7 +277,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 new TestDialogService(),
                 activeStateService,
-                confirmationService);
+                confirmationService,
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -353,7 +359,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 {
                     Result =
                         false
-                });
+                },
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -410,7 +417,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 {
                     Result =
                         true
-                });
+                },
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -463,7 +471,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 dialogService,
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -514,7 +523,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     snapshot),
                 dialogService,
                 new TestActiveStateService(),
-                new TestConfirmationService());
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
 
         await viewModel.LoadAsync();
 
@@ -539,6 +549,208 @@ public sealed class AccountManagementWorkspaceViewModelTests
         Assert.Equal(
             roleId,
             dialogService.LastEditedRoleId);
+    }
+
+    [Fact]
+    public async Task
+        DeactivateRoleCommand_WithActiveRole_RequestsInactiveState()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new AccountManagementRoleItem(
+                roleId,
+                "Quản lý nhân sự",
+                "Mô tả",
+                true);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var roleActiveStateService =
+            new TestRoleActiveStateService();
+
+        var confirmationService =
+            new TestConfirmationService
+            {
+                Result =
+                    true
+            };
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                confirmationService,
+                roleActiveStateService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        Assert.True(
+            viewModel.DeactivateRoleCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.ReactivateRoleCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.DeactivateRoleCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            confirmationService.Called);
+
+        Assert.True(
+            roleActiveStateService.Called);
+
+        Assert.Equal(
+            roleId,
+            roleActiveStateService.LastRoleId);
+
+        Assert.False(
+            roleActiveStateService.LastIsActive);
+    }
+
+    [Fact]
+    public async Task
+        DeactivateRoleCommand_WhenConfirmationDeclined_DoesNotCallService()
+    {
+        var role =
+            new AccountManagementRoleItem(
+                Guid.NewGuid(),
+                "Quản lý nhân sự",
+                null,
+                true);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var roleActiveStateService =
+            new TestRoleActiveStateService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService
+                {
+                    Result =
+                        false
+                },
+                roleActiveStateService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        await viewModel.DeactivateRoleCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.False(
+            roleActiveStateService.Called);
+    }
+
+    [Fact]
+    public async Task
+        ReactivateRoleCommand_WithInactiveRole_RequestsActiveState()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new AccountManagementRoleItem(
+                roleId,
+                "Quản lý nhân sự",
+                null,
+                false);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var roleActiveStateService =
+            new TestRoleActiveStateService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService
+                {
+                    Result =
+                        true
+                },
+                roleActiveStateService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        Assert.False(
+            viewModel.DeactivateRoleCommand
+                .CanExecute(
+                    null));
+
+        Assert.True(
+            viewModel.ReactivateRoleCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.ReactivateRoleCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            roleActiveStateService.Called);
+
+        Assert.Equal(
+            roleId,
+            roleActiveStateService.LastRoleId);
+
+        Assert.True(
+            roleActiveStateService.LastIsActive);
     }
 
     private sealed class TestQueryService
@@ -616,6 +828,55 @@ public sealed class AccountManagementWorkspaceViewModelTests
 
             return Task.FromResult(
                 Result);
+        }
+    }
+
+    private sealed class TestRoleActiveStateService
+        : IRoleActiveStateService
+    {
+        public bool Called
+        {
+            get;
+            private set;
+        }
+
+        public Guid? LastRoleId
+        {
+            get;
+            private set;
+        }
+
+        public bool LastIsActive
+        {
+            get;
+            private set;
+        }
+
+        public RoleManagementResult? Result
+        {
+            get;
+            set;
+        }
+
+        public Task<RoleManagementResult> SetAsync(
+            Guid roleId,
+            bool isActive,
+            CancellationToken cancellationToken = default)
+        {
+            Called =
+                true;
+
+            LastRoleId =
+                roleId;
+
+            LastIsActive =
+                isActive;
+
+            return Task.FromResult(
+                Result
+                ?? new RoleManagementResult(
+                    true,
+                    roleId));
         }
     }
 
