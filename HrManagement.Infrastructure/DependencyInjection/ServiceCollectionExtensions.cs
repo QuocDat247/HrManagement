@@ -128,6 +128,22 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddScoped<
+            IRolePermissionAssignmentPersistence,
+            EfRolePermissionAssignmentPersistence>();
+
+        services.AddScoped<
+            RolePermissionAssignmentService>();
+
+        services.AddScoped<
+            IRolePermissionAssignmentService>(
+                provider =>
+                    new AuthorizedRolePermissionAssignmentService(
+                        provider.GetRequiredService<
+                            RolePermissionAssignmentService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IRolePermissionRepository,
             EfRolePermissionRepository>();
 

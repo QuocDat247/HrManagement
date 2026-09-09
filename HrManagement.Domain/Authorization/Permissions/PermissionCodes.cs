@@ -137,6 +137,9 @@ public static class PermissionCodes
     public const string RoleManageLifecycle =
         "Role.ManageLifecycle";
 
+    public const string RoleAssignPermission =
+        "Role.AssignPermission";
+
     public const string AccountView =
         "Account.View";
 
@@ -207,6 +210,7 @@ public static class PermissionCodes
                 RoleCreate,
                 RoleEdit,
                 RoleManageLifecycle,
+                RoleAssignPermission,
                 AccountView,
                 AccountCreate,
                 AccountEdit,
