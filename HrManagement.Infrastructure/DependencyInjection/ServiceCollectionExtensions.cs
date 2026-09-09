@@ -479,8 +479,16 @@ public static class ServiceCollectionExtensions
             AttendancePunchContextResolver>();
 
         services.AddScoped<
-            IAttendancePunchService,
             AttendancePunchService>();
+
+        services.AddScoped<
+            IAttendancePunchService>(
+                provider =>
+                    new AuthorizedAttendancePunchService(
+                        provider.GetRequiredService<
+                            AttendancePunchService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IAttendanceScheduleWindowResolver,
@@ -498,8 +506,16 @@ public static class ServiceCollectionExtensions
             EfApprovedLeaveAttendanceResolver>();
 
         services.AddScoped<
-            IAttendanceRecalculationService,
             AttendanceRecalculationService>();
+
+        services.AddScoped<
+            IAttendanceRecalculationService>(
+                provider =>
+                    new AuthorizedAttendanceRecalculationService(
+                        provider.GetRequiredService<
+                            AttendanceRecalculationService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IWorkExpectationResolutionPersistence,
@@ -574,16 +590,20 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddScoped<
-            IDailyAttendanceGenerationService,
             DailyAttendanceGenerationService>();
+
+        services.AddScoped<
+            IDailyAttendanceGenerationService>(
+                provider =>
+                    new AuthorizedDailyAttendanceGenerationService(
+                        provider.GetRequiredService<
+                            DailyAttendanceGenerationService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IDailyAttendanceGenerationPersistence,
             EfDailyAttendanceGenerationPersistence>();
-
-        services.AddScoped<
-            IDailyAttendanceGenerationService,
-            DailyAttendanceGenerationService>();
 
         services.AddSingleton<
             IEffectiveAttendanceTimelineResolver,
@@ -593,17 +613,25 @@ public static class ServiceCollectionExtensions
             IAttendanceCorrectionPersistence,
             EfAttendanceCorrectionPersistence>();
 
-        services.AddSingleton<
+        services.AddScoped<
             IAttendanceCorrectionAuthorizationPolicy,
-            AuthenticatedAttendanceCorrectionAuthorizationPolicy>();
+            PermissionAttendanceCorrectionAuthorizationPolicy>();
 
         services.AddScoped<
             IAttendanceCorrectionService,
             AttendanceCorrectionService>();
 
         services.AddScoped<
-            IAttendanceCorrectionWorkspaceQueryService,
             AttendanceCorrectionWorkspaceQueryService>();
+
+        services.AddScoped<
+            IAttendanceCorrectionWorkspaceQueryService>(
+                provider =>
+                    new AuthorizedAttendanceCorrectionWorkspaceQueryService(
+                        provider.GetRequiredService<
+                            AttendanceCorrectionWorkspaceQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             EfHolidayExceptionWorkspaceQueryService>();
