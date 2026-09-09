@@ -169,13 +169,31 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(PayrollWorkspaceViewModel)));
         }
 
+        bool canViewAttendance =
+            await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.AttendanceView,
+                    cancellationToken);
+
+        bool canViewLeave =
+            canViewAttendance
+            && await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.LeaveView,
+                    cancellationToken);
+
+        if (canViewAttendance
+            && canViewLeave)
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Chấm công & Nghỉ phép",
+                    typeof(AttendanceLeaveWorkspaceViewModel)));
+        }
+
         navigationItems.AddRange(
             new[]
             {
-                new NavigationItem(
-                    "Chấm công & Nghỉ phép",
-                    typeof(AttendanceLeaveWorkspaceViewModel)),
-
                 new NavigationItem(
                     "Cài đặt",
                     typeof(SettingsViewModel))

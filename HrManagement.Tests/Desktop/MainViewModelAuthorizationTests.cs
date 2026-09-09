@@ -93,6 +93,12 @@ public sealed class MainViewModelAuthorizationTests
                 item.ViewModelType ==
                 typeof(PayrollWorkspaceViewModel));
 
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AttendanceLeaveWorkspaceViewModel));
+
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
@@ -115,7 +121,9 @@ public sealed class MainViewModelAuthorizationTests
                 PermissionCodes.HolidayExceptionView,
                 PermissionCodes.TimesheetView,
                 PermissionCodes.OvertimeView,
-                PermissionCodes.PayrollView);
+                PermissionCodes.PayrollView,
+                PermissionCodes.AttendanceView,
+                PermissionCodes.LeaveView);
 
         await viewModel.InitializeAsync();
 
@@ -166,6 +174,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(PayrollWorkspaceViewModel));
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AttendanceLeaveWorkspaceViewModel));
     }
 
     [Fact]
@@ -229,6 +243,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(PayrollWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AttendanceLeaveWorkspaceViewModel));
     }
 
     [Fact]
@@ -261,6 +281,30 @@ public sealed class MainViewModelAuthorizationTests
 
         Assert.Null(
             navigationService.LastNavigatedType);
+    }
+
+    [Theory]
+    [InlineData(PermissionCodes.AttendanceView)]
+    [InlineData(PermissionCodes.LeaveView)]
+    public async Task
+        InitializeAsync_WithOnlyOneAttendanceLeaveViewPermission_HidesWorkspace(
+            string permissionCode)
+    {
+        var navigationService =
+            new TestNavigationService();
+
+        var viewModel =
+            CreateViewModel(
+                navigationService,
+                permissionCode);
+
+        await viewModel.InitializeAsync();
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AttendanceLeaveWorkspaceViewModel));
     }
 
     private static MainViewModel CreateViewModel(
