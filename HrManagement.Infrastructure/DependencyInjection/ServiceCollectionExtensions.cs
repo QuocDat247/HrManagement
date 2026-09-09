@@ -541,8 +541,16 @@ public static class ServiceCollectionExtensions
             TimeProvider.System);
 
         services.AddScoped<
-            ILeaveRequestSubmissionService,
             LeaveRequestSubmissionService>();
+
+        services.AddScoped<
+            ILeaveRequestSubmissionService>(
+                provider =>
+                    new AuthorizedLeaveRequestSubmissionService(
+                        provider.GetRequiredService<
+                            LeaveRequestSubmissionService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<LeaveTypeSeedService>();
 
@@ -555,11 +563,28 @@ public static class ServiceCollectionExtensions
             EfLeaveRequestStatusTransitionPersistence>();
 
         services.AddScoped<
-            ILeaveRequestStatusService,
             LeaveRequestStatusService>();
+
+        services.AddScoped<
+            ILeaveRequestStatusService>(
+                provider =>
+                    new AuthorizedLeaveRequestStatusService(
+                        provider.GetRequiredService<
+                            LeaveRequestStatusService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
         services.AddSingleton<
-            IAttendanceLeaveWorkspaceQueryService,
             EfAttendanceLeaveWorkspaceQueryService>();
+
+        services.AddScoped<
+            IAttendanceLeaveWorkspaceQueryService>(
+                provider =>
+                    new AuthorizedAttendanceLeaveWorkspaceQueryService(
+                        provider.GetRequiredService<
+                            EfAttendanceLeaveWorkspaceQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             EfWorkScheduleWorkspaceQueryService>();

@@ -23,6 +23,8 @@ public sealed class PermissionTests
     [InlineData(PermissionCodes.OvertimeReview)]
     [InlineData(PermissionCodes.OvertimeCancel)]
     [InlineData(PermissionCodes.PayrollManageCompensation)]
+    [InlineData(PermissionCodes.LeaveSubmit)]
+    [InlineData(PermissionCodes.LeaveCancel)]
     public void
         Constructor_WithKnownPermission_CreatesPermission(
             string code)
@@ -81,7 +83,7 @@ public sealed class PermissionTests
         All_ContainsExpectedPermissionCount()
     {
         Assert.Equal(
-            45,
+            47,
             PermissionCodes.All.Count);
     }
 }

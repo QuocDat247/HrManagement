@@ -98,8 +98,14 @@ public static class PermissionCodes
     public const string LeaveView =
         "Leave.View";
 
+    public const string LeaveSubmit =
+        "Leave.Submit";
+
     public const string LeaveApprove =
         "Leave.Approve";
+
+    public const string LeaveCancel =
+        "Leave.Cancel";
 
     public const string PayrollView =
         "Payroll.View";
@@ -173,7 +179,9 @@ public static class PermissionCodes
                 AttendanceEdit,
                 AttendanceApprove,
                 LeaveView,
+                LeaveSubmit,
                 LeaveApprove,
+                LeaveCancel,
                 PayrollView,
                 PayrollCalculate,
                 PayrollClose,
