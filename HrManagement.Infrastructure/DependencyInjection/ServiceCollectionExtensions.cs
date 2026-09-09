@@ -116,6 +116,22 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddScoped<
+            IStandardAccountCreationPersistence,
+            EfStandardAccountCreationPersistence>();
+
+        services.AddScoped<
+            StandardAccountCreationService>();
+
+        services.AddScoped<
+            IStandardAccountCreationService>(
+                provider =>
+                    new AuthorizedStandardAccountCreationService(
+                        provider.GetRequiredService<
+                            StandardAccountCreationService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IAuthorizationService,
             AuthorizationService>();
 
