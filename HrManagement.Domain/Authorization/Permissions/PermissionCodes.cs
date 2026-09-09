@@ -128,6 +128,9 @@ public static class PermissionCodes
     public const string ReportExport =
         "Report.Export";
 
+    public const string AccountView =
+        "Account.View";
+
     public const string AccountCreate =
         "Account.Create";
 
@@ -192,6 +195,7 @@ public static class PermissionCodes
                 PayrollManageCompensation,
                 ReportView,
                 ReportExport,
+                AccountView,
                 AccountCreate,
                 AccountEdit,
                 AccountLock,

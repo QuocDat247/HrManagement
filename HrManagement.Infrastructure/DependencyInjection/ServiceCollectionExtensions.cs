@@ -103,6 +103,18 @@ public static class ServiceCollectionExtensions
             IUserAccountRoleRepository,
             EfUserAccountRoleRepository>();
 
+        services.AddSingleton<
+            EfAccountManagementQueryService>();
+
+        services.AddScoped<
+            IAccountManagementQueryService>(
+                provider =>
+                    new AuthorizedAccountManagementQueryService(
+                        provider.GetRequiredService<
+                            EfAccountManagementQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
         services.AddScoped<
             IAuthorizationService,
             AuthorizationService>();
