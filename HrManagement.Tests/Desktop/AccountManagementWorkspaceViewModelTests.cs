@@ -817,6 +817,119 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 .LastPermissionRoleId);
     }
 
+    [Fact]
+    public async Task
+        ManageAccountRolesCommand_WithStandardSelection_PassesAccountId()
+    {
+        Guid accountId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        accountId,
+                        "manager",
+                        "Manager",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var dialogService =
+            new TestDialogService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                dialogService,
+                new TestActiveStateService(),
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
+
+        await viewModel.LoadAsync();
+
+        Assert.False(
+            viewModel.ManageAccountRolesCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.True(
+            viewModel.ManageAccountRolesCommand
+                .CanExecute(
+                    null));
+
+        await viewModel
+            .ManageAccountRolesCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            accountId,
+            dialogService
+                .LastAccountRoleAccountId);
+    }
+
+    [Fact]
+    public async Task
+        ManageAccountRolesCommand_WithOwnerSelection_IsDisabled()
+    {
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        Guid.NewGuid(),
+                        "owner",
+                        "Chủ doanh nghiệp",
+                        UserAccountKind.Owner,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.False(
+            viewModel.ManageAccountRolesCommand
+                .CanExecute(
+                    null));
+    }
+
     private sealed class TestQueryService
         : IAccountManagementQueryService
     {
@@ -974,6 +1087,12 @@ public sealed class AccountManagementWorkspaceViewModelTests
         : HrManagement.Desktop.Services.Accounts
             .IAccountManagementDialogService
     {
+        public Guid? LastAccountRoleAccountId
+        {
+            get;
+            private set;
+        }
+
         public Guid? LastPermissionRoleId
         {
             get;
@@ -1002,6 +1121,15 @@ public sealed class AccountManagementWorkspaceViewModelTests
         {
             get;
             private set;
+        }
+
+        public bool ShowManageAccountRolesDialog(
+            Guid accountId)
+        {
+            LastAccountRoleAccountId =
+                accountId;
+
+            return false;
         }
 
         public bool ShowManageRolePermissionsDialog(

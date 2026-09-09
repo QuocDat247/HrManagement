@@ -16,4 +16,7 @@ public interface IAccountManagementDialogService
 
     bool ShowManageRolePermissionsDialog(
         Guid roleId);
+
+    bool ShowManageAccountRolesDialog(
+        Guid accountId);
 }

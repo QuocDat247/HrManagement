@@ -76,6 +76,11 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand ManageAccountRolesCommand
+    {
+        get;
+    }
+
     public IAsyncRelayCommand CreateRoleCommand
     {
         get;
@@ -145,6 +150,11 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 ReactivateAccountAsync,
                 CanReactivateAccount);
+
+        ManageAccountRolesCommand =
+            new AsyncRelayCommand(
+                ManageAccountRolesAsync,
+                CanManageAccountRoles);
 
         CreateRoleCommand =
             new AsyncRelayCommand(
@@ -247,6 +257,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
         ReactivateAccountCommand
             .NotifyCanExecuteChanged();
+
+        ManageAccountRolesCommand
+           .NotifyCanExecuteChanged();
     }
 
     partial void OnSelectedRoleChanged(
@@ -275,6 +288,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
 
         ReactivateAccountCommand
+            .NotifyCanExecuteChanged();
+
+        ManageAccountRolesCommand
             .NotifyCanExecuteChanged();
 
         CreateRoleCommand
@@ -357,6 +373,50 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Không thể mở màn hình sửa tài khoản.";
+        }
+    }
+
+    private bool CanManageAccountRoles()
+    {
+        return !IsLoading
+            && SelectedAccountRow is
+            {
+                Kind: UserAccountKind.Standard
+            };
+    }
+
+    private async Task ManageAccountRolesAsync()
+    {
+        AccountManagementAccountRow? selected =
+            SelectedAccountRow;
+
+        if (selected is null
+            || IsLoading
+            || selected.Kind !=
+                UserAccountKind.Standard)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool saved =
+                _dialogService
+                    .ShowManageAccountRolesDialog(
+                        selected.AccountId);
+
+            if (saved)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình gán vai trò cho tài khoản.";
         }
     }
 

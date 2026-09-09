@@ -108,6 +108,33 @@ public sealed class AccountManagementDialogService
             true;
     }
 
+    public bool ShowManageAccountRolesDialog(
+        Guid accountId)
+    {
+        if (accountId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã tài khoản không hợp lệ.",
+                nameof(accountId));
+        }
+
+        AccountRoleEditorWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    AccountRoleEditorWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.LoadAccount(
+            accountId);
+
+        return window.ShowDialog() ==
+            true;
+    }
+
     private RoleEditorWindow
         CreateRoleEditorWindow()
     {
