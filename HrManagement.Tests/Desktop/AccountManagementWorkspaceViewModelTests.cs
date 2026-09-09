@@ -753,6 +753,70 @@ public sealed class AccountManagementWorkspaceViewModelTests
             roleActiveStateService.LastIsActive);
     }
 
+    [Fact]
+    public async Task
+        ManageRolePermissionsCommand_WithSelection_PassesRoleId()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new AccountManagementRoleItem(
+                roleId,
+                "Quản lý nhân sự",
+                "Mô tả",
+                true);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var dialogService =
+            new TestDialogService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                dialogService,
+                new TestActiveStateService(),
+                new TestConfirmationService(),
+                new TestRoleActiveStateService());
+
+        await viewModel.LoadAsync();
+
+        Assert.False(
+            viewModel.ManageRolePermissionsCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        Assert.True(
+            viewModel.ManageRolePermissionsCommand
+                .CanExecute(
+                    null));
+
+        await viewModel
+            .ManageRolePermissionsCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            roleId,
+            dialogService
+                .LastPermissionRoleId);
+    }
+
     private sealed class TestQueryService
         : IAccountManagementQueryService
     {
@@ -910,6 +974,12 @@ public sealed class AccountManagementWorkspaceViewModelTests
         : HrManagement.Desktop.Services.Accounts
             .IAccountManagementDialogService
     {
+        public Guid? LastPermissionRoleId
+        {
+            get;
+            private set;
+        }
+
         public Guid? LastEditedAccountId
         {
             get;
@@ -932,6 +1002,15 @@ public sealed class AccountManagementWorkspaceViewModelTests
         {
             get;
             private set;
+        }
+
+        public bool ShowManageRolePermissionsDialog(
+            Guid roleId)
+        {
+            LastPermissionRoleId =
+                roleId;
+
+            return false;
         }
 
         public bool ShowCreateAccountDialog()

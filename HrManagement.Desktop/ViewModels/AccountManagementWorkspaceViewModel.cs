@@ -96,6 +96,11 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand ManageRolePermissionsCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
         IAccountManagementQueryService queryService,
         IAccountManagementDialogService dialogService,
@@ -160,6 +165,11 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 ReactivateRoleAsync,
                 CanReactivateRole);
+
+        ManageRolePermissionsCommand =
+            new AsyncRelayCommand(
+                ManageRolePermissionsAsync,
+                CanManageRolePermissions);
     }
 
     public async Task LoadAsync()
@@ -250,6 +260,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
         ReactivateRoleCommand
             .NotifyCanExecuteChanged();
+
+        ManageRolePermissionsCommand
+            .NotifyCanExecuteChanged();
     }
 
     partial void OnIsLoadingChanged(
@@ -274,6 +287,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
 
         ReactivateRoleCommand
+            .NotifyCanExecuteChanged();
+
+        ManageRolePermissionsCommand
             .NotifyCanExecuteChanged();
     }
 
@@ -520,6 +536,45 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Không thể mở màn hình sửa vai trò.";
+        }
+    }
+
+    private bool CanManageRolePermissions()
+    {
+        return !IsLoading
+            && SelectedRole is not null;
+    }
+
+    private async Task ManageRolePermissionsAsync()
+    {
+        AccountManagementRoleItem? selected =
+            SelectedRole;
+
+        if (selected is null
+            || IsLoading)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool saved =
+                _dialogService
+                    .ShowManageRolePermissionsDialog(
+                        selected.RoleId);
+
+            if (saved)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình phân quyền vai trò.";
         }
     }
 

@@ -1,0 +1,166 @@
+<Window x:Class="HrManagement.Desktop.Views.RolePermissionEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Phân quyền vai trò - HR Management"
+        Width="760"
+        Height="720"
+        MinWidth="700"
+        MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource PageBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Grid Margin="24">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Padding="22"
+                Margin="0,0,0,14"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+
+            <StackPanel>
+
+                <TextBlock Text="Phân quyền vai trò"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBlock Margin="0,8,0,0"
+                           Text="{Binding RoleName,
+                                          Mode=OneWay}"
+                           FontSize="16"
+                           FontWeight="SemiBold" />
+
+                <StackPanel Margin="0,5,0,0"
+                            Orientation="Horizontal">
+
+                    <TextBlock Text="Trạng thái: "
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Text="{Binding RoleStatusText,
+                                              Mode=OneWay}"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Margin="20,0,0,0"
+                               Text="Tổng quyền: "
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Text="{Binding Permissions.Count,
+                                              Mode=OneWay}"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                </StackPanel>
+
+                <TextBlock Margin="0,8,0,0"
+                           Text="Chọn các quyền được cấp cho vai trò này. Vai trò đang ngừng sử dụng vẫn có thể được cấu hình trước khi kích hoạt lại."
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+            </StackPanel>
+
+        </Border>
+
+        <!-- Permission list -->
+        <Border Grid.Row="1"
+                Padding="12"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+
+                <ItemsControl ItemsSource="{Binding Permissions}"
+                              IsEnabled="{Binding CanSubmit,
+                                                  Mode=OneWay}">
+
+                    <ItemsControl.ItemTemplate>
+
+                        <DataTemplate>
+
+                            <Border Padding="10,8"
+                                    BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="0,0,0,1">
+
+                                <CheckBox IsChecked="{Binding IsSelected,
+                                                             Mode=TwoWay}"
+                                          VerticalContentAlignment="Center">
+
+                                    <StackPanel Margin="8,0,0,0">
+
+                                        <TextBlock Text="{Binding Code,
+                                                                  Mode=OneWay}"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                        <TextBlock Margin="0,3,0,0"
+                                                   Text="{Binding Category,
+                                                                  Mode=OneWay}"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                    </StackPanel>
+
+                                </CheckBox>
+
+                            </Border>
+
+                        </DataTemplate>
+
+                    </ItemsControl.ItemTemplate>
+
+                </ItemsControl>
+
+            </ScrollViewer>
+
+        </Border>
+
+        <!-- Error -->
+        <Border Grid.Row="2"
+                MinHeight="48"
+                Margin="0,12,0,8">
+
+            <TextBlock Text="{Binding ErrorMessage}"
+                       VerticalAlignment="Center"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource WarningBrush}" />
+
+        </Border>
+
+        <!-- Actions -->
+        <StackPanel Grid.Row="3"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right">
+
+            <Button Content="Hủy"
+                    Width="90"
+                    Margin="0,0,8,0"
+                    IsCancel="True" />
+
+            <Button Content="Lưu phân quyền"
+                    Width="140"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding CanSubmit,
+                                        Mode=OneWay}"
+                    IsDefault="True"
+                    Background="{DynamicResource PrimaryBrush}"
+                    BorderBrush="{DynamicResource PrimaryBrush}"
+                    Foreground="White"
+                    FontWeight="SemiBold" />
+
+        </StackPanel>
+
+    </Grid>
+
+</Window>

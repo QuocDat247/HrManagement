@@ -81,6 +81,33 @@ public sealed class AccountManagementDialogService
             true;
     }
 
+    public bool ShowManageRolePermissionsDialog(
+        Guid roleId)
+    {
+        if (roleId == Guid.Empty)
+        {
+            throw new ArgumentException(
+                "Mã vai trò không hợp lệ.",
+                nameof(roleId));
+        }
+
+        RolePermissionEditorWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    RolePermissionEditorWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.LoadRole(
+            roleId);
+
+        return window.ShowDialog() ==
+            true;
+    }
+
     private RoleEditorWindow
         CreateRoleEditorWindow()
     {

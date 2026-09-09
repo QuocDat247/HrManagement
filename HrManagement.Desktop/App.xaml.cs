@@ -457,6 +457,12 @@ public partial class App : System.Windows.Application
         services.AddTransient<
             RoleEditorWindow>();
 
+        services.AddTransient<
+            RolePermissionEditorViewModel>();
+
+        services.AddTransient<
+            RolePermissionEditorWindow>();
+
         services.AddSingleton<
             IAccountManagementDialogService,
             AccountManagementDialogService>();

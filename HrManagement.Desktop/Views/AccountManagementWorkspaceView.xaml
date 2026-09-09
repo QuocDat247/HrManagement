@@ -228,6 +228,11 @@
                                     Padding="12,6"
                                     Margin="0,0,8,0" />
 
+                            <Button Content="Phân quyền"
+                                    Command="{Binding ManageRolePermissionsCommand}"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0" />
+
                             <Button Content="Ngừng sử dụng"
                                     Command="{Binding DeactivateRoleCommand}"
                                     Padding="12,6"
