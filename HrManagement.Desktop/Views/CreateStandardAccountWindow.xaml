@@ -1,0 +1,149 @@
+<Window x:Class="HrManagement.Desktop.Views.CreateStandardAccountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Tạo tài khoản - HR Management"
+        Width="560"
+        Height="790"
+        MinWidth="560"
+        MinHeight="700"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource PageBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Grid>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto">
+
+            <Border Margin="24"
+                    Padding="28"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+
+                <StackPanel>
+
+                    <TextBlock Text="Tạo tài khoản Standard"
+                               FontSize="22"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    <TextBlock Margin="0,6,0,24"
+                               Text="Tạo tài khoản đăng nhập mới. Owner không thể được tạo từ màn hình này."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Text="Tên đăng nhập"
+                               Margin="0,0,0,7"
+                               FontWeight="SemiBold" />
+
+                    <TextBox x:Name="UsernameTextBox"
+                             MinHeight="40"
+                             MaxLength="100"
+                             Margin="0,0,0,18"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding Username,
+                                            Mode=TwoWay,
+                                            UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Tên hiển thị"
+                               Margin="0,0,0,7"
+                               FontWeight="SemiBold" />
+
+                    <TextBox MinHeight="40"
+                             MaxLength="200"
+                             Margin="0,0,0,18"
+                             VerticalContentAlignment="Center"
+                             Text="{Binding DisplayName,
+                                            Mode=TwoWay,
+                                            UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBlock Text="Liên kết nhân viên"
+                               Margin="0,0,0,7"
+                               FontWeight="SemiBold" />
+
+                    <ComboBox MinHeight="40"
+                              Margin="0,0,0,18"
+                              ItemsSource="{Binding EmployeeOptions}"
+                              SelectedItem="{Binding SelectedEmployeeOption,
+                                                   Mode=TwoWay}"
+                              DisplayMemberPath="DisplayText" />
+
+                    <TextBlock Text="Mật khẩu khởi tạo"
+                               Margin="0,0,0,7"
+                               FontWeight="SemiBold" />
+
+                    <PasswordBox x:Name="PasswordBox"
+                                 MinHeight="40"
+                                 MaxLength="128"
+                                 Margin="0,0,0,6" />
+
+                    <TextBlock Margin="0,0,0,18"
+                               Text="Từ 15 đến 128 ký tự. Không sử dụng mật khẩu phổ biến."
+                               FontSize="12"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    <TextBlock Text="Xác nhận mật khẩu"
+                               Margin="0,0,0,7"
+                               FontWeight="SemiBold" />
+
+                    <PasswordBox x:Name="ConfirmPasswordBox"
+                                 MinHeight="40"
+                                 MaxLength="128"
+                                 Margin="0,0,0,12" />
+
+                    <Border MinHeight="52"
+                            Margin="0,0,0,12">
+
+                        <TextBlock Text="{Binding ErrorMessage}"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource WarningBrush}" />
+
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right">
+
+                        <Button Content="Hủy"
+                                Width="90"
+                                Margin="0,0,8,0"
+                                IsCancel="True" />
+
+                        <Button x:Name="CreateAccountButton"
+                                Content="Tạo tài khoản"
+                                Width="130"
+                                IsDefault="True"
+                                IsEnabled="{Binding CanSubmit}"
+                                Click="CreateAccountButton_Click"
+                                Background="{DynamicResource PrimaryBrush}"
+                                BorderBrush="{DynamicResource PrimaryBrush}"
+                                Foreground="White"
+                                FontWeight="SemiBold" />
+
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Border>
+
+        </ScrollViewer>
+
+        <TextBlock Grid.Row="1"
+                   Margin="24,0,24,18"
+                   Text="Tài khoản được tạo từ đây luôn là Standard."
+                   TextAlignment="Center"
+                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+    </Grid>
+
+</Window>

@@ -18,6 +18,7 @@ using HrManagement.Application.Organization.Positions;
 using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Services;
+using HrManagement.Desktop.Services.Accounts;
 using HrManagement.Desktop.Services.Departments;
 using HrManagement.Desktop.Services.Positions;
 using HrManagement.Desktop.Theming;
@@ -437,6 +438,16 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             AccountManagementWorkspaceViewModel>();
+
+        services.AddTransient<
+            CreateStandardAccountViewModel>();
+
+        services.AddTransient<
+            CreateStandardAccountWindow>();
+
+        services.AddSingleton<
+            IAccountManagementDialogService,
+            AccountManagementDialogService>();
 
         services.AddSingleton<
             IEmployeeNavigationService,

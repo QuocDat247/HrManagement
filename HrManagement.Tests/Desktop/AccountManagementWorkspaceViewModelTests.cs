@@ -51,7 +51,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
         var viewModel =
             new AccountManagementWorkspaceViewModel(
                 new TestQueryService(
-                    snapshot));
+                    snapshot),
+                new TestDialogService());
 
         await viewModel.LoadAsync();
 
@@ -118,7 +119,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
         var viewModel =
             new AccountManagementWorkspaceViewModel(
                 new TestQueryService(
-                    snapshot));
+                    snapshot),
+                new TestDialogService());
 
         await viewModel.LoadAsync();
 
@@ -144,7 +146,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestQueryService(
                     exception:
                         new InvalidOperationException(
-                            "Database failure.")));
+                            "Database failure.")),
+                new TestDialogService());
 
         await viewModel.LoadAsync();
 
@@ -195,6 +198,16 @@ public sealed class AccountManagementWorkspaceViewModelTests
 
             return Task.FromResult(
                 _snapshot!);
+        }
+    }
+
+    private sealed class TestDialogService
+        : HrManagement.Desktop.Services.Accounts
+            .IAccountManagementDialogService
+    {
+        public bool ShowCreateAccountDialog()
+        {
+            return false;
         }
     }
 }

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using HrManagement.Desktop.Services.Accounts;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Accounts;
 
@@ -10,6 +11,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
 {
     private readonly IAccountManagementQueryService
         _queryService;
+
+    private readonly IAccountManagementDialogService
+        _dialogService;
 
     [ObservableProperty]
     private IReadOnlyList<AccountManagementAccountRow>
@@ -40,15 +44,32 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand CreateAccountCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
-        IAccountManagementQueryService queryService)
+        IAccountManagementQueryService queryService,
+        IAccountManagementDialogService dialogService)
     {
         _queryService =
             queryService;
 
+        _dialogService =
+            dialogService;
+
         RefreshCommand =
             new AsyncRelayCommand(
                 LoadAsync);
+
+        RefreshCommand =
+            new AsyncRelayCommand(
+                LoadAsync);
+
+        CreateAccountCommand =
+            new AsyncRelayCommand(
+                CreateAccountAsync);
     }
 
     public async Task LoadAsync()
@@ -112,6 +133,34 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             IsLoading =
                 false;
+        }
+    }
+
+    private async Task CreateAccountAsync()
+    {
+        if (IsLoading)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool created =
+                _dialogService
+                    .ShowCreateAccountDialog();
+
+            if (created)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình tạo tài khoản.";
         }
     }
 
