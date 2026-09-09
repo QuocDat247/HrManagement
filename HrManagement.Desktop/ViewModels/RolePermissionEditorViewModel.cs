@@ -47,6 +47,10 @@ public sealed class RolePermissionSelectionItem
     }
 }
 
+public sealed record RolePermissionCategoryOption(
+    string? Category,
+    string DisplayText);
+
 public sealed class RolePermissionEditorViewModel
     : ObservableObject
 {
@@ -69,6 +73,17 @@ public sealed class RolePermissionEditorViewModel
     private IReadOnlyList<RolePermissionSelectionItem>
         _permissions =
             Array.Empty<RolePermissionSelectionItem>();
+
+    private IReadOnlyList<RolePermissionSelectionItem>
+        _filteredPermissions =
+            Array.Empty<RolePermissionSelectionItem>();
+
+    private IReadOnlyList<RolePermissionCategoryOption>
+        _permissionCategories =
+            Array.Empty<RolePermissionCategoryOption>();
+
+    private RolePermissionCategoryOption?
+        _selectedPermissionCategory;
 
     private string? _errorMessage;
 
@@ -127,6 +142,47 @@ public sealed class RolePermissionEditorViewModel
             SetProperty(
                 ref _permissions,
                 value);
+    }
+
+    public IReadOnlyList<RolePermissionSelectionItem>
+        FilteredPermissions
+    {
+        get =>
+            _filteredPermissions;
+
+        private set =>
+            SetProperty(
+                ref _filteredPermissions,
+                value);
+    }
+
+    public IReadOnlyList<RolePermissionCategoryOption>
+        PermissionCategories
+    {
+        get =>
+            _permissionCategories;
+
+        private set =>
+            SetProperty(
+                ref _permissionCategories,
+                value);
+    }
+
+    public RolePermissionCategoryOption?
+        SelectedPermissionCategory
+    {
+        get =>
+            _selectedPermissionCategory;
+
+        set
+        {
+            if (SetProperty(
+                    ref _selectedPermissionCategory,
+                    value))
+            {
+                ApplyPermissionFilter();
+            }
+        }
     }
 
     public string? ErrorMessage
@@ -206,6 +262,15 @@ public sealed class RolePermissionEditorViewModel
         Permissions =
             Array.Empty<RolePermissionSelectionItem>();
 
+        FilteredPermissions =
+            Array.Empty<RolePermissionSelectionItem>();
+
+        PermissionCategories =
+            Array.Empty<RolePermissionCategoryOption>();
+
+        SelectedPermissionCategory =
+            null;
+
         RoleName =
             string.Empty;
 
@@ -265,6 +330,37 @@ public sealed class RolePermissionEditorViewModel
                                 assigned.Contains(
                                     code)))
                     .ToArray();
+
+            string[] categories =
+                Permissions
+                    .Select(
+                        permission =>
+                            permission.Category)
+                    .Distinct(
+                        StringComparer.Ordinal)
+                    .OrderBy(
+                        category =>
+                            category,
+                        StringComparer.Ordinal)
+                    .ToArray();
+
+            PermissionCategories =
+                new[]
+                {
+                    new RolePermissionCategoryOption(
+                        null,
+                        "Tất cả phân quyền")
+                }
+                .Concat(
+                    categories.Select(
+                        category =>
+                            new RolePermissionCategoryOption(
+                                category,
+                                category)))
+                .ToArray();
+
+            SelectedPermissionCategory =
+                PermissionCategories[0];
 
             IsReady =
                 true;
@@ -365,6 +461,32 @@ public sealed class RolePermissionEditorViewModel
             IsBusy =
                 false;
         }
+    }
+
+    private void ApplyPermissionFilter()
+    {
+        string? category =
+            SelectedPermissionCategory?
+                .Category;
+
+        if (category is null)
+        {
+            FilteredPermissions =
+                Permissions
+                    .ToArray();
+
+            return;
+        }
+
+        FilteredPermissions =
+            Permissions
+                .Where(
+                    permission =>
+                        string.Equals(
+                            permission.Category,
+                            category,
+                            StringComparison.Ordinal))
+                .ToArray();
     }
 
     private static string GetCategoryText(

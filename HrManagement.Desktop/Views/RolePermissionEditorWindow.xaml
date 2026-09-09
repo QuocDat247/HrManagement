@@ -79,50 +79,109 @@
                 BorderThickness="1"
                 CornerRadius="8">
 
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid>
 
-                <ItemsControl ItemsSource="{Binding Permissions}"
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <!-- Filter -->
+                <Grid Margin="4,2,4,12">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Nhóm quyền:"
+                               Margin="0,0,10,0"
+                               VerticalAlignment="Center"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    <ComboBox Grid.Column="1"
+                              MinHeight="36"
+                              ItemsSource="{Binding PermissionCategories}"
+                              SelectedItem="{Binding SelectedPermissionCategory,
+                                                     Mode=TwoWay}"
+                              DisplayMemberPath="DisplayText"
                               IsEnabled="{Binding CanSubmit,
-                                                  Mode=OneWay}">
+                                                  Mode=OneWay}"
+                              VerticalContentAlignment="Center" />
 
-                    <ItemsControl.ItemTemplate>
+                    <StackPanel Grid.Column="3"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
 
-                        <DataTemplate>
+                        <TextBlock Text="Hiển thị: "
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                            <Border Padding="10,8"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="0,0,0,1">
+                        <TextBlock Text="{Binding FilteredPermissions.Count,
+                                                  Mode=OneWay}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                <CheckBox IsChecked="{Binding IsSelected,
-                                                             Mode=TwoWay}"
-                                          VerticalContentAlignment="Center">
+                        <TextBlock Text=" / "
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                    <StackPanel Margin="8,0,0,0">
+                        <TextBlock Text="{Binding Permissions.Count,
+                                                  Mode=OneWay}"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                                        <TextBlock Text="{Binding Code,
-                                                                  Mode=OneWay}"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                    </StackPanel>
 
-                                        <TextBlock Margin="0,3,0,0"
-                                                   Text="{Binding Category,
-                                                                  Mode=OneWay}"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                </Grid>
 
-                                    </StackPanel>
+                <ScrollViewer Grid.Row="1"
+                              VerticalScrollBarVisibility="Auto">
 
-                                </CheckBox>
+                    <ItemsControl ItemsSource="{Binding FilteredPermissions}"
+                                  IsEnabled="{Binding CanSubmit,
+                                                      Mode=OneWay}">
 
-                            </Border>
+                        <ItemsControl.ItemTemplate>
 
-                        </DataTemplate>
+                            <DataTemplate>
 
-                    </ItemsControl.ItemTemplate>
+                                <Border Padding="10,8"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="0,0,0,1">
 
-                </ItemsControl>
+                                    <CheckBox IsChecked="{Binding IsSelected,
+                                                                 Mode=TwoWay}"
+                                              VerticalContentAlignment="Center">
 
-            </ScrollViewer>
+                                        <StackPanel Margin="8,0,0,0">
+
+                                            <TextBlock Text="{Binding Code,
+                                                                      Mode=OneWay}"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                                            <TextBlock Margin="0,3,0,0"
+                                                       Text="{Binding Category,
+                                                                      Mode=OneWay}"
+                                                       FontSize="12"
+                                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                                        </StackPanel>
+
+                                    </CheckBox>
+
+                                </Border>
+
+                            </DataTemplate>
+
+                        </ItemsControl.ItemTemplate>
+
+                    </ItemsControl>
+
+                </ScrollViewer>
+
+            </Grid>
 
         </Border>
 

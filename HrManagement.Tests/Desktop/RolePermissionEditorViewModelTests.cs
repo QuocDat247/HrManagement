@@ -240,6 +240,203 @@ public sealed class RolePermissionEditorViewModelTests
             viewModel.ErrorMessage);
     }
 
+    [Fact]
+    public async Task
+        LoadAsync_DefaultsToAllPermissionsFilter()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new RolePermissionManagementSnapshot(
+                roleId,
+                "Quản lý nhân sự",
+                true,
+                new[]
+                {
+                    PermissionCodes.DepartmentView,
+                    PermissionCodes.EmployeeEdit,
+                    PermissionCodes.EmployeeView
+                },
+                Array.Empty<string>());
+
+        var viewModel =
+            new RolePermissionEditorViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestAssignmentService());
+
+        await viewModel.LoadAsync(
+            roleId);
+
+        Assert.NotNull(
+            viewModel.SelectedPermissionCategory);
+
+        Assert.Null(
+            viewModel
+                .SelectedPermissionCategory!
+                .Category);
+
+        Assert.Equal(
+            "Tất cả phân quyền",
+            viewModel
+                .SelectedPermissionCategory
+                .DisplayText);
+
+        Assert.Equal(
+            viewModel.Permissions.Count,
+            viewModel.FilteredPermissions.Count);
+    }
+
+    [Fact]
+    public async Task
+        SelectedPermissionCategory_FiltersVisiblePermissionsOnly()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new RolePermissionManagementSnapshot(
+                roleId,
+                "Quản lý nhân sự",
+                true,
+                new[]
+                {
+                    PermissionCodes.DepartmentView,
+                    PermissionCodes.EmployeeEdit,
+                    PermissionCodes.EmployeeView
+                },
+                new[]
+                {
+                    PermissionCodes.EmployeeView
+                });
+
+        var viewModel =
+            new RolePermissionEditorViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestAssignmentService());
+
+        await viewModel.LoadAsync(
+            roleId);
+
+        RolePermissionCategoryOption employeeCategory =
+            Assert.Single(
+                viewModel.PermissionCategories,
+                category =>
+                    category.Category ==
+                    "Nhân viên");
+
+        viewModel.SelectedPermissionCategory =
+            employeeCategory;
+
+        Assert.Equal(
+            2,
+            viewModel.FilteredPermissions.Count);
+
+        Assert.All(
+            viewModel.FilteredPermissions,
+            permission =>
+                Assert.Equal(
+                    "Nhân viên",
+                    permission.Category));
+
+        RolePermissionSelectionItem employeeView =
+            Assert.Single(
+                viewModel.FilteredPermissions,
+                permission =>
+                    permission.Code ==
+                    PermissionCodes.EmployeeView);
+
+        Assert.True(
+            employeeView.IsSelected);
+
+        RolePermissionCategoryOption allCategory =
+            Assert.Single(
+                viewModel.PermissionCategories,
+                category =>
+                    category.Category is null);
+
+        viewModel.SelectedPermissionCategory =
+            allCategory;
+
+        Assert.Equal(
+            3,
+            viewModel.FilteredPermissions.Count);
+
+        Assert.True(
+            Assert.Single(
+                viewModel.Permissions,
+                permission =>
+                    permission.Code ==
+                    PermissionCodes.EmployeeView)
+                .IsSelected);
+    }
+
+    [Fact]
+    public async Task
+        SaveAsync_WhileFiltered_SavesSelectionsFromAllCategories()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new RolePermissionManagementSnapshot(
+                roleId,
+                "Quản lý nhân sự",
+                true,
+                new[]
+                {
+                    PermissionCodes.AccountView,
+                    PermissionCodes.DepartmentView,
+                    PermissionCodes.EmployeeView
+                },
+                new[]
+                {
+                    PermissionCodes.AccountView
+                });
+
+        var assignmentService =
+            new TestAssignmentService();
+
+        var viewModel =
+            new RolePermissionEditorViewModel(
+                new TestQueryService(
+                    snapshot),
+                assignmentService);
+
+        await viewModel.LoadAsync(
+            roleId);
+
+        RolePermissionCategoryOption employeeCategory =
+            Assert.Single(
+                viewModel.PermissionCategories,
+                category =>
+                    category.Category ==
+                    "Nhân viên");
+
+        viewModel.SelectedPermissionCategory =
+            employeeCategory;
+
+        Assert.Single(
+            viewModel.FilteredPermissions)
+            .IsSelected =
+                true;
+
+        await viewModel.SaveCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            new[]
+            {
+                PermissionCodes.AccountView,
+                PermissionCodes.EmployeeView
+            },
+            assignmentService
+                .LastPermissionCodes);
+    }
+
     private sealed class TestQueryService
         : IRolePermissionManagementQueryService
     {
