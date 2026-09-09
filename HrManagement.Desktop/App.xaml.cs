@@ -451,6 +451,12 @@ public partial class App : System.Windows.Application
         services.AddTransient<
             EditAccountProfileWindow>();
 
+        services.AddTransient<
+            RoleEditorViewModel>();
+
+        services.AddTransient<
+            RoleEditorWindow>();
+
         services.AddSingleton<
             IAccountManagementDialogService,
             AccountManagementDialogService>();

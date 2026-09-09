@@ -1,0 +1,108 @@
+<Window x:Class="HrManagement.Desktop.Views.RoleEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle, Mode=OneWay}"
+        Width="560"
+        Height="594"
+        MinWidth="560"
+        MinHeight="520"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource PageBackgroundBrush}"
+        Foreground="{DynamicResource PrimaryTextBrush}">
+
+    <Grid>
+
+        <Border Margin="24"
+                Padding="28"
+                Background="{DynamicResource CardBackgroundBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="10">
+
+            <StackPanel>
+
+                <TextBlock Text="{Binding HeadingText,
+                                         Mode=OneWay}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                <TextBlock Margin="0,6,0,24"
+                           Text="Vai trò dùng để nhóm các quyền và gán cho tài khoản Standard."
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <TextBlock Text="Tên vai trò"
+                           Margin="0,0,0,7"
+                           FontWeight="SemiBold" />
+
+                <TextBox x:Name="NameTextBox"
+                         MinHeight="40"
+                         MaxLength="100"
+                         Margin="0,0,0,18"
+                         VerticalContentAlignment="Center"
+                         Text="{Binding Name,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Text="Mô tả"
+                           Margin="0,0,0,7"
+                           FontWeight="SemiBold" />
+
+                <TextBox Height="120"
+                         MaxLength="500"
+                         Margin="0,0,0,8"
+                         Padding="8"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         Text="{Binding Description,
+                                        Mode=TwoWay,
+                                        UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBlock Margin="0,0,0,16"
+                           Text="Tối đa 500 ký tự. Quyền cụ thể sẽ được cấu hình riêng."
+                           FontSize="12"
+                           Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                <Border MinHeight="48"
+                        Margin="0,0,0,12">
+
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource WarningBrush}" />
+
+                </Border>
+
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+
+                    <Button Content="Hủy"
+                            Width="90"
+                            Margin="0,0,8,0"
+                            IsCancel="True" />
+
+                    <Button Width="130"
+                            Content="{Binding SubmitText,
+                                              Mode=OneWay}"
+                            Command="{Binding SaveCommand}"
+                            IsEnabled="{Binding CanSubmit,
+                                                Mode=OneWay}"
+                            IsDefault="True"
+                            Background="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            Foreground="White"
+                            FontWeight="SemiBold" />
+
+                </StackPanel>
+
+            </StackPanel>
+
+        </Border>
+
+    </Grid>
+
+</Window>

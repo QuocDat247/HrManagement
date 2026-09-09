@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Services.Accounts;
 using HrManagement.Desktop.Services;
+using HrManagement.Application.Authorization.Roles;
 using HrManagement.Application.Authorization;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Accounts;
@@ -72,6 +73,16 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand CreateRoleCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand EditRoleCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
         IAccountManagementQueryService queryService,
         IAccountManagementDialogService dialogService,
@@ -112,6 +123,16 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 ReactivateAccountAsync,
                 CanReactivateAccount);
+
+        CreateRoleCommand =
+            new AsyncRelayCommand(
+                CreateRoleAsync,
+                CanCreateRole);
+
+        EditRoleCommand =
+            new AsyncRelayCommand(
+                EditRoleAsync,
+                CanEditRole);
     }
 
     public async Task LoadAsync()
@@ -191,6 +212,13 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
     }
 
+    partial void OnSelectedRoleChanged(
+        AccountManagementRoleItem? value)
+    {
+        EditRoleCommand
+            .NotifyCanExecuteChanged();
+    }
+
     partial void OnIsLoadingChanged(
         bool value)
     {
@@ -201,6 +229,12 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
 
         ReactivateAccountCommand
+            .NotifyCanExecuteChanged();
+
+        CreateRoleCommand
+            .NotifyCanExecuteChanged();
+
+        EditRoleCommand
             .NotifyCanExecuteChanged();
     }
 
@@ -375,6 +409,78 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Đã xảy ra lỗi khi thay đổi trạng thái tài khoản.";
+        }
+    }
+
+    private bool CanCreateRole()
+    {
+        return !IsLoading;
+    }
+
+    private bool CanEditRole()
+    {
+        return !IsLoading
+            && SelectedRole is not null;
+    }
+
+    private async Task CreateRoleAsync()
+    {
+        if (IsLoading)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool created =
+                _dialogService
+                    .ShowCreateRoleDialog();
+
+            if (created)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình tạo vai trò.";
+        }
+    }
+
+    private async Task EditRoleAsync()
+    {
+        AccountManagementRoleItem? selected =
+            SelectedRole;
+
+        if (selected is null
+            || IsLoading)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool updated =
+                _dialogService
+                    .ShowEditRoleDialog(
+                        selected);
+
+            if (updated)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình sửa vai trò.";
         }
     }
 

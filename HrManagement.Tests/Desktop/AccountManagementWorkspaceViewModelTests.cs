@@ -441,6 +441,106 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 .IsActive);
     }
 
+    [Fact]
+    public async Task
+        CreateRoleCommand_OpensCreateRoleDialog()
+    {
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var dialogService =
+            new TestDialogService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                dialogService,
+                new TestActiveStateService(),
+                new TestConfirmationService());
+
+        await viewModel.LoadAsync();
+
+        Assert.True(
+            viewModel.CreateRoleCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.CreateRoleCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            dialogService.CreateRoleCalled);
+    }
+
+    [Fact]
+    public async Task
+        EditRoleCommand_WithSelection_PassesSelectedRole()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new AccountManagementRoleItem(
+                roleId,
+                "Quản lý nhân sự",
+                "Mô tả",
+                true);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                Array.Empty<
+                    AccountManagementAccountItem>(),
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var dialogService =
+            new TestDialogService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                dialogService,
+                new TestActiveStateService(),
+                new TestConfirmationService());
+
+        await viewModel.LoadAsync();
+
+        Assert.False(
+            viewModel.EditRoleCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        Assert.True(
+            viewModel.EditRoleCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.EditRoleCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            roleId,
+            dialogService.LastEditedRoleId);
+    }
+
     private sealed class TestQueryService
         : IAccountManagementQueryService
     {
@@ -555,10 +655,22 @@ public sealed class AccountManagementWorkspaceViewModelTests
             private set;
         }
 
+        public Guid? LastEditedRoleId
+        {
+            get;
+            private set;
+        }
+
         public bool EditResult
         {
             get;
             set;
+        }
+
+        public bool CreateRoleCalled
+        {
+            get;
+            private set;
         }
 
         public bool ShowCreateAccountDialog()
@@ -573,6 +685,23 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 accountId;
 
             return EditResult;
+        }
+
+        public bool ShowCreateRoleDialog()
+        {
+            CreateRoleCalled =
+                true;
+
+            return false;
+        }
+
+        public bool ShowEditRoleDialog(
+            AccountManagementRoleItem role)
+        {
+            LastEditedRoleId =
+                role.RoleId;
+
+            return false;
         }
     }
 }

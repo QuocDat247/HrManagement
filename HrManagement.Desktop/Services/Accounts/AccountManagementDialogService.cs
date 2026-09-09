@@ -1,3 +1,4 @@
+using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Desktop.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System.Windows;
@@ -51,5 +52,48 @@ public sealed class AccountManagementDialogService
 
         return window.ShowDialog() ==
             true;
+    }
+
+    public bool ShowCreateRoleDialog()
+    {
+        RoleEditorWindow window =
+            CreateRoleEditorWindow();
+
+        window.LoadForCreate();
+
+        return window.ShowDialog() ==
+            true;
+    }
+
+    public bool ShowEditRoleDialog(
+        AccountManagementRoleItem role)
+    {
+        ArgumentNullException.ThrowIfNull(
+            role);
+
+        RoleEditorWindow window =
+            CreateRoleEditorWindow();
+
+        window.LoadForEdit(
+            role);
+
+        return window.ShowDialog() ==
+            true;
+    }
+
+    private RoleEditorWindow
+        CreateRoleEditorWindow()
+    {
+        RoleEditorWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    RoleEditorWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        return window;
     }
 }

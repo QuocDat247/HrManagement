@@ -194,18 +194,42 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <StackPanel Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,12">
 
-                        <TextBlock Text="Vai trò"
-                                   FontSize="18"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
 
-                        <TextBlock Margin="0,4,0,0"
-                                   Text="Vai trò dùng để cấp quyền cho tài khoản Standard."
-                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <StackPanel>
 
-                    </StackPanel>
+                            <TextBlock Text="Vai trò"
+                                       FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                            <TextBlock Margin="0,4,0,0"
+                                       Text="Vai trò dùng để cấp quyền cho tài khoản Standard."
+                                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+
+                            <Button Content="Tạo vai trò"
+                                    Command="{Binding CreateRoleCommand}"
+                                    Padding="12,6"
+                                    Margin="0,0,8,0" />
+
+                            <Button Content="Sửa vai trò"
+                                    Command="{Binding EditRoleCommand}"
+                                    Padding="12,6" />
+
+                        </StackPanel>
+
+                    </Grid>
 
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding Roles}"

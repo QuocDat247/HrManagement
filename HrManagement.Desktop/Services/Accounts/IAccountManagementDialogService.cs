@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Accounts;
+
 namespace HrManagement.Desktop.Services.Accounts;
 
 public interface IAccountManagementDialogService
@@ -6,4 +8,9 @@ public interface IAccountManagementDialogService
 
     bool ShowEditAccountDialog(
         Guid accountId);
+
+    bool ShowCreateRoleDialog();
+
+    bool ShowEditRoleDialog(
+        AccountManagementRoleItem role);
 }
