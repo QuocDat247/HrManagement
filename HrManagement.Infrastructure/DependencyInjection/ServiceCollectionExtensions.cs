@@ -151,6 +151,22 @@ public static class ServiceCollectionExtensions
             IUserAccountRoleRepository,
             EfUserAccountRoleRepository>();
 
+        services.AddScoped<
+            IUserAccountRoleAssignmentPersistence,
+            EfUserAccountRoleAssignmentPersistence>();
+
+        services.AddScoped<
+            UserAccountRoleAssignmentService>();
+
+        services.AddScoped<
+            IUserAccountRoleAssignmentService>(
+                provider =>
+                    new AuthorizedUserAccountRoleAssignmentService(
+                        provider.GetRequiredService<
+                            UserAccountRoleAssignmentService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
         services.AddSingleton<
             EfAccountManagementQueryService>();
 
