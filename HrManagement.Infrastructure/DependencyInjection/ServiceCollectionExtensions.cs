@@ -148,6 +148,18 @@ public static class ServiceCollectionExtensions
             EfRolePermissionRepository>();
 
         services.AddScoped<
+            RolePermissionManagementQueryService>();
+
+        services.AddScoped<
+            IRolePermissionManagementQueryService>(
+                provider =>
+                    new AuthorizedRolePermissionManagementQueryService(
+                        provider.GetRequiredService<
+                            RolePermissionManagementQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IUserAccountRoleRepository,
             EfUserAccountRoleRepository>();
 
