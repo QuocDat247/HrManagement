@@ -112,6 +112,22 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddScoped<
+            IRoleActiveStatePersistence,
+            EfRoleActiveStatePersistence>();
+
+        services.AddScoped<
+            RoleActiveStateService>();
+
+        services.AddScoped<
+            IRoleActiveStateService>(
+                provider =>
+                    new AuthorizedRoleActiveStateService(
+                        provider.GetRequiredService<
+                            RoleActiveStateService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IRolePermissionRepository,
             EfRolePermissionRepository>();
 

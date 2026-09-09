@@ -22,7 +22,11 @@ public sealed class Role
         private set;
     }
 
-    public bool IsActive { get; }
+    public bool IsActive
+    {
+        get;
+        private set;
+    }
 
     public Role(
         Guid id,
@@ -127,5 +131,12 @@ public sealed class Role
 
         Description =
             normalizedDescription;
+    }
+
+    public void SetActive(
+        bool isActive)
+    {
+        IsActive =
+            isActive;
     }
 }

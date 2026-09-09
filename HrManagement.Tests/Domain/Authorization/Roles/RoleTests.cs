@@ -209,4 +209,50 @@ public sealed class RoleTests
                 role.UpdateDetails(
                     "   "));
     }
+
+    [Fact]
+    public void
+        SetActive_CanDisableAndEnableWithoutChangingDetails()
+    {
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new Role(
+                roleId,
+                "Quản lý nhân sự",
+                "Quản lý hồ sơ.");
+
+        role.SetActive(
+            false);
+
+        Assert.False(
+            role.IsActive);
+
+        Assert.Equal(
+            roleId,
+            role.Id);
+
+        Assert.Equal(
+            "Quản lý nhân sự",
+            role.Name);
+
+        Assert.Equal(
+            "QUẢN LÝ NHÂN SỰ",
+            role.NormalizedName);
+
+        Assert.Equal(
+            "Quản lý hồ sơ.",
+            role.Description);
+
+        role.SetActive(
+            true);
+
+        Assert.True(
+            role.IsActive);
+
+        Assert.Equal(
+            "Quản lý nhân sự",
+            role.Name);
+    }
 }
