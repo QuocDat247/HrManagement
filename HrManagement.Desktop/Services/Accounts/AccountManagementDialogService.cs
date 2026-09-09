@@ -32,4 +32,24 @@ public sealed class AccountManagementDialogService
         return window.ShowDialog() ==
             true;
     }
+
+    public bool ShowEditAccountDialog(
+        Guid accountId)
+    {
+        EditAccountProfileWindow window =
+            _serviceProvider
+                .GetRequiredService<
+                    EditAccountProfileWindow>();
+
+        window.Owner =
+            System.Windows.Application
+                .Current
+                .MainWindow;
+
+        window.LoadAccount(
+            accountId);
+
+        return window.ShowDialog() ==
+            true;
+    }
 }

@@ -445,6 +445,12 @@ public partial class App : System.Windows.Application
         services.AddTransient<
             CreateStandardAccountWindow>();
 
+        services.AddTransient<
+            EditAccountProfileViewModel>();
+
+        services.AddTransient<
+            EditAccountProfileWindow>();
+
         services.AddSingleton<
             IAccountManagementDialogService,
             AccountManagementDialogService>();

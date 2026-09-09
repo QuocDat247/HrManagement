@@ -162,6 +162,63 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 viewModel.ErrorMessage));
     }
 
+    [Fact]
+    public async Task
+        EditAccountCommand_WithSelection_PassesSelectedAccountId()
+    {
+        Guid accountId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        accountId,
+                        "manager",
+                        "Manager",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var dialogService =
+            new TestDialogService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                dialogService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.True(
+            viewModel.EditAccountCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.EditAccountCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.Equal(
+            accountId,
+            dialogService.LastEditedAccountId);
+    }
+
     private sealed class TestQueryService
         : IAccountManagementQueryService
     {
@@ -205,9 +262,30 @@ public sealed class AccountManagementWorkspaceViewModelTests
         : HrManagement.Desktop.Services.Accounts
             .IAccountManagementDialogService
     {
+        public Guid? LastEditedAccountId
+        {
+            get;
+            private set;
+        }
+
+        public bool EditResult
+        {
+            get;
+            set;
+        }
+
         public bool ShowCreateAccountDialog()
         {
             return false;
+        }
+
+        public bool ShowEditAccountDialog(
+            Guid accountId)
+        {
+            LastEditedAccountId =
+                accountId;
+
+            return EditResult;
         }
     }
 }

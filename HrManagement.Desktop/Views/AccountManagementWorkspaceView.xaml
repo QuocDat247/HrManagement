@@ -42,6 +42,10 @@
                         Padding="16,7"
                         Margin="0,0,8,0" />
 
+                <Button Content="Sửa tài khoản"
+                        Command="{Binding EditAccountCommand}"
+                        Padding="16,7"
+                        Margin="0,0,8,0" />
                 <Button Content="Làm mới"
                         Command="{Binding RefreshCommand}"
                         Padding="16,7" />

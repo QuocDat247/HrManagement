@@ -49,6 +49,11 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand EditAccountCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
         IAccountManagementQueryService queryService,
         IAccountManagementDialogService dialogService)
@@ -63,13 +68,14 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 LoadAsync);
 
-        RefreshCommand =
-            new AsyncRelayCommand(
-                LoadAsync);
-
         CreateAccountCommand =
             new AsyncRelayCommand(
                 CreateAccountAsync);
+
+        EditAccountCommand =
+            new AsyncRelayCommand(
+                EditAccountAsync,
+                CanEditAccount);
     }
 
     public async Task LoadAsync()
@@ -136,6 +142,20 @@ public sealed partial class AccountManagementWorkspaceViewModel
         }
     }
 
+    partial void OnSelectedAccountRowChanged(
+        AccountManagementAccountRow? value)
+    {
+        EditAccountCommand
+            .NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLoadingChanged(
+        bool value)
+    {
+        EditAccountCommand
+            .NotifyCanExecuteChanged();
+    }
+
     private async Task CreateAccountAsync()
     {
         if (IsLoading)
@@ -161,6 +181,45 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Không thể mở màn hình tạo tài khoản.";
+        }
+    }
+
+    private bool CanEditAccount()
+    {
+        return !IsLoading
+            && SelectedAccountRow is not null;
+    }
+
+    private async Task EditAccountAsync()
+    {
+        AccountManagementAccountRow? selected =
+            SelectedAccountRow;
+
+        if (selected is null
+            || IsLoading)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        try
+        {
+            bool updated =
+                _dialogService
+                    .ShowEditAccountDialog(
+                        selected.AccountId);
+
+            if (updated)
+            {
+                await LoadAsync();
+            }
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Không thể mở màn hình sửa tài khoản.";
         }
     }
 
