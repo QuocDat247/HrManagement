@@ -1,6 +1,7 @@
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authorization;
 using HrManagement.Application.Payroll.Calculations;
+using HrManagement.Application.Payroll.Compensation;
 using HrManagement.Application.Payroll.Periods;
 using HrManagement.Domain.Authorization.Permissions;
 
@@ -160,6 +161,72 @@ public sealed class AuthorizedPayrollServiceTests
         Assert.Equal(
             PermissionCodes.PayrollClose,
             authorizationService.LastPermissionCode);
+    }
+
+    [Fact]
+    public async Task
+        CompensationPolicy_RequiresManageCompensation()
+    {
+        var authorizationService =
+            new TestAuthorizationService(
+                allowed:
+                    true);
+
+        var policy =
+            new PermissionEmployeeCompensationAuthorizationPolicy(
+                authorizationService);
+
+        bool allowed =
+            await policy.CanSetAsync(
+                CreateCompensationRequest());
+
+        Assert.True(
+            allowed);
+
+        Assert.Equal(
+            PermissionCodes.PayrollManageCompensation,
+            authorizationService.LastPermissionCode);
+    }
+
+    [Fact]
+    public async Task
+        CompensationPolicy_WhenDenied_ReturnsFalse()
+    {
+        var authorizationService =
+            new TestAuthorizationService(
+                allowed:
+                    false);
+
+        var policy =
+            new PermissionEmployeeCompensationAuthorizationPolicy(
+                authorizationService);
+
+        bool allowed =
+            await policy.CanSetAsync(
+                CreateCompensationRequest());
+
+        Assert.False(
+            allowed);
+
+        Assert.Equal(
+            PermissionCodes.PayrollManageCompensation,
+            authorizationService.LastPermissionCode);
+    }
+
+    private static EmployeeCompensationAuthorizationRequest
+        CreateCompensationRequest()
+    {
+        return new EmployeeCompensationAuthorizationRequest(
+            new AuthenticatedUser(
+                Guid.NewGuid()
+                    .ToString("D"),
+                "test-user",
+                "Test User"),
+            Guid.NewGuid(),
+            new DateOnly(
+                2026,
+                9,
+                9));
     }
 
     private static PayrollPeriodClosingAuthorizationRequest

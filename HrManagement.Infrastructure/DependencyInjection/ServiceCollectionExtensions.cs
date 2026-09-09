@@ -341,9 +341,9 @@ public static class ServiceCollectionExtensions
             IEmployeeCompensationQuerySource,
             EfEmployeeCompensationQuerySource>();
 
-        services.AddSingleton<
+        services.AddScoped<
             IEmployeeCompensationAuthorizationPolicy,
-            AuthenticatedEmployeeCompensationAuthorizationPolicy>();
+            PermissionEmployeeCompensationAuthorizationPolicy>();
 
         services.AddScoped<
             IEmployeeCompensationService,

@@ -281,7 +281,7 @@ public sealed class EmployeeCompensationWorkflowAcceptanceTests
                         factory),
                     contextSource,
                     persistence,
-                    new AuthenticatedEmployeeCompensationAuthorizationPolicy(),
+                    new AllowEmployeeCompensationAuthorizationPolicy(),
                     financialPeriodLockSource,
                     currentUserContext);
 
@@ -353,6 +353,24 @@ public sealed class EmployeeCompensationWorkflowAcceptanceTests
         public async ValueTask DisposeAsync()
         {
             await _connection.DisposeAsync();
+        }
+    }
+
+    private sealed class AllowEmployeeCompensationAuthorizationPolicy
+        : IEmployeeCompensationAuthorizationPolicy
+    {
+        public Task<bool> CanSetAsync(
+            EmployeeCompensationAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(
+                request);
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                true);
         }
     }
 
