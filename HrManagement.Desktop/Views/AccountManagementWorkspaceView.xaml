@@ -46,6 +46,16 @@
                         Command="{Binding EditAccountCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
+
+                <Button Content="Vô hiệu hóa"
+                        Command="{Binding DeactivateAccountCommand}"
+                        Padding="16,7"
+                        Margin="0,0,8,0" />
+
+                <Button Content="Kích hoạt lại"
+                        Command="{Binding ReactivateAccountCommand}"
+                        Padding="16,7"
+                        Margin="0,0,8,0" />
                 <Button Content="Làm mới"
                         Command="{Binding RefreshCommand}"
                         Padding="16,7" />

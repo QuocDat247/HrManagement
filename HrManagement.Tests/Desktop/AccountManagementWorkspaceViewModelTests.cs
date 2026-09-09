@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Services;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Authentication.Accounts;
@@ -52,7 +53,9 @@ public sealed class AccountManagementWorkspaceViewModelTests
             new AccountManagementWorkspaceViewModel(
                 new TestQueryService(
                     snapshot),
-                new TestDialogService());
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService());
 
         await viewModel.LoadAsync();
 
@@ -120,7 +123,9 @@ public sealed class AccountManagementWorkspaceViewModelTests
             new AccountManagementWorkspaceViewModel(
                 new TestQueryService(
                     snapshot),
-                new TestDialogService());
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService());
 
         await viewModel.LoadAsync();
 
@@ -147,7 +152,9 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     exception:
                         new InvalidOperationException(
                             "Database failure.")),
-                new TestDialogService());
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService());
 
         await viewModel.LoadAsync();
 
@@ -197,7 +204,9 @@ public sealed class AccountManagementWorkspaceViewModelTests
             new AccountManagementWorkspaceViewModel(
                 new TestQueryService(
                     snapshot),
-                dialogService);
+                dialogService,
+                new TestActiveStateService(),
+                new TestConfirmationService());
 
         await viewModel.LoadAsync();
 
@@ -217,6 +226,219 @@ public sealed class AccountManagementWorkspaceViewModelTests
         Assert.Equal(
             accountId,
             dialogService.LastEditedAccountId);
+    }
+
+    [Fact]
+    public async Task
+        DeactivateAccountCommand_WithActiveSelection_ConfirmsAndDisables()
+    {
+        Guid accountId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        accountId,
+                        "manager",
+                        "Manager",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var activeStateService =
+            new TestActiveStateService();
+
+        var confirmationService =
+            new TestConfirmationService
+            {
+                Result =
+                    true
+            };
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                activeStateService,
+                confirmationService);
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.True(
+            viewModel.DeactivateAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.ReactivateAccountCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.DeactivateAccountCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            confirmationService.Called);
+
+        Assert.True(
+            activeStateService.Called);
+
+        Assert.NotNull(
+            activeStateService.LastRequest);
+
+        Assert.Equal(
+            accountId,
+            activeStateService
+                .LastRequest!
+                .AccountId);
+
+        Assert.False(
+            activeStateService
+                .LastRequest!
+                .IsActive);
+    }
+
+    [Fact]
+    public async Task
+        DeactivateAccountCommand_WhenConfirmationIsDeclined_DoesNotCallService()
+    {
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        Guid.NewGuid(),
+                        "manager",
+                        "Manager",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var activeStateService =
+            new TestActiveStateService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                activeStateService,
+                new TestConfirmationService
+                {
+                    Result =
+                        false
+                });
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        await viewModel.DeactivateAccountCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.False(
+            activeStateService.Called);
+    }
+
+    [Fact]
+    public async Task
+        ReactivateAccountCommand_WithInactiveSelection_RequestsActiveState()
+    {
+        Guid accountId =
+            Guid.NewGuid();
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        accountId,
+                        "manager",
+                        "Manager",
+                        UserAccountKind.Standard,
+                        false,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var activeStateService =
+            new TestActiveStateService();
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                activeStateService,
+                new TestConfirmationService
+                {
+                    Result =
+                        true
+                });
+
+        await viewModel.LoadAsync();
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.False(
+            viewModel.DeactivateAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.True(
+            viewModel.ReactivateAccountCommand
+                .CanExecute(
+                    null));
+
+        await viewModel.ReactivateAccountCommand
+            .ExecuteAsync(
+                null);
+
+        Assert.True(
+            activeStateService.Called);
+
+        Assert.True(
+            activeStateService
+                .LastRequest!
+                .IsActive);
     }
 
     private sealed class TestQueryService
@@ -255,6 +477,71 @@ public sealed class AccountManagementWorkspaceViewModelTests
 
             return Task.FromResult(
                 _snapshot!);
+        }
+    }
+
+    private sealed class TestActiveStateService
+        : IAccountActiveStateService
+    {
+        public bool Called
+        {
+            get;
+            private set;
+        }
+
+        public SetAccountActiveStateRequest?
+            LastRequest
+        {
+            get;
+            private set;
+        }
+
+        public SetAccountActiveStateResult Result
+        {
+            get;
+            set;
+        } =
+            new(
+                true);
+
+        public Task<SetAccountActiveStateResult> SetAsync(
+            SetAccountActiveStateRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            Called =
+                true;
+
+            LastRequest =
+                request;
+
+            return Task.FromResult(
+                Result);
+        }
+    }
+
+    private sealed class TestConfirmationService
+        : IUserConfirmationService
+    {
+        public bool Result
+        {
+            get;
+            set;
+        }
+
+        public bool Called
+        {
+            get;
+            private set;
+        }
+
+        public bool Confirm(
+            string title,
+            string message)
+        {
+            Called =
+                true;
+
+            return Result;
         }
     }
 

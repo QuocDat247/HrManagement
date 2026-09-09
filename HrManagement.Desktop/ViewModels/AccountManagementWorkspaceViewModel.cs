@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Desktop.Services.Accounts;
+using HrManagement.Desktop.Services;
+using HrManagement.Application.Authorization;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Accounts;
 
@@ -14,6 +16,12 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
     private readonly IAccountManagementDialogService
         _dialogService;
+
+    private readonly IAccountActiveStateService
+        _activeStateService;
+
+    private readonly IUserConfirmationService
+        _confirmationService;
 
     [ObservableProperty]
     private IReadOnlyList<AccountManagementAccountRow>
@@ -54,15 +62,33 @@ public sealed partial class AccountManagementWorkspaceViewModel
         get;
     }
 
+    public IAsyncRelayCommand DeactivateAccountCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand ReactivateAccountCommand
+    {
+        get;
+    }
+
     public AccountManagementWorkspaceViewModel(
         IAccountManagementQueryService queryService,
-        IAccountManagementDialogService dialogService)
+        IAccountManagementDialogService dialogService,
+        IAccountActiveStateService activeStateService,
+        IUserConfirmationService confirmationService)
     {
         _queryService =
             queryService;
 
         _dialogService =
             dialogService;
+
+        _activeStateService =
+            activeStateService;
+
+        _confirmationService =
+            confirmationService;
 
         RefreshCommand =
             new AsyncRelayCommand(
@@ -76,6 +102,16 @@ public sealed partial class AccountManagementWorkspaceViewModel
             new AsyncRelayCommand(
                 EditAccountAsync,
                 CanEditAccount);
+
+        DeactivateAccountCommand =
+            new AsyncRelayCommand(
+                DeactivateAccountAsync,
+                CanDeactivateAccount);
+
+        ReactivateAccountCommand =
+            new AsyncRelayCommand(
+                ReactivateAccountAsync,
+                CanReactivateAccount);
     }
 
     public async Task LoadAsync()
@@ -147,12 +183,24 @@ public sealed partial class AccountManagementWorkspaceViewModel
     {
         EditAccountCommand
             .NotifyCanExecuteChanged();
+
+        DeactivateAccountCommand
+            .NotifyCanExecuteChanged();
+
+        ReactivateAccountCommand
+            .NotifyCanExecuteChanged();
     }
 
     partial void OnIsLoadingChanged(
         bool value)
     {
         EditAccountCommand
+            .NotifyCanExecuteChanged();
+
+        DeactivateAccountCommand
+            .NotifyCanExecuteChanged();
+
+        ReactivateAccountCommand
             .NotifyCanExecuteChanged();
     }
 
@@ -220,6 +268,113 @@ public sealed partial class AccountManagementWorkspaceViewModel
         {
             ErrorMessage =
                 "Không thể mở màn hình sửa tài khoản.";
+        }
+    }
+
+    private bool CanDeactivateAccount()
+    {
+        return !IsLoading
+            && SelectedAccountRow is
+            {
+                IsActive: true
+            };
+    }
+
+    private bool CanReactivateAccount()
+    {
+        return !IsLoading
+            && SelectedAccountRow is
+            {
+                IsActive: false
+            };
+    }
+
+    private Task DeactivateAccountAsync()
+    {
+        return SetSelectedAccountActiveStateAsync(
+            isActive:
+                false);
+    }
+
+    private Task ReactivateAccountAsync()
+    {
+        return SetSelectedAccountActiveStateAsync(
+            isActive:
+                true);
+    }
+
+    private async Task SetSelectedAccountActiveStateAsync(
+        bool isActive)
+    {
+        AccountManagementAccountRow? selected =
+            SelectedAccountRow;
+
+        if (selected is null
+            || IsLoading
+            || selected.IsActive ==
+                isActive)
+        {
+            return;
+        }
+
+        ErrorMessage =
+            null;
+
+        string title =
+            isActive
+                ? "Kích hoạt lại tài khoản"
+                : "Vô hiệu hóa tài khoản";
+
+        string message =
+            isActive
+                ? $"Kích hoạt lại tài khoản \"{selected.Username}\"?\n\n"
+                    + "Tài khoản sẽ có thể đăng nhập lại."
+                : $"Vô hiệu hóa tài khoản \"{selected.Username}\"?\n\n"
+                    + "Tài khoản sẽ không thể đăng nhập "
+                    + "cho đến khi được kích hoạt lại.";
+
+        if (!_confirmationService
+                .Confirm(
+                    title,
+                    message))
+        {
+            return;
+        }
+
+        try
+        {
+            SetAccountActiveStateResult result =
+                await _activeStateService
+                    .SetAsync(
+                        new SetAccountActiveStateRequest(
+                            selected.AccountId,
+                            isActive));
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể thay đổi trạng thái tài khoản.";
+
+                return;
+            }
+
+            await LoadAsync();
+        }
+        catch (AuthorizationDeniedException)
+        {
+            ErrorMessage =
+                "Bạn không có quyền thay đổi trạng thái tài khoản.";
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage =
+                "Thao tác thay đổi trạng thái tài khoản đã bị hủy.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Đã xảy ra lỗi khi thay đổi trạng thái tài khoản.";
         }
     }
 
