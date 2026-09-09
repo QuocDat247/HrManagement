@@ -158,13 +158,20 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(OvertimeWorkspaceViewModel)));
         }
 
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.PayrollView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Bảng lương",
+                    typeof(PayrollWorkspaceViewModel)));
+        }
+
         navigationItems.AddRange(
             new[]
             {
-                new NavigationItem(
-                    "Bảng lương",
-                    typeof(PayrollWorkspaceViewModel)),
-
                 new NavigationItem(
                     "Chấm công & Nghỉ phép",
                     typeof(AttendanceLeaveWorkspaceViewModel)),
