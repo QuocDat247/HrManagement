@@ -68,6 +68,12 @@ public static class PermissionCodes
     public const string HolidayExceptionManageLifecycle =
         "HolidayException.ManageLifecycle";
 
+    public const string TimesheetView =
+        "Timesheet.View";
+
+    public const string TimesheetClose =
+        "Timesheet.Close";
+
     public const string AttendanceView =
         "Attendance.View";
 
@@ -142,6 +148,8 @@ public static class PermissionCodes
                 HolidayExceptionCreate,
                 HolidayExceptionEdit,
                 HolidayExceptionManageLifecycle,
+                TimesheetView,
+                TimesheetClose,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,

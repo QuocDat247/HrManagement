@@ -447,7 +447,7 @@ public sealed class CloseTimesheetPeriodPersistenceTests
             new CloseTimesheetPeriodService(
                 database.Persistence,
                 new StubCurrentUserContext(),
-                new AuthenticatedTimesheetPeriodClosingAuthorizationPolicy(),
+                new AllowTimesheetPeriodClosingAuthorizationPolicy(),
                 new FixedTimeProvider(
                     closedAt));
 
@@ -873,6 +873,24 @@ public sealed class CloseTimesheetPeriodPersistenceTests
         public async ValueTask DisposeAsync()
         {
             await _connection.DisposeAsync();
+        }
+    }
+
+    private sealed class AllowTimesheetPeriodClosingAuthorizationPolicy
+        : ITimesheetPeriodClosingAuthorizationPolicy
+    {
+        public Task<bool> CanCloseAsync(
+            TimesheetPeriodClosingAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(
+                request);
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                true);
         }
     }
 

@@ -404,17 +404,25 @@ public static class ServiceCollectionExtensions
             IPayrollCalculationInputService,
             PayrollCalculationInputService>();
 
-        services.AddSingleton<
+        services.AddScoped<
             ITimesheetPeriodClosingAuthorizationPolicy,
-            AuthenticatedTimesheetPeriodClosingAuthorizationPolicy>();
+            PermissionTimesheetPeriodClosingAuthorizationPolicy>();
 
         services.AddScoped<
             ICloseTimesheetPeriodService,
             CloseTimesheetPeriodService>();
 
         services.AddScoped<
-            IMonthlyTimesheetQueryService,
             MonthlyTimesheetQueryService>();
+
+        services.AddScoped<
+            IMonthlyTimesheetQueryService>(
+                provider =>
+                    new AuthorizedMonthlyTimesheetQueryService(
+                        provider.GetRequiredService<
+                            MonthlyTimesheetQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IAttendanceRecordRepository,
