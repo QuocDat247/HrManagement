@@ -96,6 +96,22 @@ public static class ServiceCollectionExtensions
             EfRoleRepository>();
 
         services.AddScoped<
+            IRoleManagementPersistence,
+            EfRoleManagementPersistence>();
+
+        services.AddScoped<
+            RoleManagementService>();
+
+        services.AddScoped<
+            IRoleManagementService>(
+                provider =>
+                    new AuthorizedRoleManagementService(
+                        provider.GetRequiredService<
+                            RoleManagementService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
+
+        services.AddScoped<
             IRolePermissionRepository,
             EfRolePermissionRepository>();
 

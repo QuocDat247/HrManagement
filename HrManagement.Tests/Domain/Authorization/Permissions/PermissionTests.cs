@@ -26,6 +26,8 @@ public sealed class PermissionTests
     [InlineData(PermissionCodes.LeaveSubmit)]
     [InlineData(PermissionCodes.LeaveCancel)]
     [InlineData(PermissionCodes.AccountView)]
+    [InlineData(PermissionCodes.RoleCreate)]
+    [InlineData(PermissionCodes.RoleEdit)]
     public void
         Constructor_WithKnownPermission_CreatesPermission(
             string code)
@@ -84,7 +86,7 @@ public sealed class PermissionTests
         All_ContainsExpectedPermissionCount()
     {
         Assert.Equal(
-            48,
+            50,
             PermissionCodes.All.Count);
     }
 }

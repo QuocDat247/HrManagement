@@ -128,6 +128,12 @@ public static class PermissionCodes
     public const string ReportExport =
         "Report.Export";
 
+    public const string RoleCreate =
+        "Role.Create";
+
+    public const string RoleEdit =
+        "Role.Edit";
+
     public const string AccountView =
         "Account.View";
 
@@ -195,6 +201,8 @@ public static class PermissionCodes
                 PayrollManageCompensation,
                 ReportView,
                 ReportExport,
+                RoleCreate,
+                RoleEdit,
                 AccountView,
                 AccountCreate,
                 AccountEdit,

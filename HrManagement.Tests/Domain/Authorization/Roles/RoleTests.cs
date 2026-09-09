@@ -145,4 +145,68 @@ public sealed class RoleTests
         Assert.False(
             role.IsActive);
     }
+
+    [Fact]
+    public void
+        UpdateDetails_WithValidValues_ChangesDetailsOnly()
+    {
+        var role =
+            new Role(
+                Guid.NewGuid(),
+                "Tên cũ",
+                "Mô tả cũ",
+                isActive:
+                    false);
+
+        role.UpdateDetails(
+            "  Quản lý nhân sự  ",
+            "  Quản lý hồ sơ.  ");
+
+        Assert.Equal(
+            "Quản lý nhân sự",
+            role.Name);
+
+        Assert.Equal(
+            "QUẢN LÝ NHÂN SỰ",
+            role.NormalizedName);
+
+        Assert.Equal(
+            "Quản lý hồ sơ.",
+            role.Description);
+
+        Assert.False(
+            role.IsActive);
+    }
+
+    [Fact]
+    public void
+        UpdateDetails_WithBlankDescription_NormalizesToNull()
+    {
+        var role =
+            new Role(
+                Guid.NewGuid(),
+                "Quản lý");
+
+        role.UpdateDetails(
+            "Quản lý mới",
+            "   ");
+
+        Assert.Null(
+            role.Description);
+    }
+
+    [Fact]
+    public void
+        UpdateDetails_WithBlankName_Throws()
+    {
+        var role =
+            new Role(
+                Guid.NewGuid(),
+                "Quản lý");
+
+        Assert.Throws<ArgumentException>(
+            () =>
+                role.UpdateDetails(
+                    "   "));
+    }
 }
