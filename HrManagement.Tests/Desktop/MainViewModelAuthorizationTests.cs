@@ -102,6 +102,12 @@ public sealed class MainViewModelAuthorizationTests
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(SettingsViewModel));
     }
 
     [Fact]
@@ -281,6 +287,26 @@ public sealed class MainViewModelAuthorizationTests
 
         Assert.Null(
             navigationService.LastNavigatedType);
+    }
+
+    [Fact]
+    public async Task
+        InitializeAsync_WithoutSettingsManage_StillShowsPersonalSettings()
+    {
+        var navigationService =
+            new TestNavigationService();
+
+        var viewModel =
+            CreateViewModel(
+                navigationService);
+
+        await viewModel.InitializeAsync();
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(SettingsViewModel));
     }
 
     [Theory]

@@ -140,6 +140,9 @@ public static class PermissionCodes
     public const string AccountAssignRole =
         "Account.AssignRole";
 
+    // Reserved for future organization-wide administrative settings.
+    // Personal desktop preferences such as theme and diagnostic
+    // consent are intentionally not gated by this permission.
     public const string SettingsManage =
         "Settings.Manage";
 
