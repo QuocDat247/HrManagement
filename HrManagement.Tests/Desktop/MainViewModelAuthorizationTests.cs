@@ -99,6 +99,12 @@ public sealed class MainViewModelAuthorizationTests
                 item.ViewModelType ==
                 typeof(AttendanceLeaveWorkspaceViewModel));
 
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AccountManagementWorkspaceViewModel));
+
         Assert.Equal(
             typeof(DashboardViewModel),
             navigationService.LastNavigatedType);
@@ -129,7 +135,8 @@ public sealed class MainViewModelAuthorizationTests
                 PermissionCodes.OvertimeView,
                 PermissionCodes.PayrollView,
                 PermissionCodes.AttendanceView,
-                PermissionCodes.LeaveView);
+                PermissionCodes.LeaveView,
+                PermissionCodes.AccountView);
 
         await viewModel.InitializeAsync();
 
@@ -186,6 +193,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(AttendanceLeaveWorkspaceViewModel));
+
+        Assert.Contains(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AccountManagementWorkspaceViewModel));
     }
 
     [Fact]
@@ -255,6 +268,12 @@ public sealed class MainViewModelAuthorizationTests
             item =>
                 item.ViewModelType ==
                 typeof(AttendanceLeaveWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AccountManagementWorkspaceViewModel));
     }
 
     [Fact]

@@ -435,6 +435,9 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<SettingsViewModel>();
 
+        services.AddTransient<
+            AccountManagementWorkspaceViewModel>();
+
         services.AddSingleton<
             IEmployeeNavigationService,
             EmployeeNavigationService>();

@@ -54,6 +54,10 @@
             <views:PayrollWorkspaceView />
         </DataTemplate>
 
+        <DataTemplate DataType="{x:Type vm:AccountManagementWorkspaceViewModel}">
+            <views:AccountManagementWorkspaceView />
+        </DataTemplate>
+
         <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
             <views:SettingsView />
         </DataTemplate>

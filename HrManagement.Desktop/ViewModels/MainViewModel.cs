@@ -191,6 +191,17 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(AttendanceLeaveWorkspaceViewModel)));
         }
 
+        if (await _authorizationService
+                .HasPermissionAsync(
+                    PermissionCodes.AccountView,
+                    cancellationToken))
+        {
+            navigationItems.Add(
+                new NavigationItem(
+                    "Tài khoản & Phân quyền",
+                    typeof(AccountManagementWorkspaceViewModel)));
+        }
+
         navigationItems.AddRange(
             new[]
             {
