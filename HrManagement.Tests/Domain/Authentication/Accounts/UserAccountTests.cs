@@ -219,4 +219,52 @@ public sealed class UserAccountTests
                     "Quản lý mới",
                     Guid.Empty));
     }
+
+    [Fact]
+    public void
+        SetActive_CanDisableAndEnableWithoutChangingIdentity()
+    {
+        Guid employeeId =
+            Guid.NewGuid();
+
+        var account =
+            new UserAccount(
+                Guid.NewGuid(),
+                "manager",
+                "Quản lý",
+                UserAccountKind.Standard,
+                employeeId);
+
+        account.SetActive(
+            false);
+
+        Assert.False(
+            account.IsActive);
+
+        Assert.Equal(
+            "manager",
+            account.Username);
+
+        Assert.Equal(
+            "Quản lý",
+            account.DisplayName);
+
+        Assert.Equal(
+            employeeId,
+            account.EmployeeId);
+
+        Assert.Equal(
+            UserAccountKind.Standard,
+            account.Kind);
+
+        account.SetActive(
+            true);
+
+        Assert.True(
+            account.IsActive);
+
+        Assert.Equal(
+            UserAccountKind.Standard,
+            account.Kind);
+    }
 }

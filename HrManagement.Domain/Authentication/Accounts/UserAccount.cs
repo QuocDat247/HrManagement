@@ -22,7 +22,11 @@ public sealed class UserAccount
 
     public UserAccountKind Kind { get; }
 
-    public bool IsActive { get; }
+    public bool IsActive
+    {
+        get;
+        private set;
+    }
 
     public UserAccount(
         Guid id,
@@ -150,5 +154,11 @@ public sealed class UserAccount
 
         EmployeeId =
             employeeId;
+    }
+    public void SetActive(
+        bool isActive)
+    {
+        IsActive =
+            isActive;
     }
 }
