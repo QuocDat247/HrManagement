@@ -398,7 +398,7 @@ public sealed class OvertimeWorkflowAcceptanceTests
                     employeeRepository,
                     submissionContextSource,
                     periodLockPolicy,
-                    new AuthenticatedOvertimeRequestSubmissionAuthorizationPolicy(),
+                    new AllowOvertimeRequestSubmissionAuthorizationPolicy(),
                     submissionPersistence,
                     currentUserContext,
                     timeProvider);
@@ -420,7 +420,7 @@ public sealed class OvertimeWorkflowAcceptanceTests
                 new OvertimeRequestStatusService(
                     statusContextSource,
                     statusPersistence,
-                    new AuthenticatedOvertimeRequestStatusAuthorizationPolicy(),
+                    new AllowOvertimeRequestStatusAuthorizationPolicy(),
                     financialPeriodLockSource,
                     currentUserContext,
                     timeProvider);
@@ -498,6 +498,42 @@ public sealed class OvertimeWorkflowAcceptanceTests
         public async ValueTask DisposeAsync()
         {
             await _connection.DisposeAsync();
+        }
+    }
+
+    private sealed class AllowOvertimeRequestSubmissionAuthorizationPolicy
+        : IOvertimeRequestSubmissionAuthorizationPolicy
+    {
+        public Task<bool> CanSubmitAsync(
+            OvertimeRequestSubmissionAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(
+                request);
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                true);
+        }
+    }
+
+    private sealed class AllowOvertimeRequestStatusAuthorizationPolicy
+        : IOvertimeRequestStatusAuthorizationPolicy
+    {
+        public Task<bool> CanChangeStatusAsync(
+            OvertimeRequestStatusAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(
+                request);
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                true);
         }
     }
 

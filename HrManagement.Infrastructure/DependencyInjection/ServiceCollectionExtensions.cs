@@ -293,13 +293,21 @@ public static class ServiceCollectionExtensions
             IOvertimeRequestSubmissionPersistence,
             EfOvertimeRequestSubmissionPersistence>();
 
-        services.AddSingleton<
+        services.AddScoped<
             IOvertimeRequestSubmissionAuthorizationPolicy,
-            AuthenticatedOvertimeRequestSubmissionAuthorizationPolicy>();
+            PermissionOvertimeRequestSubmissionAuthorizationPolicy>();
 
         services.AddSingleton<
-            IOvertimeWorkspaceQueryService,
             EfOvertimeWorkspaceQueryService>();
+
+        services.AddScoped<
+            IOvertimeWorkspaceQueryService>(
+                provider =>
+                    new AuthorizedOvertimeWorkspaceQueryService(
+                        provider.GetRequiredService<
+                            EfOvertimeWorkspaceQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddScoped<
             ISubmitOvertimeRequestService,
@@ -313,9 +321,9 @@ public static class ServiceCollectionExtensions
             IOvertimeRequestStatusTransitionPersistence,
             EfOvertimeRequestStatusTransitionPersistence>();
 
-        services.AddSingleton<
+        services.AddScoped<
             IOvertimeRequestStatusAuthorizationPolicy,
-            AuthenticatedOvertimeRequestStatusAuthorizationPolicy>();
+            PermissionOvertimeRequestStatusAuthorizationPolicy>();
 
         services.AddScoped<
             IOvertimeRequestStatusService,

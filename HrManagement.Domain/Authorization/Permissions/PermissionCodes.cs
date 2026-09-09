@@ -74,6 +74,18 @@ public static class PermissionCodes
     public const string TimesheetClose =
         "Timesheet.Close";
 
+    public const string OvertimeView =
+        "Overtime.View";
+
+    public const string OvertimeSubmit =
+        "Overtime.Submit";
+
+    public const string OvertimeReview =
+        "Overtime.Review";
+
+    public const string OvertimeCancel =
+        "Overtime.Cancel";
+
     public const string AttendanceView =
         "Attendance.View";
 
@@ -150,6 +162,10 @@ public static class PermissionCodes
                 HolidayExceptionManageLifecycle,
                 TimesheetView,
                 TimesheetClose,
+                OvertimeView,
+                OvertimeSubmit,
+                OvertimeReview,
+                OvertimeCancel,
                 AttendanceView,
                 AttendanceEdit,
                 AttendanceApprove,
