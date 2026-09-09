@@ -446,7 +446,7 @@ public sealed class PayrollWorkflowAcceptanceTests
                 new ClosePayrollPeriodService(
                     previewService,
                     closePersistence,
-                    new AuthenticatedPayrollPeriodClosingAuthorizationPolicy(),
+                    new AllowPayrollPeriodClosingAuthorizationPolicy(),
                     currentUserContext,
                     new FixedTimeProvider(
                         new DateTimeOffset(
@@ -748,6 +748,24 @@ public sealed class PayrollWorkflowAcceptanceTests
         {
             return Task.FromResult(
                 CreateDbContext());
+        }
+    }
+
+    private sealed class AllowPayrollPeriodClosingAuthorizationPolicy
+        : IPayrollPeriodClosingAuthorizationPolicy
+    {
+        public Task<bool> CanCloseAsync(
+            PayrollPeriodClosingAuthorizationRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(
+                request);
+
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                true);
         }
     }
 

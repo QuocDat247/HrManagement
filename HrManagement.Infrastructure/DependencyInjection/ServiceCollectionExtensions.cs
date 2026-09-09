@@ -385,24 +385,46 @@ public static class ServiceCollectionExtensions
             CurrencyMoneyRoundingPolicy>();
 
         services.AddScoped<
-            IPayrollPreviewService,
             PayrollPreviewService>();
+
+        services.AddScoped<
+            IPayrollPreviewService>(
+                provider =>
+                    new AuthorizedPayrollPreviewService(
+                        provider.GetRequiredService<
+                            PayrollPreviewService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IClosePayrollPeriodPersistence,
             EfClosePayrollPeriodPersistence>();
 
-        services.AddSingleton<
+        services.AddScoped<
             IPayrollPeriodClosingAuthorizationPolicy,
-            AuthenticatedPayrollPeriodClosingAuthorizationPolicy>();
+            PermissionPayrollPeriodClosingAuthorizationPolicy>();
 
         services.AddScoped<
-            IClosePayrollPeriodService,
-            ClosePayrollPeriodService>();
+            IClosePayrollPeriodService>(
+                provider =>
+                    ActivatorUtilities
+                        .CreateInstance<
+                            ClosePayrollPeriodService>(
+                                provider,
+                                provider.GetRequiredService<
+                                    PayrollPreviewService>()));
 
         services.AddSingleton<
-            IClosedPayrollQueryService,
             EfClosedPayrollQueryService>();
+
+        services.AddScoped<
+            IClosedPayrollQueryService>(
+                provider =>
+                    new AuthorizedClosedPayrollQueryService(
+                        provider.GetRequiredService<
+                            EfClosedPayrollQueryService>(),
+                        provider.GetRequiredService<
+                            IAuthorizationGuard>()));
 
         services.AddSingleton<
             IPayrollFinancialPeriodLockSource,
