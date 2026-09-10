@@ -6,6 +6,7 @@ using HrManagement.Application.Authorization.Roles;
 using HrManagement.Application.Authorization;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Accounts;
+using HrManagement.Domain.Authorization.Permissions;
 
 namespace HrManagement.Desktop.ViewModels;
 
@@ -26,6 +27,25 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
     private readonly IUserConfirmationService
         _confirmationService;
+
+    private readonly IAuthorizationService
+        _authorizationService;
+
+    private bool _canCreateAccount;
+
+    private bool _canEditAccount;
+
+    private bool _canLockAccount;
+
+    private bool _canAssignAccountRole;
+
+    private bool _canCreateRole;
+
+    private bool _canEditRole;
+
+    private bool _canManageRoleLifecycle;
+
+    private bool _canAssignRolePermission;
 
     [ObservableProperty]
     private IReadOnlyList<AccountManagementAccountRow>
@@ -111,7 +131,8 @@ public sealed partial class AccountManagementWorkspaceViewModel
         IAccountManagementDialogService dialogService,
         IAccountActiveStateService activeStateService,
         IUserConfirmationService confirmationService,
-        IRoleActiveStateService roleActiveStateService)
+        IRoleActiveStateService roleActiveStateService,
+        IAuthorizationService authorizationService)
     {
         _queryService =
             queryService;
@@ -128,13 +149,17 @@ public sealed partial class AccountManagementWorkspaceViewModel
         _roleActiveStateService =
             roleActiveStateService;
 
+        _authorizationService =
+            authorizationService;
+
         RefreshCommand =
             new AsyncRelayCommand(
                 LoadAsync);
 
         CreateAccountCommand =
             new AsyncRelayCommand(
-                CreateAccountAsync);
+                CreateAccountAsync,
+                CanCreateAccount);
 
         EditAccountCommand =
             new AsyncRelayCommand(
@@ -192,6 +217,8 @@ public sealed partial class AccountManagementWorkspaceViewModel
         IsLoading =
             true;
 
+        ResetActionCapabilities();
+
         ErrorMessage =
             null;
 
@@ -200,6 +227,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
             AccountManagementSnapshot snapshot =
                 await _queryService
                     .GetAsync();
+
+            bool actionCapabilitiesLoaded =
+                await TryLoadActionCapabilitiesAsync();
 
             AccountRows =
                 snapshot.Accounts
@@ -221,6 +251,13 @@ public sealed partial class AccountManagementWorkspaceViewModel
                 PreserveRoleSelection(
                     Roles,
                     SelectedRole);
+
+            if (!actionCapabilitiesLoaded)
+            {
+                ErrorMessage =
+                    "Dữ liệu đã tải, nhưng không thể xác định quyền thao tác. "
+                    + "Các thao tác quản trị tạm thời bị khóa.";
+            }
         }
         catch (Exception)
         {
@@ -281,6 +318,9 @@ public sealed partial class AccountManagementWorkspaceViewModel
     partial void OnIsLoadingChanged(
         bool value)
     {
+        CreateAccountCommand
+            .NotifyCanExecuteChanged();
+
         EditAccountCommand
             .NotifyCanExecuteChanged();
 
@@ -309,9 +349,121 @@ public sealed partial class AccountManagementWorkspaceViewModel
             .NotifyCanExecuteChanged();
     }
 
+    private async Task<bool>
+        TryLoadActionCapabilitiesAsync()
+    {
+        try
+        {
+            bool canCreateAccount =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.AccountCreate);
+
+            bool canEditAccount =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.AccountEdit);
+
+            bool canLockAccount =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.AccountLock);
+
+            bool canAssignAccountRole =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.AccountAssignRole);
+
+            bool canCreateRole =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.RoleCreate);
+
+            bool canEditRole =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.RoleEdit);
+
+            bool canManageRoleLifecycle =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.RoleManageLifecycle);
+
+            bool canAssignRolePermission =
+                await _authorizationService
+                    .HasPermissionAsync(
+                        PermissionCodes.RoleAssignPermission);
+
+            _canCreateAccount =
+                canCreateAccount;
+
+            _canEditAccount =
+                canEditAccount;
+
+            _canLockAccount =
+                canLockAccount;
+
+            _canAssignAccountRole =
+                canAssignAccountRole;
+
+            _canCreateRole =
+                canCreateRole;
+
+            _canEditRole =
+                canEditRole;
+
+            _canManageRoleLifecycle =
+                canManageRoleLifecycle;
+
+            _canAssignRolePermission =
+                canAssignRolePermission;
+
+            return true;
+        }
+        catch (Exception)
+        {
+            ResetActionCapabilities();
+
+            return false;
+        }
+    }
+
+    private void ResetActionCapabilities()
+    {
+        _canCreateAccount =
+            false;
+
+        _canEditAccount =
+            false;
+
+        _canLockAccount =
+            false;
+
+        _canAssignAccountRole =
+            false;
+
+        _canCreateRole =
+            false;
+
+        _canEditRole =
+            false;
+
+        _canManageRoleLifecycle =
+            false;
+
+        _canAssignRolePermission =
+            false;
+    }
+
+    private bool CanCreateAccount()
+    {
+        return !IsLoading
+            && _canCreateAccount;
+    }
+
     private async Task CreateAccountAsync()
     {
-        if (IsLoading)
+        if (!CanCreateAccount())
         {
             return;
         }
@@ -340,6 +492,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanEditAccount()
     {
         return !IsLoading
+            && _canEditAccount
             && SelectedAccountRow is not null;
     }
 
@@ -349,7 +502,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
             SelectedAccountRow;
 
         if (selected is null
-            || IsLoading)
+            || !CanEditAccount())
         {
             return;
         }
@@ -379,6 +532,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanManageAccountRoles()
     {
         return !IsLoading
+            && _canAssignAccountRole
             && SelectedAccountRow is
             {
                 Kind: UserAccountKind.Standard
@@ -391,9 +545,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
             SelectedAccountRow;
 
         if (selected is null
-            || IsLoading
-            || selected.Kind !=
-                UserAccountKind.Standard)
+            || !CanManageAccountRoles())
         {
             return;
         }
@@ -423,6 +575,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanDeactivateAccount()
     {
         return !IsLoading
+            && _canLockAccount
             && SelectedAccountRow is
             {
                 IsActive: true
@@ -432,6 +585,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanReactivateAccount()
     {
         return !IsLoading
+            && _canLockAccount
             && SelectedAccountRow is
             {
                 IsActive: false
@@ -460,6 +614,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
         if (selected is null
             || IsLoading
+            || !_canLockAccount
             || selected.IsActive ==
                 isActive)
         {
@@ -529,18 +684,20 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
     private bool CanCreateRole()
     {
-        return !IsLoading;
+        return !IsLoading
+            && _canCreateRole;
     }
 
     private bool CanEditRole()
     {
         return !IsLoading
+            && _canEditRole
             && SelectedRole is not null;
     }
 
     private async Task CreateRoleAsync()
     {
-        if (IsLoading)
+        if (!CanCreateRole())
         {
             return;
         }
@@ -572,7 +729,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
             SelectedRole;
 
         if (selected is null
-            || IsLoading)
+            || !CanEditRole())
         {
             return;
         }
@@ -602,6 +759,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanManageRolePermissions()
     {
         return !IsLoading
+            && _canAssignRolePermission
             && SelectedRole is not null;
     }
 
@@ -611,7 +769,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
             SelectedRole;
 
         if (selected is null
-            || IsLoading)
+            || !CanManageRolePermissions())
         {
             return;
         }
@@ -641,6 +799,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanDeactivateRole()
     {
         return !IsLoading
+            && _canManageRoleLifecycle
             && SelectedRole is
             {
                 IsActive: true
@@ -650,6 +809,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
     private bool CanReactivateRole()
     {
         return !IsLoading
+            && _canManageRoleLifecycle
             && SelectedRole is
             {
                 IsActive: false
@@ -678,6 +838,7 @@ public sealed partial class AccountManagementWorkspaceViewModel
 
         if (selected is null
             || IsLoading
+            || !_canManageRoleLifecycle
             || selected.IsActive ==
                 isActive)
         {

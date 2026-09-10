@@ -38,26 +38,36 @@
                         VerticalAlignment="Center">
 
                 <Button Content="Tạo tài khoản"
+                        ToolTip="Yêu cầu quyền tạo tài khoản."
+                        ToolTipService.ShowOnDisabled="True"
                         Command="{Binding CreateAccountCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
 
                 <Button Content="Sửa tài khoản"
+                        ToolTip="Chọn tài khoản và cần quyền sửa tài khoản."
+                        ToolTipService.ShowOnDisabled="True"
                         Command="{Binding EditAccountCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
 
                 <Button Content="Gán vai trò"
+                        ToolTip="Chọn tài khoản Standard và cần quyền gán vai trò."
+                        ToolTipService.ShowOnDisabled="True"
                         Command="{Binding ManageAccountRolesCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
 
                 <Button Content="Vô hiệu hóa"
+                        ToolTip="Chọn tài khoản phù hợp và cần quyền thay đổi trạng thái."
+                        ToolTipService.ShowOnDisabled="True"
                         Command="{Binding DeactivateAccountCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
 
                 <Button Content="Kích hoạt lại"
+                        ToolTip="Chọn tài khoản phù hợp và cần quyền thay đổi trạng thái."
+                        ToolTipService.ShowOnDisabled="True"
                         Command="{Binding ReactivateAccountCommand}"
                         Padding="16,7"
                         Margin="0,0,8,0" />
@@ -224,26 +234,36 @@
                                     VerticalAlignment="Center">
 
                             <Button Content="Tạo vai trò"
+                                    ToolTip="Yêu cầu quyền tạo vai trò."
+                                    ToolTipService.ShowOnDisabled="True"
                                     Command="{Binding CreateRoleCommand}"
                                     Padding="12,6"
                                     Margin="0,0,8,0" />
 
                             <Button Content="Sửa vai trò"
+                                    ToolTip="Chọn vai trò và cần quyền sửa vai trò."
+                                    ToolTipService.ShowOnDisabled="True"
                                     Command="{Binding EditRoleCommand}"
                                     Padding="12,6"
                                     Margin="0,0,8,0" />
 
                             <Button Content="Phân quyền"
+                                    ToolTip="Chọn vai trò và cần quyền phân quyền."
+                                    ToolTipService.ShowOnDisabled="True"
                                     Command="{Binding ManageRolePermissionsCommand}"
                                     Padding="12,6"
                                     Margin="0,0,8,0" />
 
                             <Button Content="Ngừng sử dụng"
+                                    ToolTip="Chọn vai trò phù hợp và cần quyền thay đổi trạng thái vai trò."
+                                    ToolTipService.ShowOnDisabled="True"
                                     Command="{Binding DeactivateRoleCommand}"
                                     Padding="12,6"
                                     Margin="0,0,8,0" />
 
                             <Button Content="Kích hoạt lại"
+                                    ToolTip="Chọn vai trò phù hợp và cần quyền thay đổi trạng thái vai trò."
+                                    ToolTipService.ShowOnDisabled="True"
                                     Command="{Binding ReactivateRoleCommand}"
                                     Padding="12,6" />
 

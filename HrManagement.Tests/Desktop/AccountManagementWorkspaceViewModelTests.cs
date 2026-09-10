@@ -1,8 +1,10 @@
+using HrManagement.Application.Authorization;
 using HrManagement.Application.Authorization.Roles;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Authentication.Accounts;
+using HrManagement.Domain.Authorization.Permissions;
 
 namespace HrManagement.Tests.Desktop;
 
@@ -57,7 +59,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -128,7 +131,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -158,7 +162,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -211,7 +216,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 dialogService,
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -278,7 +284,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 activeStateService,
                 confirmationService,
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -360,7 +367,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     Result =
                         false
                 },
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -418,7 +426,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     Result =
                         true
                 },
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -472,7 +481,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 dialogService,
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -524,7 +534,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 dialogService,
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -593,7 +604,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 new TestActiveStateService(),
                 confirmationService,
-                roleActiveStateService);
+                roleActiveStateService,
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -665,7 +677,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     Result =
                         false
                 },
-                roleActiveStateService);
+                roleActiveStateService,
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -720,7 +733,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                     Result =
                         true
                 },
-                roleActiveStateService);
+                roleActiveStateService,
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -788,7 +802,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 dialogService,
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -855,7 +870,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 dialogService,
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -916,7 +932,8 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 new TestDialogService(),
                 new TestActiveStateService(),
                 new TestConfirmationService(),
-                new TestRoleActiveStateService());
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService());
 
         await viewModel.LoadAsync();
 
@@ -928,6 +945,174 @@ public sealed class AccountManagementWorkspaceViewModelTests
             viewModel.ManageAccountRolesCommand
                 .CanExecute(
                     null));
+    }
+
+    [Fact]
+    public async Task
+        LoadAsync_WithLimitedPermissions_DisablesUnauthorizedActions()
+    {
+        Guid accountId =
+            Guid.NewGuid();
+
+        Guid roleId =
+            Guid.NewGuid();
+
+        var role =
+            new AccountManagementRoleItem(
+                roleId,
+                "Chỉ xem",
+                null,
+                true);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        accountId,
+                        "viewer",
+                        "Người xem",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                new[]
+                {
+                    role
+                },
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var authorizationService =
+            new TestAuthorizationService(
+                new[]
+                {
+                    PermissionCodes.AccountCreate,
+                    PermissionCodes.RoleCreate
+                });
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService(),
+                new TestRoleActiveStateService(),
+                authorizationService);
+
+        await viewModel.LoadAsync();
+
+        Assert.True(
+            viewModel.CreateAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.True(
+            viewModel.CreateRoleCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedAccountRow =
+            Assert.Single(
+                viewModel.AccountRows);
+
+        Assert.False(
+            viewModel.EditAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.DeactivateAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.ManageAccountRolesCommand
+                .CanExecute(
+                    null));
+
+        viewModel.SelectedRole =
+            Assert.Single(
+                viewModel.Roles);
+
+        Assert.False(
+            viewModel.EditRoleCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.DeactivateRoleCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.ManageRolePermissionsCommand
+                .CanExecute(
+                    null));
+    }
+
+    [Fact]
+    public async Task
+        LoadAsync_WhenCapabilityLookupFails_KeepsDataAndLocksActions()
+    {
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                    new AccountManagementAccountItem(
+                        Guid.NewGuid(),
+                        "viewer",
+                        "Người xem",
+                        UserAccountKind.Standard,
+                        true,
+                        null,
+                        null,
+                        null,
+                        Array.Empty<
+                            AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var viewModel =
+            new AccountManagementWorkspaceViewModel(
+                new TestQueryService(
+                    snapshot),
+                new TestDialogService(),
+                new TestActiveStateService(),
+                new TestConfirmationService(),
+                new TestRoleActiveStateService(),
+                new TestAuthorizationService(
+                    exception:
+                        new InvalidOperationException(
+                            "Authorization failure.")));
+
+        await viewModel.LoadAsync();
+
+        Assert.Single(
+            viewModel.AccountRows);
+
+        Assert.False(
+            viewModel.CreateAccountCommand
+                .CanExecute(
+                    null));
+
+        Assert.False(
+            viewModel.CreateRoleCommand
+                .CanExecute(
+                    null));
+
+        Assert.Equal(
+            "Dữ liệu đã tải, nhưng không thể xác định quyền thao tác. "
+            + "Các thao tác quản trị tạm thời bị khóa.",
+            viewModel.ErrorMessage);
     }
 
     private sealed class TestQueryService
@@ -1080,6 +1265,47 @@ public sealed class AccountManagementWorkspaceViewModelTests
                 true;
 
             return Result;
+        }
+    }
+
+    private sealed class TestAuthorizationService
+        : IAuthorizationService
+    {
+        private readonly HashSet<string>
+            _permissions;
+
+        private readonly Exception?
+            _exception;
+
+        public TestAuthorizationService(
+            IEnumerable<string>? permissions = null,
+            Exception? exception = null)
+        {
+            _permissions =
+                (permissions
+                    ?? PermissionCodes.All)
+                .ToHashSet(
+                    StringComparer.Ordinal);
+
+            _exception =
+                exception;
+        }
+
+        public Task<bool> HasPermissionAsync(
+            string permissionCode,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            if (_exception is not null)
+            {
+                throw _exception;
+            }
+
+            return Task.FromResult(
+                _permissions.Contains(
+                    permissionCode));
         }
     }
 
