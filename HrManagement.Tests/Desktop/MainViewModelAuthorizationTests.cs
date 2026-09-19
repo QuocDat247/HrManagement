@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Authentication;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authorization;
 using HrManagement.Desktop.Navigation;
@@ -294,7 +295,8 @@ public sealed class MainViewModelAuthorizationTests
             new MainViewModel(
                 navigationService,
                 CreateCurrentUserContext(),
-                authorizationService);
+                authorizationService,
+                new CurrentUserSession());
 
         await Assert.ThrowsAsync<
             InvalidOperationException>(
@@ -360,7 +362,8 @@ public sealed class MainViewModelAuthorizationTests
             navigationService,
             CreateCurrentUserContext(),
             new TestAuthorizationService(
-                allowedPermissions));
+                allowedPermissions),
+            new CurrentUserSession());
     }
 
     private static ICurrentUserContext

@@ -153,9 +153,6 @@ public partial class App : System.Windows.Application
 
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        var loginWindow =
-            _serviceProvider.GetRequiredService<LoginWindow>();
-
         IInitialOwnerBootstrapService
             ownerBootstrapService =
                 _serviceProvider.GetRequiredService<
@@ -197,61 +194,93 @@ public partial class App : System.Windows.Application
             }
         }
 
-        _logger.LogInformation(
-            DiagnosticEventIds.LoginWindowOpened,
-            "Login window opened.");
+        IUserSession userSession =
+            _serviceProvider.GetRequiredService<
+                IUserSession>();
 
-        bool? loginResult = loginWindow.ShowDialog();
-
-        if (loginResult != true)
+        while (true)
         {
             _logger.LogInformation(
-                DiagnosticEventIds.LoginCancelled,
-                "Login was not completed.");
+                DiagnosticEventIds.LoginWindowOpened,
+                "Login window opened.");
 
-            Shutdown();
-            return;
+            var loginWindow =
+                _serviceProvider.GetRequiredService<
+                    LoginWindow>();
+
+            bool? loginResult =
+                loginWindow.ShowDialog();
+
+            if (loginResult != true)
+            {
+                userSession.SignOut();
+
+                _logger.LogInformation(
+                    DiagnosticEventIds.LoginCancelled,
+                    "Login was not completed.");
+
+                Shutdown();
+                return;
+            }
+
+            var mainViewModel =
+                _serviceProvider.GetRequiredService<
+                    MainViewModel>();
+
+            try
+            {
+                await mainViewModel
+                    .InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Navigation authorization initialization failed.");
+
+                MessageBox.Show(
+                    "Không thể tải quyền truy cập của tài khoản.",
+                    "Lỗi phân quyền",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                userSession.SignOut();
+
+                Shutdown();
+                return;
+            }
+
+            var mainWindow =
+                new MainWindow(
+                    mainViewModel);
+
+            MainWindow =
+                mainWindow;
+
+            _logger.LogInformation(
+                DiagnosticEventIds.MainWindowOpened,
+                "Main window opened.");
+
+            mainWindow.ShowDialog();
+
+            /*
+             * Nếu MainWindow đóng nhưng session vẫn còn,
+             * người dùng đã bấm nút X để thoát app.
+             *
+             * Nếu session đã bị SignOut, người dùng đã
+             * bấm "Đăng xuất", nên quay lại màn Login.
+             */
+            if (userSession.IsAuthenticated)
+            {
+                userSession.SignOut();
+
+                Shutdown();
+                return;
+            }
+
+            _logger.LogInformation(
+                "User signed out. Returning to login window.");
         }
-
-        var mainViewModel =
-            _serviceProvider.GetRequiredService<
-                MainViewModel>();
-
-        try
-        {
-            await mainViewModel
-                .InitializeAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Navigation authorization initialization failed.");
-
-            MessageBox.Show(
-                "Không thể tải quyền truy cập của tài khoản.",
-                "Lỗi phân quyền",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-
-            Shutdown();
-            return;
-        }
-
-        var mainWindow =
-            new MainWindow(
-                mainViewModel);
-
-        MainWindow =
-            mainWindow;
-
-        ShutdownMode = ShutdownMode.OnMainWindowClose;
-
-        mainWindow.Show();
-
-        _logger.LogInformation(
-            DiagnosticEventIds.MainWindowOpened,
-            "Main window opened.");
     }
 
     private static void ConfigureServices(

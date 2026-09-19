@@ -14,6 +14,9 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IAuthorizationService
         _authorizationService;
 
+    private readonly IUserSession
+    _userSession;
+
     private bool _isInitialized;
 
     [ObservableProperty]
@@ -23,13 +26,17 @@ public sealed partial class MainViewModel : ObservableObject
     public MainViewModel(
     INavigationService navigationService,
     ICurrentUserContext currentUserContext,
-    IAuthorizationService authorizationService)
+    IAuthorizationService authorizationService,
+    IUserSession userSession)
     {
         _navigationService =
             navigationService;
 
         _authorizationService =
             authorizationService;
+
+        _userSession =
+            userSession;
 
         CurrentUserDisplayName =
             currentUserContext.CurrentUser?.DisplayName
@@ -45,6 +52,10 @@ public sealed partial class MainViewModel : ObservableObject
         NavigateCommand =
             new RelayCommand<NavigationItem>(
                 Navigate);
+
+        LogoutCommand =
+            new RelayCommand(
+                Logout);
     }
 
     // Command>
@@ -63,6 +74,14 @@ public sealed partial class MainViewModel : ObservableObject
         _navigationService.CurrentViewModel;
 
     public IRelayCommand<NavigationItem> NavigateCommand { get; }
+
+    public IRelayCommand LogoutCommand
+    {
+        get;
+    }
+
+    public event EventHandler?
+        LogoutRequested;
     // <
 
     public async Task InitializeAsync(
@@ -236,6 +255,15 @@ public sealed partial class MainViewModel : ObservableObject
         SelectedNavigationItem = item;
 
         _navigationService.NavigateTo(item.ViewModelType);
+    }
+
+    private void Logout()
+    {
+        _userSession.SignOut();
+
+        LogoutRequested?.Invoke(
+            this,
+            EventArgs.Empty);
     }
 
     private void OnCurrentViewModelChanged(

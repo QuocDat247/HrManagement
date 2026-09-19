@@ -151,19 +151,31 @@
                     <TextBlock Text="{Binding SelectedNavigationItem.Title}"
                                Style="{DynamicResource PageTitleTextStyle}" />
 
-                    <Border Grid.Column="1"
-                            Padding="12,7"
-                            VerticalAlignment="Center"
-                            Background="{DynamicResource CardBackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}"
-                            BorderThickness="1"
-                            CornerRadius="6">
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
 
-                        <TextBlock Text="{Binding CurrentUserDisplayName}"
-                           Style="{DynamicResource SecondaryTextStyle}"
-                           VerticalAlignment="Center" />
+                        <Border Padding="12,7"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource CardBackgroundBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
 
-                    </Border>
+                            <TextBlock Text="{Binding CurrentUserDisplayName}"
+                                       Style="{DynamicResource SecondaryTextStyle}"
+                                       VerticalAlignment="Center" />
+
+                        </Border>
+
+                        <Button Content="Đăng xuất"
+                                Command="{Binding LogoutCommand}"
+                                Margin="10,0,0,0"
+                                Padding="12,7"
+                                MinWidth="90"
+                                VerticalAlignment="Center" />
+
+                    </StackPanel>
 
                 </Grid>
 
