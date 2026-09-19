@@ -88,6 +88,14 @@ public static class ServiceCollectionExtensions
             EfUserCredentialRepository>();
 
         services.AddScoped<
+            IAccountPasswordResetPersistence,
+            EfAccountPasswordResetPersistence>();
+
+        services.AddScoped<
+            IAccountPasswordResetService,
+            AccountPasswordResetService>();
+
+        services.AddScoped<
             IUserLoginSecurityStateRepository,
             EfUserLoginSecurityStateRepository>();
 

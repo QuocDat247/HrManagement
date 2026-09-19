@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication;
+using HrManagement.Application.Authentication.Credentials;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Desktop.ViewModels;
 using HrManagement.Domain.Authentication.Accounts;
@@ -81,7 +83,9 @@ public sealed class EditAccountProfileViewModelTests
             new EditAccountProfileViewModel(
                 new TestUpdateService(),
                 new TestQueryService(
-                    snapshot));
+                    snapshot),
+                new TestPasswordResetService(),
+                new TestCurrentUserContext());
 
         await viewModel.LoadAsync(
             accountId);
@@ -166,7 +170,9 @@ public sealed class EditAccountProfileViewModelTests
             new EditAccountProfileViewModel(
                 updateService,
                 new TestQueryService(
-                    snapshot));
+                    snapshot),
+                new TestPasswordResetService(),
+                new TestCurrentUserContext());
 
         await viewModel.LoadAsync(
             accountId);
@@ -235,7 +241,9 @@ public sealed class EditAccountProfileViewModelTests
                         Array.Empty<
                             AccountManagementRoleItem>(),
                         Array.Empty<
-                            AccountManagementEmployeeItem>())));
+                            AccountManagementEmployeeItem>())),
+                new TestPasswordResetService(),
+                new TestCurrentUserContext());
 
         await viewModel.LoadAsync(
             Guid.NewGuid());
@@ -251,6 +259,190 @@ public sealed class EditAccountProfileViewModelTests
         Assert.False(
             string.IsNullOrWhiteSpace(
                 viewModel.ErrorMessage));
+    }
+
+    [Fact]
+    public async Task
+    LoadAsync_WhenOwnerEditsStandard_EnablesPasswordReset()
+    {
+        var owner =
+            new UserAccount(
+                Guid.NewGuid(),
+                "owner",
+                "Chủ doanh nghiệp",
+                UserAccountKind.Owner);
+
+        var targetAccount =
+            new UserAccount(
+                Guid.NewGuid(),
+                "employee",
+                "Nhân viên",
+                UserAccountKind.Standard);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                new AccountManagementAccountItem(
+                    owner.Id,
+                    owner.Username,
+                    owner.DisplayName,
+                    owner.Kind,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<
+                        AccountManagementRoleItem>()),
+
+                new AccountManagementAccountItem(
+                    targetAccount.Id,
+                    targetAccount.Username,
+                    targetAccount.DisplayName,
+                    targetAccount.Kind,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<
+                        AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var viewModel =
+            new EditAccountProfileViewModel(
+                new TestUpdateService(),
+                new TestQueryService(
+                    snapshot),
+                new TestPasswordResetService(),
+                new TestCurrentUserContext(
+                    owner));
+
+        await viewModel.LoadAsync(
+            targetAccount.Id);
+
+        Assert.True(
+            viewModel.IsReady);
+
+        Assert.True(
+            viewModel.IsPasswordResetAvailable);
+
+        Assert.True(
+            viewModel.CanResetPasswordSubmit);
+    }
+
+    [Fact]
+    public async Task
+    LoadAsync_WhenStandardEditsStandard_DisablesPasswordReset()
+    {
+        var currentAccount =
+            new UserAccount(
+                Guid.NewGuid(),
+                "manager",
+                "Quản lý",
+                UserAccountKind.Standard);
+
+        var targetAccount =
+            new UserAccount(
+                Guid.NewGuid(),
+                "employee",
+                "Nhân viên",
+                UserAccountKind.Standard);
+
+        var snapshot =
+            new AccountManagementSnapshot(
+                new[]
+                {
+                new AccountManagementAccountItem(
+                    currentAccount.Id,
+                    currentAccount.Username,
+                    currentAccount.DisplayName,
+                    currentAccount.Kind,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<
+                        AccountManagementRoleItem>()),
+
+                new AccountManagementAccountItem(
+                    targetAccount.Id,
+                    targetAccount.Username,
+                    targetAccount.DisplayName,
+                    targetAccount.Kind,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Array.Empty<
+                        AccountManagementRoleItem>())
+                },
+                Array.Empty<
+                    AccountManagementRoleItem>(),
+                Array.Empty<
+                    AccountManagementEmployeeItem>());
+
+        var viewModel =
+            new EditAccountProfileViewModel(
+                new TestUpdateService(),
+                new TestQueryService(
+                    snapshot),
+                new TestPasswordResetService(),
+                new TestCurrentUserContext(
+                    currentAccount));
+
+        await viewModel.LoadAsync(
+            targetAccount.Id);
+
+        Assert.True(
+            viewModel.IsReady);
+
+        Assert.False(
+            viewModel.IsPasswordResetAvailable);
+
+        Assert.False(
+            viewModel.CanResetPasswordSubmit);
+    }
+
+    private sealed class TestPasswordResetService
+    : IAccountPasswordResetService
+    {
+        public Task<ResetAccountPasswordResult> ResetAsync(
+            ResetAccountPasswordRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(
+                new ResetAccountPasswordResult(
+                    true));
+        }
+    }
+
+    private sealed class TestCurrentUserContext
+    : ICurrentUserContext
+    {
+        public TestCurrentUserContext(
+            UserAccount? account = null)
+        {
+            if (account is not null)
+            {
+                CurrentUser =
+                    new AuthenticatedUser(
+                        account.Id.ToString("D"),
+                        account.Username,
+                        account.DisplayName);
+            }
+        }
+
+        public AuthenticatedUser? CurrentUser
+        {
+            get;
+        }
+
+        public bool IsAuthenticated =>
+            CurrentUser is not null;
     }
 
     private sealed class TestUpdateService

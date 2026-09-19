@@ -1,10 +1,16 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Authentication.Accounts;
+using HrManagement.Application.Authentication;
+using HrManagement.Application.Authentication.Credentials;
 using HrManagement.Application.Authorization;
 using HrManagement.Domain.Authentication.Accounts;
 
 namespace HrManagement.Desktop.ViewModels;
+
+public sealed record ResetAccountPasswordPasswords(
+    string NewPassword,
+    string ConfirmPassword);
 
 public sealed class EditAccountProfileViewModel
     : ObservableObject
@@ -14,6 +20,12 @@ public sealed class EditAccountProfileViewModel
 
     private readonly IAccountManagementQueryService
         _queryService;
+
+    private readonly IAccountPasswordResetService
+        _passwordResetService;
+
+    private readonly ICurrentUserContext
+        _currentUserContext;
 
     private Guid _accountId;
 
@@ -35,13 +47,19 @@ public sealed class EditAccountProfileViewModel
 
     private string? _errorMessage;
 
+    private string? _successMessage;
+
+    private bool _isPasswordResetAvailable;
+
     private bool _isBusy;
 
     private bool _isReady;
 
     public EditAccountProfileViewModel(
-        IAccountProfileUpdateService updateService,
-        IAccountManagementQueryService queryService)
+    IAccountProfileUpdateService updateService,
+    IAccountManagementQueryService queryService,
+    IAccountPasswordResetService passwordResetService,
+    ICurrentUserContext currentUserContext)
     {
         _updateService =
             updateService;
@@ -49,14 +67,29 @@ public sealed class EditAccountProfileViewModel
         _queryService =
             queryService;
 
+        _passwordResetService =
+            passwordResetService;
+
+        _currentUserContext =
+            currentUserContext;
+
         SaveCommand =
             new AsyncRelayCommand(
                 SaveAsync,
                 CanSave);
+
+        ResetPasswordCommand =
+            new AsyncRelayCommand<
+                ResetAccountPasswordPasswords?>(
+                    ResetPasswordAsync,
+                    CanResetPassword);
     }
 
     public event EventHandler?
         AccountUpdated;
+
+    public event EventHandler?
+        PasswordReset;
 
     public string Username
     {
@@ -138,6 +171,37 @@ public sealed class EditAccountProfileViewModel
                 value);
     }
 
+    public string? SuccessMessage
+    {
+        get =>
+            _successMessage;
+
+        private set =>
+            SetProperty(
+                ref _successMessage,
+                value);
+    }
+
+    public bool IsPasswordResetAvailable
+    {
+        get =>
+            _isPasswordResetAvailable;
+
+        private set
+        {
+            if (SetProperty(
+                    ref _isPasswordResetAvailable,
+                    value))
+            {
+                OnPropertyChanged(
+                    nameof(CanResetPasswordSubmit));
+
+                ResetPasswordCommand
+                    .NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public bool IsBusy
     {
         get =>
@@ -151,6 +215,12 @@ public sealed class EditAccountProfileViewModel
             {
                 OnPropertyChanged(
                     nameof(CanSubmit));
+
+                OnPropertyChanged(
+                    nameof(CanResetPasswordSubmit));
+
+                ResetPasswordCommand
+                    .NotifyCanExecuteChanged();
 
                 SaveCommand
                     .NotifyCanExecuteChanged();
@@ -172,6 +242,12 @@ public sealed class EditAccountProfileViewModel
                 OnPropertyChanged(
                     nameof(CanSubmit));
 
+                OnPropertyChanged(
+                    nameof(CanResetPasswordSubmit));
+
+                ResetPasswordCommand
+                    .NotifyCanExecuteChanged();
+
                 SaveCommand
                     .NotifyCanExecuteChanged();
             }
@@ -182,7 +258,19 @@ public sealed class EditAccountProfileViewModel
         IsReady
         && !IsBusy;
 
+    public bool CanResetPasswordSubmit =>
+    IsReady
+    && IsPasswordResetAvailable
+    && !IsBusy;
+
     public IAsyncRelayCommand SaveCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand<
+    ResetAccountPasswordPasswords?>
+    ResetPasswordCommand
     {
         get;
     }
@@ -197,6 +285,12 @@ public sealed class EditAccountProfileViewModel
 
         ErrorMessage =
             null;
+
+        SuccessMessage =
+            null;
+
+        IsPasswordResetAvailable =
+            false;
 
         IsReady =
             false;
@@ -247,6 +341,27 @@ public sealed class EditAccountProfileViewModel
 
             DisplayName =
                 account.DisplayName;
+
+            AuthenticatedUser? currentUser =
+                _currentUserContext.CurrentUser;
+
+            bool currentUserIsOwner =
+                currentUser is not null
+                && Guid.TryParse(
+                    currentUser.UserId,
+                    out Guid currentAccountId)
+                && snapshot.Accounts.Any(
+                    item =>
+                        item.AccountId ==
+                            currentAccountId
+                        && item.Kind ==
+                            UserAccountKind.Owner
+                        && item.IsActive);
+
+            IsPasswordResetAvailable =
+                currentUserIsOwner
+                && account.Kind ==
+                    UserAccountKind.Standard;
 
             HashSet<Guid> linkedByOtherAccounts =
                 snapshot.Accounts
@@ -394,6 +509,97 @@ public sealed class EditAccountProfileViewModel
         {
             ErrorMessage =
                 "Đã xảy ra lỗi khi cập nhật tài khoản. Vui lòng thử lại.";
+        }
+        finally
+        {
+            IsBusy =
+                false;
+        }
+    }
+
+    private bool CanResetPassword(
+    ResetAccountPasswordPasswords? passwords)
+    {
+        return CanResetPasswordSubmit;
+    }
+
+    private async Task ResetPasswordAsync(
+        ResetAccountPasswordPasswords? passwords)
+    {
+        ErrorMessage =
+            null;
+
+        SuccessMessage =
+            null;
+
+        if (!IsPasswordResetAvailable
+            || _accountId == Guid.Empty)
+        {
+            ErrorMessage =
+                "Chỉ Owner mới có thể đặt lại mật khẩu cho tài khoản Standard.";
+
+            return;
+        }
+
+        if (passwords is null
+            || string.IsNullOrEmpty(
+                passwords.NewPassword))
+        {
+            ErrorMessage =
+                "Vui lòng nhập mật khẩu tạm mới.";
+
+            return;
+        }
+
+        if (!string.Equals(
+                passwords.NewPassword,
+                passwords.ConfirmPassword,
+                StringComparison.Ordinal))
+        {
+            ErrorMessage =
+                "Mật khẩu xác nhận không khớp.";
+
+            return;
+        }
+
+        try
+        {
+            IsBusy =
+                true;
+
+            ResetAccountPasswordResult result =
+                await _passwordResetService
+                    .ResetAsync(
+                        new ResetAccountPasswordRequest(
+                            _accountId,
+                            passwords.NewPassword));
+
+            if (!result.IsSuccessful)
+            {
+                ErrorMessage =
+                    result.ErrorMessage
+                    ?? "Không thể đặt lại mật khẩu.";
+
+                return;
+            }
+
+            SuccessMessage =
+                "Đã đặt lại mật khẩu tạm. "
+                + "Người dùng sẽ phải đổi mật khẩu khi đăng nhập lần tiếp theo.";
+
+            PasswordReset?.Invoke(
+                this,
+                EventArgs.Empty);
+        }
+        catch (OperationCanceledException)
+        {
+            ErrorMessage =
+                "Thao tác đặt lại mật khẩu đã bị hủy.";
+        }
+        catch (Exception)
+        {
+            ErrorMessage =
+                "Đã xảy ra lỗi khi đặt lại mật khẩu. Vui lòng thử lại.";
         }
         finally
         {

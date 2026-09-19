@@ -3,18 +3,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Sửa tài khoản - HR Management"
         Width="560"
-        Height="674"
         MinWidth="560"
-        MinHeight="590"
+        SizeToContent="Height"
+        MaxHeight="{Binding Source={x:Static SystemParameters.WorkArea},
+                            Path=Height}"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
         ShowInTaskbar="False"
         Background="{DynamicResource PageBackgroundBrush}"
         Foreground="{DynamicResource PrimaryTextBrush}">
 
     <Grid>
 
-        <Border Margin="24"
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  CanContentScroll="True"
+                  PanningMode="VerticalOnly">
+
+            <Border Margin="24"
                 Padding="28"
                 Background="{DynamicResource CardBackgroundBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
@@ -79,6 +85,74 @@
                                                Mode=TwoWay}"
                           DisplayMemberPath="DisplayText" />
 
+                <Border Margin="0,4,0,18"
+                        Padding="16"
+                        Background="{DynamicResource PageBackgroundBrush}"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility"
+                                    Value="Collapsed" />
+
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPasswordResetAvailable}"
+                                             Value="True">
+                                    <Setter Property="Visibility"
+                                            Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+
+                    <StackPanel>
+                        <TextBlock Text="Đặt lại mật khẩu"
+                                   FontWeight="SemiBold"
+                                   FontSize="16"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,6,0,14"
+                                   Text="Tạo mật khẩu tạm mới. Người dùng sẽ bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo."
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Text="Mật khẩu tạm mới"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
+
+                        <PasswordBox x:Name="ResetPasswordBox"
+                                     MinHeight="40"
+                                     MaxLength="128"
+                                     Margin="0,0,0,12"
+                                     IsEnabled="{Binding CanResetPasswordSubmit}" />
+
+                        <TextBlock Text="Xác nhận mật khẩu tạm"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
+
+                        <PasswordBox x:Name="ResetPasswordConfirmBox"
+                                     MinHeight="40"
+                                     MaxLength="128"
+                                     Margin="0,0,0,12"
+                                     IsEnabled="{Binding CanResetPasswordSubmit}" />
+
+                        <Button x:Name="ResetPasswordButton"
+                                Content="Đặt lại mật khẩu"
+                                Width="150"
+                                MinHeight="38"
+                                HorizontalAlignment="Left"
+                                IsEnabled="{Binding CanResetPasswordSubmit}"
+                                Click="ResetPasswordButton_Click" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Margin="0,0,0,8"
+                           Text="{Binding SuccessMessage}"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource PrimaryBrush}" />
+
                 <Border MinHeight="52"
                         Margin="0,0,0,12">
 
@@ -111,7 +185,9 @@
 
             </StackPanel>
 
-        </Border>
+            </Border>
+
+        </ScrollViewer>
 
     </Grid>
 

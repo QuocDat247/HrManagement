@@ -25,6 +25,9 @@ public partial class EditAccountProfileWindow
         _viewModel.AccountUpdated +=
             OnAccountUpdated;
 
+        _viewModel.PasswordReset +=
+            OnPasswordReset;
+
         Loaded +=
             OnWindowLoaded;
 
@@ -58,6 +61,34 @@ public partial class EditAccountProfileWindow
         DisplayNameTextBox.SelectAll();
     }
 
+    private void ResetPasswordButton_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        var passwords =
+            new ResetAccountPasswordPasswords(
+                ResetPasswordBox.Password,
+                ResetPasswordConfirmBox.Password);
+
+        if (_viewModel
+            .ResetPasswordCommand
+            .CanExecute(passwords))
+        {
+            _viewModel
+                .ResetPasswordCommand
+                .Execute(passwords);
+        }
+    }
+
+    private void OnPasswordReset(
+        object? sender,
+        EventArgs e)
+    {
+        ResetPasswordBox.Clear();
+
+        ResetPasswordConfirmBox.Clear();
+    }
+
     private void OnAccountUpdated(
         object? sender,
         EventArgs e)
@@ -70,6 +101,13 @@ public partial class EditAccountProfileWindow
         object? sender,
         EventArgs e)
     {
+        ResetPasswordBox.Clear();
+
+        ResetPasswordConfirmBox.Clear();
+
+        _viewModel.PasswordReset -=
+            OnPasswordReset;
+
         _viewModel.AccountUpdated -=
             OnAccountUpdated;
 
