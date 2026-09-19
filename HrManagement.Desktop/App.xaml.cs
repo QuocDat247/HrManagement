@@ -3,10 +3,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
-using HrManagement.Application.Authorization;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authentication.Bootstrap;
+using HrManagement.Application.Authentication.Credentials;
+using HrManagement.Application.Authorization;
 using HrManagement.Application.Dashboard;
 using HrManagement.Application.Employees.EmploymentHistories;
 using HrManagement.Application.Employees.OrganizationAssignments;
@@ -384,6 +385,10 @@ public partial class App : System.Windows.Application
             IAuthenticationService,
             RealAuthenticationService>();
 
+        services.AddTransient<
+            IChangePasswordService,
+            ChangePasswordService>();
+
         services.AddSingleton<
             CurrentUserSession>();
 
@@ -473,6 +478,12 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             CreateStandardAccountWindow>();
+
+        services.AddTransient<
+            ChangePasswordViewModel>();
+
+        services.AddTransient<
+            ChangePasswordWindow>();
 
         services.AddTransient<
             EditAccountProfileViewModel>();

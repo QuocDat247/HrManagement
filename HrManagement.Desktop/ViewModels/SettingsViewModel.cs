@@ -1,6 +1,9 @@
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Desktop.Views;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.Diagnostics;
 
@@ -14,6 +17,9 @@ public sealed partial class SettingsViewModel
 
     private readonly IDiagnosticConsentService
         _diagnosticConsentService;
+
+    private readonly IServiceProvider
+        _serviceProvider;
 
     [ObservableProperty]
     private ApplicationAppearance selectedAppearance;
@@ -35,13 +41,17 @@ public sealed partial class SettingsViewModel
 
     public SettingsViewModel(
         IApplicationThemeService themeService,
-        IDiagnosticConsentService diagnosticConsentService)
+        IDiagnosticConsentService diagnosticConsentService,
+        IServiceProvider serviceProvider)
     {
         _themeService =
             themeService;
 
         _diagnosticConsentService =
             diagnosticConsentService;
+
+        _serviceProvider =
+            serviceProvider;
 
         AppearanceOptions =
         [
@@ -74,6 +84,10 @@ public sealed partial class SettingsViewModel
                 "Màu chủ đạo xanh lá cho navigation và hành động chính.")
         ];
 
+        ChangePasswordCommand =
+            new RelayCommand(
+                ChangePassword);
+
         LoadCommand =
             new RelayCommand(
                 Load);
@@ -94,6 +108,11 @@ public sealed partial class SettingsViewModel
 
     public IReadOnlyList<SettingsAccentOption>
         AccentOptions
+    {
+        get;
+    }
+
+    public IRelayCommand ChangePasswordCommand
     {
         get;
     }
@@ -185,6 +204,28 @@ public sealed partial class SettingsViewModel
         bool value)
     {
         NotifySelectionState();
+    }
+
+    private void ChangePassword()
+    {
+        ChangePasswordWindow window =
+            _serviceProvider.GetRequiredService<
+                ChangePasswordWindow>();
+
+        window.Owner =
+            System.Windows.Application.Current.MainWindow;
+
+        bool? result =
+            window.ShowDialog();
+
+        if (result == true)
+        {
+            SuccessMessage =
+                "Đã đổi mật khẩu thành công.";
+
+            ErrorMessage =
+                null;
+        }
     }
 
     private void Load()

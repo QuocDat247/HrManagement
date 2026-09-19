@@ -243,6 +243,52 @@
                 </Grid>
 
             </Border>
+
+            <!-- ACCOUNT SECURITY -->
+            <Border Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,16">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0"
+                    Margin="0,0,30,0">
+
+                        <TextBlock Text="Bảo mật tài khoản"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,7,0,0"
+                       TextWrapping="Wrap"
+                       Text="Quản lý mật khẩu của tài khoản đang đăng nhập."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1">
+
+                        <TextBlock Text="Bạn nên sử dụng mật khẩu riêng, dài và không dùng lại ở dịch vụ khác."
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <Button Margin="0,14,0,0"
+                    Width="140"
+                    MinHeight="38"
+                    Padding="14,8"
+                    HorizontalAlignment="Left"
+                    Content="Đổi mật khẩu"
+                    Command="{Binding ChangePasswordCommand}" />
+
+                    </StackPanel>
+
+                </Grid>
+
+            </Border>
             <!-- APPLY -->
             <Border Style="{DynamicResource CardBorderStyle}">
 

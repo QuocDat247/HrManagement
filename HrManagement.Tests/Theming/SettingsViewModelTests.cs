@@ -1,3 +1,4 @@
+using System;
 using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.ViewModels;
@@ -27,7 +28,8 @@ public sealed class SettingsViewModelTests
         var viewModel =
             new SettingsViewModel(
                 themeService,
-                diagnosticConsentService);
+                diagnosticConsentService,
+                new TestServiceProvider());
 
         Assert.Equal(
             ApplicationAppearance.Dark,
@@ -73,7 +75,8 @@ public sealed class SettingsViewModelTests
         var viewModel =
             new SettingsViewModel(
                 themeService,
-                diagnosticConsentService);
+                diagnosticConsentService,
+                new TestServiceProvider());
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -131,7 +134,8 @@ public sealed class SettingsViewModelTests
         var viewModel =
             new SettingsViewModel(
                 themeService,
-                diagnosticConsentService);
+                diagnosticConsentService,
+                new TestServiceProvider());
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -175,7 +179,8 @@ public sealed class SettingsViewModelTests
         var viewModel =
             new SettingsViewModel(
                 themeService,
-                diagnosticConsentService);
+                diagnosticConsentService,
+                new TestServiceProvider());
 
         Assert.False(
             viewModel.SelectedAllowDiagnosticUpload);
@@ -307,6 +312,16 @@ public sealed class SettingsViewModelTests
                     : preference.Appearance;
 
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class TestServiceProvider
+    : IServiceProvider
+    {
+        public object? GetService(
+            Type serviceType)
+        {
+            return null;
         }
     }
 }
