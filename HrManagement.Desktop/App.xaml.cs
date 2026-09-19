@@ -224,6 +224,26 @@ public partial class App : System.Windows.Application
                 return;
             }
 
+            if (loginWindow.MustChangePassword)
+            {
+                var changePasswordWindow =
+                    _serviceProvider.GetRequiredService<
+                        ChangePasswordWindow>();
+
+                bool? changePasswordResult =
+                    changePasswordWindow.ShowDialog();
+
+                if (changePasswordResult != true)
+                {
+                    userSession.SignOut();
+
+                    _logger.LogInformation(
+                        "Mandatory password change was not completed.");
+
+                    continue;
+                }
+            }
+
             var mainViewModel =
                 _serviceProvider.GetRequiredService<
                     MainViewModel>();

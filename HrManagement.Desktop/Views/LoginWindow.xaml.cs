@@ -7,6 +7,9 @@ public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _viewModel;
 
+    public bool MustChangePassword =>
+        _viewModel.MustChangePassword;
+
     public LoginWindow(LoginViewModel viewModel)
     {
         InitializeComponent();

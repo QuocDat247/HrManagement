@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using HrManagement.Application.Authentication;
 
@@ -23,6 +23,12 @@ public sealed class LoginViewModel : ObservableObject
     }
 
     public event EventHandler? LoginSucceeded;
+
+    public bool MustChangePassword
+    {
+        get;
+        private set;
+    }
 
     public string Username
     {
@@ -69,6 +75,9 @@ public sealed class LoginViewModel : ObservableObject
     {
         ErrorMessage = null;
 
+        MustChangePassword =
+            false;
+
         if (string.IsNullOrEmpty(password))
         {
             ErrorMessage = "Vui lòng nhập mật khẩu.";
@@ -92,6 +101,9 @@ public sealed class LoginViewModel : ObservableObject
 
                 return;
             }
+
+            MustChangePassword =
+                result.MustChangePassword;
 
             LoginSucceeded?.Invoke(this, EventArgs.Empty);
         }
