@@ -1,3 +1,4 @@
+using HrManagement.Domain.Authentication.Recovery;
 using HrManagement.Domain.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Credentials;
 using HrManagement.Domain.Authentication.Security;
@@ -31,6 +32,10 @@ public sealed class HrManagementDbContext : DbContext
 
     public DbSet<UserCredential> UserCredentials =>
         Set<UserCredential>();
+
+    public DbSet<OwnerRecoveryCredential>
+    OwnerRecoveryCredentials =>
+        Set<OwnerRecoveryCredential>();
 
     public DbSet<UserLoginSecurityState>
         UserLoginSecurityStates =>
@@ -160,6 +165,9 @@ public sealed class HrManagementDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(
             new UserCredentialConfiguration());
+
+        modelBuilder.ApplyConfiguration(
+            new OwnerRecoveryCredentialConfiguration());
 
         modelBuilder.ApplyConfiguration(
             new UserLoginSecurityStateConfiguration());

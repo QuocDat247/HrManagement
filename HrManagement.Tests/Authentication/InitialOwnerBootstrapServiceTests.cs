@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Recovery;
+using HrManagement.Domain.Authentication.Recovery;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Application.Authentication.Bootstrap;
 using HrManagement.Application.Authentication.Credentials;
@@ -107,6 +109,18 @@ public sealed class InitialOwnerBootstrapServiceTests
         Assert.Null(
             persistence.SecurityState
                 .LockoutEndUtc);
+
+        Assert.Equal(
+            "7F3A-91C8-2D6E-B447-A120-8F9C-35D2-61EA",
+            result.RecoveryCode);
+
+        Assert.NotNull(
+            persistence.RecoveryCredential);
+
+        Assert.Equal(
+            "$test$recovery$hash",
+            persistence.RecoveryCredential!
+                .RecoveryCodeHash);
     }
 
     [Fact]
@@ -200,6 +214,8 @@ public sealed class InitialOwnerBootstrapServiceTests
             new DefaultPasswordPolicy(
                 new TestPasswordBlocklist()),
             new TestPasswordHasher(),
+            new TestRecoveryCodeGenerator(),
+            new TestRecoveryCodeHasher(),
             bootstrapPersistence
                 ?? new TestBootstrapPersistence());
     }
@@ -212,6 +228,33 @@ public sealed class InitialOwnerBootstrapServiceTests
             "existing-user",
             "Người dùng hiện có",
             UserAccountKind.Standard);
+    }
+
+    private sealed class TestRecoveryCodeGenerator
+    : IRecoveryCodeGenerator
+    {
+        public string Generate()
+        {
+            return
+                "7F3A-91C8-2D6E-B447-A120-8F9C-35D2-61EA";
+        }
+    }
+
+    private sealed class TestRecoveryCodeHasher
+        : IRecoveryCodeHasher
+    {
+        public string Hash(
+            string recoveryCode)
+        {
+            return "$test$recovery$hash";
+        }
+
+        public bool Verify(
+            string recoveryCode,
+            string recoveryCodeHash)
+        {
+            return false;
+        }
     }
 
     private sealed class TestUserAccountRepository
@@ -304,6 +347,13 @@ public sealed class InitialOwnerBootstrapServiceTests
     private sealed class TestBootstrapPersistence
         : IInitialOwnerBootstrapPersistence
     {
+        public OwnerRecoveryCredential?
+            RecoveryCredential
+        {
+            get;
+            private set;
+        }
+
         private readonly bool
             _allowCreate;
 
@@ -336,6 +386,7 @@ public sealed class InitialOwnerBootstrapServiceTests
             UserAccount account,
             UserCredential credential,
             UserLoginSecurityState securityState,
+            OwnerRecoveryCredential recoveryCredential,
             CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -354,6 +405,9 @@ public sealed class InitialOwnerBootstrapServiceTests
 
             SecurityState =
                 securityState;
+
+            RecoveryCredential =
+                recoveryCredential;
 
             return Task.FromResult(
                 true);

@@ -23,11 +23,27 @@ public partial class OwnerSetupWindow
         _viewModel.OwnerCreated +=
             OnOwnerCreated;
 
+        _viewModel.RecoveryCodeReady +=
+            OnRecoveryCodeReady;
+
         Closed +=
             OnWindowClosed;
 
         Loaded +=
             OnWindowLoaded;
+    }
+
+    private void OnRecoveryCodeReady(
+        object? sender,
+        EventArgs e)
+    {
+        PasswordBox.Clear();
+
+        ConfirmPasswordBox.Clear();
+
+        RecoveryCodeTextBox.Focus();
+
+        RecoveryCodeTextBox.SelectAll();
     }
 
     private void OnWindowLoaded(
@@ -68,6 +84,9 @@ public partial class OwnerSetupWindow
         object? sender,
         EventArgs e)
     {
+        _viewModel.RecoveryCodeReady -=
+            OnRecoveryCodeReady;
+
         _viewModel.OwnerCreated -=
             OnOwnerCreated;
 

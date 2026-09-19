@@ -31,117 +31,206 @@
                     BorderThickness="1"
                     CornerRadius="12">
 
-                <StackPanel>
+                <Grid>
 
-                    <Border Width="56"
-                            Height="56"
-                            HorizontalAlignment="Center"
-                            Background="{DynamicResource PrimaryBrush}"
-                            CornerRadius="12">
+                    <!-- STEP 1: CREATE OWNER -->
+                    <StackPanel>
 
-                        <TextBlock Text="HR"
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility"
+                                        Value="Visible" />
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecoveryCodeReady}"
+                                                 Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <Border Width="56"
+                                Height="56"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource PrimaryBrush}"
+                                CornerRadius="12">
+
+                            <TextBlock Text="HR"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Foreground="White" />
+
+                        </Border>
+
+                        <TextBlock Margin="0,18,0,0"
+                                   Text="THIẾT LẬP BAN ĐẦU"
                                    HorizontalAlignment="Center"
-                                   VerticalAlignment="Center"
-                                   FontSize="20"
-                                   FontWeight="Bold"
-                                   Foreground="White" />
+                                   FontSize="22"
+                                   FontWeight="SemiBold" />
 
-                    </Border>
+                        <TextBlock Margin="0,8,0,26"
+                                   Text="Tạo tài khoản Chủ doanh nghiệp đầu tiên"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                    <TextBlock Margin="0,18,0,0"
-                               Text="THIẾT LẬP BAN ĐẦU"
-                               HorizontalAlignment="Center"
-                               FontSize="22"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource PrimaryTextBrush}" />
+                        <TextBlock Text="Tên đăng nhập"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
 
-                    <TextBlock Margin="0,8,0,26"
-                               Text="Tạo tài khoản Chủ doanh nghiệp đầu tiên"
-                               HorizontalAlignment="Center"
-                               TextAlignment="Center"
-                               Foreground="{DynamicResource SecondaryTextBrush}" />
-
-                    <TextBlock Text="Tên đăng nhập"
-                               Margin="0,0,0,7"
-                               FontWeight="SemiBold" />
-
-                    <TextBox x:Name="UsernameTextBox"
-                             MinHeight="40"
-                             MaxLength="100"
-                             Margin="0,0,0,6"
-                             VerticalContentAlignment="Center"
-                             Text="{Binding Username,
-                                            Mode=TwoWay,
-                                            UpdateSourceTrigger=PropertyChanged}" />
-
-                    <TextBlock Margin="0,0,0,18"
-                               Text="Tối đa 100 ký tự và không chứa khoảng trắng."
-                               FontSize="12"
-                               Foreground="{DynamicResource SecondaryTextBrush}" />
-
-                    <TextBlock Text="Tên hiển thị"
-                               Margin="0,0,0,7"
-                               FontWeight="SemiBold" />
-
-                    <TextBox MinHeight="40"
-                             MaxLength="200"
-                             Margin="0,0,0,18"
-                             VerticalContentAlignment="Center"
-                             Text="{Binding DisplayName,
-                                            Mode=TwoWay,
-                                            UpdateSourceTrigger=PropertyChanged}" />
-
-                    <TextBlock Text="Mật khẩu"
-                               Margin="0,0,0,7"
-                               FontWeight="SemiBold" />
-
-                    <PasswordBox x:Name="PasswordBox"
+                        <TextBox x:Name="UsernameTextBox"
                                  MinHeight="40"
-                                 MaxLength="128"
-                                 Margin="0,0,0,6" />
+                                 MaxLength="100"
+                                 Margin="0,0,0,6"
+                                 VerticalContentAlignment="Center"
+                                 Text="{Binding Username,
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
-                    <TextBlock Margin="0,0,0,18"
-                               Text="Từ 15 đến 128 ký tự. Không sử dụng mật khẩu phổ biến."
-                               FontSize="12"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <TextBlock Margin="0,0,0,18"
+                                   Text="Tối đa 100 ký tự và không chứa khoảng trắng."
+                                   FontSize="12"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                    <TextBlock Text="Xác nhận mật khẩu"
-                               Margin="0,0,0,7"
-                               FontWeight="SemiBold" />
+                        <TextBlock Text="Tên hiển thị"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
 
-                    <PasswordBox x:Name="ConfirmPasswordBox"
-                                 MinHeight="40"
-                                 MaxLength="128"
-                                 Margin="0,0,0,12" />
+                        <TextBox MinHeight="40"
+                                 MaxLength="200"
+                                 Margin="0,0,0,18"
+                                 VerticalContentAlignment="Center"
+                                 Text="{Binding DisplayName,
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged}" />
 
-                    <Border MinHeight="48"
-                            Margin="0,0,0,12">
+                        <TextBlock Text="Mật khẩu"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
 
-                        <TextBlock Text="{Binding ErrorMessage}"
-                                   VerticalAlignment="Center"
+                        <PasswordBox x:Name="PasswordBox"
+                                     MinHeight="40"
+                                     MaxLength="128"
+                                     Margin="0,0,0,6" />
+
+                        <TextBlock Margin="0,0,0,18"
+                                   Text="Từ 15 đến 128 ký tự. Không sử dụng mật khẩu phổ biến."
+                                   FontSize="12"
                                    TextWrapping="Wrap"
-                                   Foreground="{DynamicResource SeparationBrush}" />
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                    </Border>
+                        <TextBlock Text="Xác nhận mật khẩu"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
 
-                    <Button x:Name="CreateOwnerButton"
-                            Height="42"
-                            Content="Tạo tài khoản Chủ doanh nghiệp"
-                            Click="CreateOwnerButton_Click"
-                            IsDefault="True"
-                            Background="{DynamicResource PrimaryBrush}"
-                            Foreground="White"
-                            FontWeight="SemiBold"
-                            BorderBrush="{DynamicResource PrimaryBrush}" />
+                        <PasswordBox x:Name="ConfirmPasswordBox"
+                                     MinHeight="40"
+                                     MaxLength="128"
+                                     Margin="0,0,0,12" />
 
-                    <TextBlock Margin="0,18,0,0"
-                               Text="Tài khoản này có quyền cao nhất trong hệ thống."
-                               TextAlignment="Center"
-                               TextWrapping="Wrap"
-                               Foreground="{DynamicResource SecondaryTextBrush}" />
+                        <Border MinHeight="48"
+                                Margin="0,0,0,12">
 
-                </StackPanel>
+                            <TextBlock Text="{Binding ErrorMessage}"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SeparationBrush}" />
+
+                        </Border>
+
+                        <Button x:Name="CreateOwnerButton"
+                                Height="42"
+                                Content="Tạo tài khoản Chủ doanh nghiệp"
+                                Click="CreateOwnerButton_Click"
+                                IsDefault="True"
+                                Background="{DynamicResource PrimaryBrush}"
+                                Foreground="White"
+                                FontWeight="SemiBold"
+                                BorderBrush="{DynamicResource PrimaryBrush}" />
+
+                    </StackPanel>
+
+                    <!-- STEP 2: RECOVERY CODE -->
+                    <StackPanel>
+
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility"
+                                        Value="Collapsed" />
+
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecoveryCodeReady}"
+                                                 Value="True">
+                                        <Setter Property="Visibility"
+                                                Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+
+                        <Border Width="56"
+                                Height="56"
+                                HorizontalAlignment="Center"
+                                Background="{DynamicResource PrimaryBrush}"
+                                CornerRadius="12">
+
+                            <TextBlock Text="✓"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       FontSize="24"
+                                       FontWeight="Bold"
+                                       Foreground="White" />
+
+                        </Border>
+
+                        <TextBlock Margin="0,18,0,0"
+                                   Text="MÃ KHÔI PHỤC OWNER"
+                                   HorizontalAlignment="Center"
+                                   FontSize="22"
+                                   FontWeight="SemiBold" />
+
+                        <TextBlock Margin="0,10,0,22"
+                                   Text="Hãy lưu mã này ở nơi an toàn. Mã được dùng khi bạn quên mật khẩu Owner và sẽ không được hiển thị lại sau khi hoàn tất."
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Text="Recovery Code"
+                                   Margin="0,0,0,7"
+                                   FontWeight="SemiBold" />
+
+                        <TextBox x:Name="RecoveryCodeTextBox"
+                                 MinHeight="72"
+                                 Padding="12"
+                                 IsReadOnly="True"
+                                 TextWrapping="Wrap"
+                                 FontFamily="Consolas"
+                                 FontSize="16"
+                                 VerticalContentAlignment="Center"
+                                 Text="{Binding RecoveryCode,
+                                                Mode=OneWay}" />
+
+                        <TextBlock Margin="0,12,0,22"
+                                   Text="Không lưu mã này cùng mật khẩu Owner. Không gửi mã qua email hoặc tin nhắn nếu không cần thiết."
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <Button Height="42"
+                                Content="Tôi đã lưu mã khôi phục"
+                                Command="{Binding ConfirmRecoveryCodeSavedCommand}"
+                                IsDefault="True"
+                                Background="{DynamicResource PrimaryBrush}"
+                                Foreground="White"
+                                FontWeight="SemiBold"
+                                BorderBrush="{DynamicResource PrimaryBrush}" />
+
+                    </StackPanel>
+
+                </Grid>
 
             </Border>
 

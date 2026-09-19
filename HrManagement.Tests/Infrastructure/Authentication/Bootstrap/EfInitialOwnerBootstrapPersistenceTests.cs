@@ -1,5 +1,6 @@
 using HrManagement.Domain.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Credentials;
+using HrManagement.Domain.Authentication.Recovery;
 using HrManagement.Domain.Authentication.Security;
 using HrManagement.Infrastructure.Authentication.Bootstrap;
 using HrManagement.Infrastructure.Persistence;
@@ -38,7 +39,8 @@ public sealed class
                 await persistence.TryCreateAsync(
                     bootstrapSet.Account,
                     bootstrapSet.Credential,
-                    bootstrapSet.SecurityState);
+                    bootstrapSet.SecurityState,
+                    bootstrapSet.RecoveryCredential);
 
             Assert.True(
                 created);
@@ -58,6 +60,11 @@ public sealed class
 
             UserLoginSecurityState securityState =
                 await dbContext.UserLoginSecurityStates
+                    .AsNoTracking()
+                    .SingleAsync();
+
+            OwnerRecoveryCredential recoveryCredential =
+                await dbContext.OwnerRecoveryCredentials
                     .AsNoTracking()
                     .SingleAsync();
 
@@ -90,6 +97,14 @@ public sealed class
 
             Assert.Null(
                 securityState.LockoutEndUtc);
+
+            Assert.Equal(
+                account.Id,
+                recoveryCredential.AccountId);
+
+            Assert.Equal(
+                "$test$recovery$hash",
+                recoveryCredential.RecoveryCodeHash);
         }
         finally
         {
@@ -130,13 +145,15 @@ public sealed class
                 await persistence.TryCreateAsync(
                     first.Account,
                     first.Credential,
-                    first.SecurityState);
+                    first.SecurityState,
+                    first.RecoveryCredential);
 
             bool secondCreated =
                 await persistence.TryCreateAsync(
                     second.Account,
                     second.Credential,
-                    second.SecurityState);
+                    second.SecurityState,
+                    second.RecoveryCredential);
 
             Assert.True(
                 firstCreated);
@@ -160,6 +177,11 @@ public sealed class
             Assert.Equal(
                 1,
                 await dbContext.UserLoginSecurityStates
+                    .CountAsync());
+
+            Assert.Equal(
+                1,
+                await dbContext.OwnerRecoveryCredentials
                     .CountAsync());
         }
         finally
@@ -205,13 +227,15 @@ public sealed class
                 firstPersistence.TryCreateAsync(
                     first.Account,
                     first.Credential,
-                    first.SecurityState);
+                    first.SecurityState,
+                    first.RecoveryCredential);
 
             Task<bool> secondTask =
                 secondPersistence.TryCreateAsync(
                     second.Account,
                     second.Credential,
-                    second.SecurityState);
+                    second.SecurityState,
+                    second.RecoveryCredential);
 
             bool[] results =
                 await Task.WhenAll(
@@ -239,6 +263,11 @@ public sealed class
             Assert.Equal(
                 1,
                 await dbContext.UserLoginSecurityStates
+                    .CountAsync());
+
+            Assert.Equal(
+                1,
+                await dbContext.OwnerRecoveryCredentials
                     .CountAsync());
         }
         finally
@@ -285,7 +314,8 @@ public sealed class
                         persistence.TryCreateAsync(
                             bootstrapSet.Account,
                             wrongCredential,
-                            bootstrapSet.SecurityState));
+                            bootstrapSet.SecurityState,
+                            bootstrapSet.RecoveryCredential));
         }
         finally
         {
@@ -295,11 +325,12 @@ public sealed class
     }
 
     private static (
-        UserAccount Account,
-        UserCredential Credential,
-        UserLoginSecurityState SecurityState)
-        CreateBootstrapSet(
-            string username)
+    UserAccount Account,
+    UserCredential Credential,
+    UserLoginSecurityState SecurityState,
+    OwnerRecoveryCredential RecoveryCredential)
+    CreateBootstrapSet(
+        string username)
     {
         Guid accountId =
             Guid.NewGuid();
@@ -322,10 +353,16 @@ public sealed class
             new UserLoginSecurityState(
                 accountId);
 
+        var recoveryCredential =
+            new OwnerRecoveryCredential(
+                accountId,
+                "$test$recovery$hash");
+
         return (
             account,
             credential,
-            securityState);
+            securityState,
+            recoveryCredential);
     }
 
     private static async Task MigrateAsync(

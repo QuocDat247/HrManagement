@@ -22,6 +22,10 @@ public sealed class OwnerSetupViewModel
 
     private string? _errorMessage;
 
+    private string? _recoveryCode;
+
+    private bool _isRecoveryCodeReady;
+
     private bool _isBusy;
 
     public OwnerSetupViewModel(
@@ -34,9 +38,53 @@ public sealed class OwnerSetupViewModel
             new AsyncRelayCommand<OwnerSetupPasswords?>(
                 CreateOwnerAsync,
                 CanCreateOwner);
+
+        ConfirmRecoveryCodeSavedCommand =
+            new RelayCommand(
+                ConfirmRecoveryCodeSaved,
+                CanConfirmRecoveryCodeSaved);
     }
 
     public event EventHandler? OwnerCreated;
+
+    public event EventHandler? RecoveryCodeReady;
+
+    public string? RecoveryCode
+    {
+        get =>
+            _recoveryCode;
+
+        private set =>
+            SetProperty(
+                ref _recoveryCode,
+                value);
+    }
+
+    public bool IsRecoveryCodeReady
+    {
+        get =>
+            _isRecoveryCodeReady;
+
+        private set
+        {
+            if (SetProperty(
+                    ref _isRecoveryCodeReady,
+                    value))
+            {
+                CreateOwnerCommand
+                    .NotifyCanExecuteChanged();
+
+                ConfirmRecoveryCodeSavedCommand
+                    .NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public IRelayCommand
+        ConfirmRecoveryCodeSavedCommand
+    {
+        get;
+    }
 
     public string Username
     {
@@ -102,6 +150,9 @@ public sealed class OwnerSetupViewModel
             {
                 CreateOwnerCommand
                     .NotifyCanExecuteChanged();
+
+                ConfirmRecoveryCodeSavedCommand
+                    .NotifyCanExecuteChanged();
             }
         }
     }
@@ -113,9 +164,10 @@ public sealed class OwnerSetupViewModel
     }
 
     private bool CanCreateOwner(
-        OwnerSetupPasswords? passwords)
+    OwnerSetupPasswords? passwords)
     {
         return !IsBusy
+            && !IsRecoveryCodeReady
             && passwords is not null
             && !string.IsNullOrWhiteSpace(
                 Username)
@@ -171,7 +223,22 @@ public sealed class OwnerSetupViewModel
                 return;
             }
 
-            OwnerCreated?.Invoke(
+            if (string.IsNullOrWhiteSpace(
+                result.RecoveryCode))
+            {
+                ErrorMessage =
+                    "Không thể tạo mã khôi phục cho tài khoản Owner.";
+
+                return;
+            }
+
+            RecoveryCode =
+                result.RecoveryCode;
+
+            IsRecoveryCodeReady =
+                true;
+
+            RecoveryCodeReady?.Invoke(
                 this,
                 EventArgs.Empty);
         }
@@ -190,5 +257,25 @@ public sealed class OwnerSetupViewModel
             IsBusy =
                 false;
         }
+    }
+
+    private bool CanConfirmRecoveryCodeSaved()
+    {
+        return IsRecoveryCodeReady
+            && !IsBusy
+            && !string.IsNullOrWhiteSpace(
+                RecoveryCode);
+    }
+
+    private void ConfirmRecoveryCodeSaved()
+    {
+        if (!CanConfirmRecoveryCodeSaved())
+        {
+            return;
+        }
+
+        OwnerCreated?.Invoke(
+            this,
+            EventArgs.Empty);
     }
 }

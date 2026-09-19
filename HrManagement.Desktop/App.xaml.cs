@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using HrManagement.Application.Authentication.Recovery;
 using HrManagement.Application.Auditing;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authentication.Bootstrap;
@@ -239,6 +240,56 @@ public partial class App : System.Windows.Application
 
                     _logger.LogInformation(
                         "Mandatory password change was not completed.");
+
+                    continue;
+                }
+            }
+
+            IOwnerRecoveryEnrollmentService
+    ownerRecoveryEnrollmentService =
+        _serviceProvider.GetRequiredService<
+            IOwnerRecoveryEnrollmentService>();
+
+            bool recoveryEnrollmentRequired;
+
+            try
+            {
+                recoveryEnrollmentRequired =
+                    await ownerRecoveryEnrollmentService
+                        .IsEnrollmentRequiredAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Owner recovery enrollment status check failed.");
+
+                MessageBox.Show(
+                    "Không thể kiểm tra trạng thái mã khôi phục của tài khoản.",
+                    "Lỗi khôi phục tài khoản",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                userSession.SignOut();
+
+                continue;
+            }
+
+            if (recoveryEnrollmentRequired)
+            {
+                var recoveryEnrollmentWindow =
+                    _serviceProvider.GetRequiredService<
+                        OwnerRecoveryEnrollmentWindow>();
+
+                bool? recoveryEnrollmentResult =
+                    recoveryEnrollmentWindow.ShowDialog();
+
+                if (recoveryEnrollmentResult != true)
+                {
+                    userSession.SignOut();
+
+                    _logger.LogInformation(
+                        "Owner recovery enrollment was not completed.");
 
                     continue;
                 }
@@ -606,6 +657,12 @@ public partial class App : System.Windows.Application
                             PositionService>(),
                         provider.GetRequiredService<
                             IAuthorizationGuard>()));
+
+        services.AddTransient<
+            OwnerRecoveryEnrollmentViewModel>();
+
+        services.AddTransient<
+            OwnerRecoveryEnrollmentWindow>();
 
         services.AddTransient<
             PositionEditorViewModel>();

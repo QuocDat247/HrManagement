@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Recovery;
+using HrManagement.Infrastructure.Authentication.Recovery;
 using HrManagement.Application.Authorization;
 using HrManagement.Application.Authorization.Roles;
 using HrManagement.Infrastructure.Authorization.Roles;
@@ -274,6 +276,22 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IPasswordPolicy,
             DefaultPasswordPolicy>();
+
+        services.AddSingleton<
+            IRecoveryCodeGenerator,
+            CryptographicRecoveryCodeGenerator>();
+
+        services.AddSingleton<
+            IOwnerRecoveryEnrollmentPersistence,
+            EfOwnerRecoveryEnrollmentPersistence>();
+
+        services.AddTransient<
+            IOwnerRecoveryEnrollmentService,
+            OwnerRecoveryEnrollmentService>();
+
+        services.AddSingleton<
+            IRecoveryCodeHasher,
+            RecoveryCodeHasher>();
 
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 

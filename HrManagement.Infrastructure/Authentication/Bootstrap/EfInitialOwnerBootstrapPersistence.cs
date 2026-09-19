@@ -1,3 +1,4 @@
+using HrManagement.Domain.Authentication.Recovery;
 using HrManagement.Application.Authentication.Bootstrap;
 using HrManagement.Domain.Authentication.Accounts;
 using HrManagement.Domain.Authentication.Credentials;
@@ -25,6 +26,7 @@ public sealed class EfInitialOwnerBootstrapPersistence
         UserAccount account,
         UserCredential credential,
         UserLoginSecurityState securityState,
+        OwnerRecoveryCredential recoveryCredential,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(
@@ -35,6 +37,9 @@ public sealed class EfInitialOwnerBootstrapPersistence
 
         ArgumentNullException.ThrowIfNull(
             securityState);
+
+        ArgumentNullException.ThrowIfNull(
+            recoveryCredential);
 
         if (account.Kind !=
             UserAccountKind.Owner)
@@ -58,6 +63,14 @@ public sealed class EfInitialOwnerBootstrapPersistence
             throw new ArgumentException(
                 "Login security state không thuộc tài khoản bootstrap.",
                 nameof(securityState));
+        }
+
+        if (recoveryCredential.AccountId !=
+            account.Id)
+        {
+            throw new ArgumentException(
+                "Recovery credential không thuộc tài khoản bootstrap.",
+                nameof(recoveryCredential));
         }
 
         await using HrManagementDbContext dbContext =
@@ -103,6 +116,10 @@ public sealed class EfInitialOwnerBootstrapPersistence
 
         await dbContext.UserLoginSecurityStates.AddAsync(
             securityState,
+            cancellationToken);
+
+        await dbContext.OwnerRecoveryCredentials.AddAsync(
+            recoveryCredential,
             cancellationToken);
 
         await dbContext.SaveChangesAsync(

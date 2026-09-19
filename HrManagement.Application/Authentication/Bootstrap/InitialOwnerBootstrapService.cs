@@ -1,3 +1,5 @@
+using HrManagement.Application.Authentication.Recovery;
+using HrManagement.Domain.Authentication.Recovery;
 using HrManagement.Application.Authentication.Accounts;
 using HrManagement.Application.Authentication.Credentials;
 using HrManagement.Domain.Authentication.Accounts;
@@ -18,6 +20,12 @@ public sealed class InitialOwnerBootstrapService
     private readonly IPasswordHasher
         _passwordHasher;
 
+    private readonly IRecoveryCodeGenerator
+        _recoveryCodeGenerator;
+
+    private readonly IRecoveryCodeHasher
+        _recoveryCodeHasher;
+
     private readonly IInitialOwnerBootstrapPersistence
         _bootstrapPersistence;
 
@@ -25,6 +33,8 @@ public sealed class InitialOwnerBootstrapService
         IUserAccountRepository accountRepository,
         IPasswordPolicy passwordPolicy,
         IPasswordHasher passwordHasher,
+        IRecoveryCodeGenerator recoveryCodeGenerator,
+        IRecoveryCodeHasher recoveryCodeHasher,
         IInitialOwnerBootstrapPersistence bootstrapPersistence)
     {
         _accountRepository =
@@ -35,6 +45,12 @@ public sealed class InitialOwnerBootstrapService
 
         _passwordHasher =
             passwordHasher;
+
+        _recoveryCodeGenerator =
+            recoveryCodeGenerator;
+
+        _recoveryCodeHasher =
+            recoveryCodeHasher;
 
         _bootstrapPersistence =
             bootstrapPersistence;
@@ -134,12 +150,25 @@ public sealed class InitialOwnerBootstrapService
             new UserLoginSecurityState(
                 account.Id);
 
+        string recoveryCode =
+            _recoveryCodeGenerator.Generate();
+
+        string recoveryCodeHash =
+            _recoveryCodeHasher.Hash(
+                recoveryCode);
+
+        var recoveryCredential =
+            new OwnerRecoveryCredential(
+                account.Id,
+                recoveryCodeHash);
+
         bool created =
             await _bootstrapPersistence
                 .TryCreateAsync(
                     account,
                     credential,
                     securityState,
+                    recoveryCredential,
                     cancellationToken);
 
         if (!created)
@@ -149,7 +178,9 @@ public sealed class InitialOwnerBootstrapService
         }
 
         return new OwnerBootstrapResult(
-            true);
+            true,
+            RecoveryCode:
+                recoveryCode);
     }
 
     private static OwnerBootstrapResult Failure(

@@ -51,6 +51,21 @@ public sealed class OwnerSetupViewModelTests
             "A secure owner password 2026",
             service.Password);
 
+        Assert.False(
+            ownerCreated);
+
+        Assert.True(
+            viewModel.IsRecoveryCodeReady);
+
+        Assert.Equal(
+            "7F3A-91C8-2D6E-B447-A120-8F9C-35D2-61EA",
+            viewModel.RecoveryCode);
+
+        viewModel
+            .ConfirmRecoveryCodeSavedCommand
+            .Execute(
+                null);
+
         Assert.True(
             ownerCreated);
 
@@ -137,7 +152,9 @@ public sealed class OwnerSetupViewModelTests
             set;
         } =
             new(
-                true);
+                true,
+                RecoveryCode:
+                    "7F3A-91C8-2D6E-B447-A120-8F9C-35D2-61EA");
 
         public bool CreateCalled
         {
