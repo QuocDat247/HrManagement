@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Persistence.Upgrades;
 using HrManagement.Application.Persistence.Backups;
 using HrManagement.Infrastructure.Persistence.Backups;
 using HrManagement.Infrastructure.Persistence.Demo;
@@ -333,6 +334,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<
             IDatabaseBackupService,
             SqliteDatabaseBackupService>();
+
+        services.AddSingleton<
+            DatabaseUpgradeSafetyService>();
+
+        services.AddSingleton<
+            IDatabaseMigrationExecutor,
+            EfDatabaseMigrationExecutor>();
+
+        services.AddSingleton<
+            DatabaseUpgradeRollbackService>();
+
+        services.AddSingleton<
+            DatabaseUpgradeCoordinator>();
 
         services.AddSingleton<
             IDatabaseBackupValidationService,

@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Persistence.Upgrades;
 using HrManagement.Infrastructure.Persistence.Demo;
 using HrManagement.Infrastructure.Leave.Types;
 using HrManagement.Application.Employees.EmploymentHistories;
@@ -10,6 +11,9 @@ namespace HrManagement.Infrastructure.Persistence;
 
 public sealed class DatabaseInitializer
 {
+    private readonly DatabaseUpgradeCoordinator
+        _databaseUpgradeCoordinator;
+
     private readonly DatabaseInitializationOptions
         _options;
 
@@ -37,12 +41,15 @@ public sealed class DatabaseInitializer
 
     // Constructor
     public DatabaseInitializer(
-    IDbContextFactory<HrManagementDbContext> dbContextFactory,
-    IEmploymentHistoryBackfillService employmentHistoryBackfillService,
-    IEmployeeOrganizationBackfillService employeeOrganizationBackfillService,
-    IEmployeeOrganizationAssignmentBackfillService employeeOrganizationAssignmentBackfillService,
-    WorkScheduleSeedService workScheduleSeedService, LeaveTypeSeedService leaveTypeSeedService,
-    DatabaseInitializationOptions options, DemoEmployeeSeedService demoEmployeeSeedService)
+        IDbContextFactory<HrManagementDbContext> dbContextFactory,
+        IEmploymentHistoryBackfillService employmentHistoryBackfillService,
+        IEmployeeOrganizationBackfillService employeeOrganizationBackfillService,
+        IEmployeeOrganizationAssignmentBackfillService employeeOrganizationAssignmentBackfillService,
+        WorkScheduleSeedService workScheduleSeedService,
+        LeaveTypeSeedService leaveTypeSeedService,
+        DatabaseInitializationOptions options,
+        DemoEmployeeSeedService demoEmployeeSeedService,
+        DatabaseUpgradeCoordinator databaseUpgradeCoordinator)
     {
         _options =
             options;
@@ -50,10 +57,14 @@ public sealed class DatabaseInitializer
         _demoEmployeeSeedService =
             demoEmployeeSeedService;
 
+        _databaseUpgradeCoordinator =
+            databaseUpgradeCoordinator;
+
         _employeeOrganizationAssignmentBackfillService =
             employeeOrganizationAssignmentBackfillService;
 
-        _dbContextFactory = dbContextFactory;
+        _dbContextFactory =
+            dbContextFactory;
 
         _employmentHistoryBackfillService =
             employmentHistoryBackfillService;
@@ -71,14 +82,9 @@ public sealed class DatabaseInitializer
     public async Task InitializeAsync(
     CancellationToken cancellationToken = default)
     {
-        await using (
-            HrManagementDbContext dbContext =
-                await _dbContextFactory.CreateDbContextAsync(
-                    cancellationToken))
-        {
-            await dbContext.Database.MigrateAsync(
+        await _databaseUpgradeCoordinator
+            .UpgradeAsync(
                 cancellationToken);
-        }
 
         if (_options.DataMode ==
             ApplicationDataMode.Demo)
