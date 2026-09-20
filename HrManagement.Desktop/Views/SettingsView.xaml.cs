@@ -12,15 +12,20 @@ public partial class SettingsView
         InitializeComponent();
     }
 
-    private void SettingsView_Loaded(
-        object sender,
-        RoutedEventArgs e)
+    private async void SettingsView_Loaded(
+    object sender,
+    RoutedEventArgs e)
     {
         if (DataContext is
             SettingsViewModel viewModel)
         {
             viewModel.LoadCommand.Execute(
                 null);
+
+            await viewModel
+                .LoadDatabaseMaintenanceAccessCommand
+                .ExecuteAsync(
+                    null);
         }
     }
 }

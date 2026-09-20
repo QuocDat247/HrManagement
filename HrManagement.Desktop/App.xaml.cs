@@ -17,6 +17,7 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Services.Authentication;
 using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Navigation;
@@ -768,6 +769,14 @@ public partial class App : System.Windows.Application
         services.AddSingleton<
             IConfirmationDialogService,
             ConfirmationDialogService>();
+
+        services.AddSingleton<
+            IDatabaseBackupFileDialogService,
+            DatabaseBackupFileDialogService>();
+
+        services.AddSingleton<
+            IApplicationExitService,
+            WpfApplicationExitService>();
 
         services.AddSingleton<
             IEmployeeProfileCompletionPolicy,

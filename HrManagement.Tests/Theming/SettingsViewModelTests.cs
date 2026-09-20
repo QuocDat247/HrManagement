@@ -1,4 +1,7 @@
 using System;
+using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Services;
+using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.ViewModels;
@@ -26,10 +29,9 @@ public sealed class SettingsViewModelTests
             new StubDiagnosticConsentService();
 
         var viewModel =
-            new SettingsViewModel(
+            CreateViewModel(
                 themeService,
-                diagnosticConsentService,
-                new TestServiceProvider());
+                diagnosticConsentService);
 
         Assert.Equal(
             ApplicationAppearance.Dark,
@@ -73,10 +75,9 @@ public sealed class SettingsViewModelTests
             new StubDiagnosticConsentService();
 
         var viewModel =
-            new SettingsViewModel(
+            CreateViewModel(
                 themeService,
-                diagnosticConsentService,
-                new TestServiceProvider());
+                diagnosticConsentService);
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -132,10 +133,9 @@ public sealed class SettingsViewModelTests
             new StubDiagnosticConsentService();
 
         var viewModel =
-            new SettingsViewModel(
+            CreateViewModel(
                 themeService,
-                diagnosticConsentService,
-                new TestServiceProvider());
+                diagnosticConsentService);
 
         viewModel.SelectedAppearance =
             ApplicationAppearance.Dark;
@@ -177,10 +177,9 @@ public sealed class SettingsViewModelTests
             new StubDiagnosticConsentService();
 
         var viewModel =
-            new SettingsViewModel(
+            CreateViewModel(
                 themeService,
-                diagnosticConsentService,
-                new TestServiceProvider());
+                diagnosticConsentService);
 
         Assert.False(
             viewModel.SelectedAllowDiagnosticUpload);
@@ -213,6 +212,20 @@ public sealed class SettingsViewModelTests
         Assert.Equal(
             "Đã áp dụng và lưu cài đặt.",
             viewModel.SuccessMessage);
+    }
+
+    private static SettingsViewModel CreateViewModel(
+    IApplicationThemeService themeService,
+    IDiagnosticConsentService diagnosticConsentService)
+    {
+        return new SettingsViewModel(
+            themeService,
+            diagnosticConsentService,
+            new TestServiceProvider(),
+            new StubOwnerDatabaseMaintenanceService(),
+            new StubDatabaseBackupFileDialogService(),
+            new StubConfirmationDialogService(),
+            new StubApplicationExitService());
     }
 
     private sealed class StubDiagnosticConsentService
@@ -312,6 +325,69 @@ public sealed class SettingsViewModelTests
                     : preference.Appearance;
 
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class StubOwnerDatabaseMaintenanceService
+    : IOwnerDatabaseMaintenanceService
+    {
+        public Task<bool> CanManageAsync(
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken
+                .ThrowIfCancellationRequested();
+
+            return Task.FromResult(
+                false);
+        }
+
+        public Task<DatabaseBackupResult>
+            CreateBackupAsync(
+                string destinationFilePath,
+                CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<DatabaseRestoreResult>
+            RestoreAsync(
+                string backupFilePath,
+                CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+    }
+
+    private sealed class StubDatabaseBackupFileDialogService
+        : IDatabaseBackupFileDialogService
+    {
+        public string? SelectBackupDestination()
+        {
+            return null;
+        }
+
+        public string? SelectBackupForRestore()
+        {
+            return null;
+        }
+    }
+
+    private sealed class StubConfirmationDialogService
+        : IConfirmationDialogService
+    {
+        public bool Confirm(
+            string title,
+            string message)
+        {
+            return false;
+        }
+    }
+
+    private sealed class StubApplicationExitService
+        : IApplicationExitService
+    {
+        public void Shutdown()
+        {
         }
     }
 

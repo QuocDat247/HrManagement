@@ -264,7 +264,6 @@ Generated_Code/
 _UpgradeReport_Files/
 Backup*/
 # Source folders named Backups are part of the application.
-# Source folders named Backups are part of the application.
 !HrManagement.Application/Persistence/Backups/
 !HrManagement.Application/Persistence/Backups/**
 
@@ -273,6 +272,10 @@ Backup*/
 
 !HrManagement.Tests/Infrastructure/Persistence/Backups/
 !HrManagement.Tests/Infrastructure/Persistence/Backups/**
+
+!HrManagement.Tests/Application/Persistence/Backups/
+!HrManagement.Tests/Application/Persistence/Backups/**
+
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/

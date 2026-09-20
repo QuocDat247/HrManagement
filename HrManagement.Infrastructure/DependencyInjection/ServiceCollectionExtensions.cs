@@ -346,6 +346,10 @@ public static class ServiceCollectionExtensions
             IDatabaseRestoreService,
             SqliteDatabaseRestoreService>();
 
+        services.AddTransient<
+            IOwnerDatabaseMaintenanceService,
+            OwnerDatabaseMaintenanceService>();
+
         services.AddSingleton<
             DemoEmployeeSeedService>();
 

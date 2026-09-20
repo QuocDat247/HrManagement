@@ -3,6 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Services;
+using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Views;
 using HrManagement.Desktop.Theming;
 using HrManagement.Desktop.Diagnostics;
@@ -20,6 +23,18 @@ public sealed partial class SettingsViewModel
 
     private readonly IServiceProvider
         _serviceProvider;
+
+    private readonly IOwnerDatabaseMaintenanceService
+        _databaseMaintenanceService;
+
+    private readonly IDatabaseBackupFileDialogService
+        _databaseBackupFileDialogService;
+
+    private readonly IConfirmationDialogService
+        _confirmationDialogService;
+
+    private readonly IApplicationExitService
+        _applicationExitService;
 
     [ObservableProperty]
     private ApplicationAppearance selectedAppearance;
@@ -39,10 +54,26 @@ public sealed partial class SettingsViewModel
     [ObservableProperty]
     private string? successMessage;
 
+    [ObservableProperty]
+    private bool hasDatabaseMaintenanceAccess;
+
+    [ObservableProperty]
+    private bool isDatabaseMaintenanceBusy;
+
+    [ObservableProperty]
+    private string? databaseMaintenanceMessage;
+
+    [ObservableProperty]
+    private string? databaseMaintenanceError;
+
     public SettingsViewModel(
         IApplicationThemeService themeService,
         IDiagnosticConsentService diagnosticConsentService,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        IOwnerDatabaseMaintenanceService databaseMaintenanceService,
+        IDatabaseBackupFileDialogService databaseBackupFileDialogService,
+        IConfirmationDialogService confirmationDialogService,
+        IApplicationExitService applicationExitService)
     {
         _themeService =
             themeService;
@@ -52,6 +83,18 @@ public sealed partial class SettingsViewModel
 
         _serviceProvider =
             serviceProvider;
+
+        _databaseMaintenanceService =
+            databaseMaintenanceService;
+
+        _databaseBackupFileDialogService =
+            databaseBackupFileDialogService;
+
+        _confirmationDialogService =
+            confirmationDialogService;
+
+        _applicationExitService =
+            applicationExitService;
 
         AppearanceOptions =
         [
@@ -97,6 +140,20 @@ public sealed partial class SettingsViewModel
                 ApplyAsync,
                 CanApply);
 
+        LoadDatabaseMaintenanceAccessCommand =
+            new AsyncRelayCommand(
+                LoadDatabaseMaintenanceAccessAsync);
+
+        CreateDatabaseBackupCommand =
+            new AsyncRelayCommand(
+                CreateDatabaseBackupAsync,
+                CanManageDatabase);
+
+        RestoreDatabaseCommand =
+            new AsyncRelayCommand(
+                RestoreDatabaseAsync,
+                CanManageDatabase);
+
         Load();
     }
 
@@ -123,6 +180,24 @@ public sealed partial class SettingsViewModel
     }
 
     public IAsyncRelayCommand ApplyCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand
+        LoadDatabaseMaintenanceAccessCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand
+        CreateDatabaseBackupCommand
+    {
+        get;
+    }
+
+    public IAsyncRelayCommand
+        RestoreDatabaseCommand
     {
         get;
     }
@@ -204,6 +279,18 @@ public sealed partial class SettingsViewModel
         bool value)
     {
         NotifySelectionState();
+    }
+
+    partial void OnHasDatabaseMaintenanceAccessChanged(
+    bool value)
+    {
+        NotifyDatabaseMaintenanceCommandState();
+    }
+
+    partial void OnIsDatabaseMaintenanceBusyChanged(
+        bool value)
+    {
+        NotifyDatabaseMaintenanceCommandState();
     }
 
     private void ChangePassword()
@@ -341,6 +428,228 @@ public sealed partial class SettingsViewModel
 
             NotifySelectionState();
         }
+    }
+
+    private async Task
+    LoadDatabaseMaintenanceAccessAsync()
+    {
+        try
+        {
+            HasDatabaseMaintenanceAccess =
+                await _databaseMaintenanceService
+                    .CanManageAsync();
+        }
+        catch
+        {
+            HasDatabaseMaintenanceAccess =
+                false;
+        }
+    }
+
+    private async Task
+        CreateDatabaseBackupAsync()
+    {
+        if (!CanManageDatabase())
+        {
+            return;
+        }
+
+        string? destinationFilePath =
+            _databaseBackupFileDialogService
+                .SelectBackupDestination();
+
+        if (string.IsNullOrWhiteSpace(
+                destinationFilePath))
+        {
+            return;
+        }
+
+        DatabaseMaintenanceError =
+            null;
+
+        DatabaseMaintenanceMessage =
+            null;
+
+        IsDatabaseMaintenanceBusy =
+            true;
+
+        try
+        {
+            DatabaseBackupResult result =
+                await _databaseMaintenanceService
+                    .CreateBackupAsync(
+                        destinationFilePath);
+
+            DatabaseMaintenanceMessage =
+                "Đã tạo bản sao lưu thành công:\n"
+                + result.BackupFilePath;
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            DatabaseMaintenanceError =
+                exception.Message;
+
+            HasDatabaseMaintenanceAccess =
+                false;
+        }
+        catch (IOException exception)
+        {
+            DatabaseMaintenanceError =
+                "Không thể ghi file backup: "
+                + exception.Message;
+        }
+        catch (InvalidOperationException exception)
+        {
+            DatabaseMaintenanceError =
+                exception.Message;
+        }
+        finally
+        {
+            IsDatabaseMaintenanceBusy =
+                false;
+        }
+    }
+
+    private async Task
+        RestoreDatabaseAsync()
+    {
+        if (!CanManageDatabase())
+        {
+            return;
+        }
+
+        string? backupFilePath =
+            _databaseBackupFileDialogService
+                .SelectBackupForRestore();
+
+        if (string.IsNullOrWhiteSpace(
+                backupFilePath))
+        {
+            return;
+        }
+
+        bool firstConfirmation =
+            _confirmationDialogService
+                .Confirm(
+                    "Khôi phục dữ liệu",
+                    "Khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại "
+                    + "bằng dữ liệu trong file backup đã chọn.\n\n"
+                    + "Ứng dụng sẽ tự tạo một safety backup "
+                    + "của database hiện tại trước khi thay thế.\n\n"
+                    + "Bạn có muốn tiếp tục không?");
+
+        if (!firstConfirmation)
+        {
+            return;
+        }
+
+        bool finalConfirmation =
+            _confirmationDialogService
+                .Confirm(
+                    "Xác nhận khôi phục lần cuối",
+                    "Sau khi khôi phục thành công, ứng dụng sẽ đóng ngay "
+                    + "để tránh tiếp tục sử dụng dữ liệu cũ đang được giữ "
+                    + "trong bộ nhớ.\n\n"
+                    + "Hãy đảm bảo mọi thao tác đang làm đã hoàn tất.\n\n"
+                    + "Tiếp tục khôi phục?");
+
+        if (!finalConfirmation)
+        {
+            return;
+        }
+
+        DatabaseMaintenanceError =
+            null;
+
+        DatabaseMaintenanceMessage =
+            null;
+
+        IsDatabaseMaintenanceBusy =
+            true;
+
+        try
+        {
+            DatabaseRestoreResult result =
+                await _databaseMaintenanceService
+                    .RestoreAsync(
+                        backupFilePath);
+
+            if (!result.IsSuccessful)
+            {
+                DatabaseMaintenanceError =
+                    result.ErrorMessage
+                    ?? "Không thể khôi phục database.";
+
+                if (!string.IsNullOrWhiteSpace(
+                        result.SafetyBackupFilePath))
+                {
+                    DatabaseMaintenanceError +=
+                        "\n\nSafety backup:\n"
+                        + result.SafetyBackupFilePath;
+                }
+
+                return;
+            }
+
+            string safetyBackupText =
+                string.IsNullOrWhiteSpace(
+                    result.SafetyBackupFilePath)
+                    ? "Không có thông tin đường dẫn safety backup."
+                    : result.SafetyBackupFilePath;
+
+            MessageBox.Show(
+                "Khôi phục dữ liệu thành công.\n\n"
+                + "Safety backup của database trước khi khôi phục:\n"
+                + safetyBackupText
+                + "\n\nỨng dụng sẽ đóng ngay. "
+                + "Vui lòng mở lại HR Management.",
+                "Khôi phục hoàn tất",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            _applicationExitService
+                .Shutdown();
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            DatabaseMaintenanceError =
+                exception.Message;
+
+            HasDatabaseMaintenanceAccess =
+                false;
+        }
+        catch (InvalidOperationException exception)
+        {
+            DatabaseMaintenanceError =
+                exception.Message;
+        }
+        catch (IOException exception)
+        {
+            DatabaseMaintenanceError =
+                "Không thể đọc file backup: "
+                + exception.Message;
+        }
+        finally
+        {
+            IsDatabaseMaintenanceBusy =
+                false;
+        }
+    }
+
+    private bool CanManageDatabase()
+    {
+        return HasDatabaseMaintenanceAccess
+            && !IsDatabaseMaintenanceBusy;
+    }
+
+    private void
+        NotifyDatabaseMaintenanceCommandState()
+    {
+        CreateDatabaseBackupCommand?
+            .NotifyCanExecuteChanged();
+
+        RestoreDatabaseCommand?
+            .NotifyCanExecuteChanged();
     }
 
     private bool CanApply()
