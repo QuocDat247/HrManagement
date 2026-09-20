@@ -1,3 +1,4 @@
+using HrManagement.Infrastructure.Persistence.Demo;
 using HrManagement.Application.Authentication.Recovery;
 using HrManagement.Infrastructure.Authentication.Recovery;
 using HrManagement.Application.Authorization;
@@ -72,12 +73,22 @@ namespace HrManagement.Infrastructure.DependencyInjection;
 public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(
-    this IServiceCollection services)
+        this IServiceCollection services,
+        ApplicationDataMode dataMode =
+            ApplicationDataMode.Production)
     {
+        var databaseInitializationOptions =
+            new DatabaseInitializationOptions(
+                dataMode);
+
+        services.AddSingleton(
+            databaseInitializationOptions);
+
         services.AddDbContextFactory<HrManagementDbContext>(
             options =>
                 options.UseSqlite(
-                    DatabasePath.GetConnectionString()));
+                    DatabasePath.GetConnectionString(
+                        dataMode)));
 
         services.AddSingleton<IDashboardService, EfDashboardService>();
 
@@ -316,6 +327,9 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddSingleton<DatabaseInitializer>();
+
+        services.AddSingleton<
+            DemoEmployeeSeedService>();
 
         services.AddSingleton<IWorkforceAnalyticsService, EfWorkforceAnalyticsService>();
 

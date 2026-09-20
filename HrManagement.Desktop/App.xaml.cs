@@ -65,9 +65,16 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        var services = new ServiceCollection();
+        ApplicationDataMode dataMode =
+            ResolveApplicationDataMode(
+                e.Args);
 
-        ConfigureServices(services);
+        var services =
+            new ServiceCollection();
+
+        ConfigureServices(
+            services,
+            dataMode);
 
         _serviceProvider = services.BuildServiceProvider();
 
@@ -356,8 +363,26 @@ public partial class App : System.Windows.Application
         }
     }
 
+    private static ApplicationDataMode
+    ResolveApplicationDataMode(
+        IReadOnlyCollection<string> arguments)
+    {
+        bool demoRequested =
+            arguments.Any(
+                argument =>
+                    string.Equals(
+                        argument,
+                        "--demo",
+                        StringComparison.OrdinalIgnoreCase));
+
+        return demoRequested
+            ? ApplicationDataMode.Demo
+            : ApplicationDataMode.Production;
+    }
+
     private static void ConfigureServices(
-    IServiceCollection services)
+        IServiceCollection services,
+        ApplicationDataMode dataMode)
     {
         DiagnosticLogOptions diagnosticLogOptions =
             DiagnosticLogOptions.CreateDefault();
@@ -516,7 +541,8 @@ public partial class App : System.Windows.Application
             IApplicationThemeService,
             ApplicationThemeService>();
 
-        services.AddInfrastructure();
+        services.AddInfrastructure(
+            dataMode);
 
         services.AddTransient<AddEmployeeViewModel>();
 

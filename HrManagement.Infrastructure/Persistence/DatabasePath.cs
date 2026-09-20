@@ -5,10 +5,18 @@ public static class DatabasePath
     private const string ApplicationFolderName =
         "HrManagement";
 
-    private const string DatabaseFileName =
+    private const string ProductionDatabaseFileName =
         "hrmanagement.db";
 
-    public static string GetDatabaseFilePath()
+    private const string DemoFolderName =
+        "Demo";
+
+    private const string DemoDatabaseFileName =
+        "hrmanagement-demo.db";
+
+    public static string GetDatabaseFilePath(
+        ApplicationDataMode dataMode =
+            ApplicationDataMode.Production)
     {
         string localApplicationData =
             Environment.GetFolderPath(
@@ -19,16 +27,33 @@ public static class DatabasePath
                 localApplicationData,
                 ApplicationFolderName);
 
+        if (dataMode ==
+            ApplicationDataMode.Demo)
+        {
+            applicationDirectory =
+                Path.Combine(
+                    applicationDirectory,
+                    DemoFolderName);
+        }
+
         Directory.CreateDirectory(
             applicationDirectory);
 
+        string databaseFileName =
+            dataMode ==
+                ApplicationDataMode.Demo
+                ? DemoDatabaseFileName
+                : ProductionDatabaseFileName;
+
         return Path.Combine(
             applicationDirectory,
-            DatabaseFileName);
+            databaseFileName);
     }
 
-    public static string GetConnectionString()
+    public static string GetConnectionString(
+        ApplicationDataMode dataMode =
+            ApplicationDataMode.Production)
     {
-        return $"Data Source={GetDatabaseFilePath()}";
+        return $"Data Source={GetDatabaseFilePath(dataMode)}";
     }
 }
