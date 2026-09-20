@@ -9,14 +9,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <Product>HR Management</Product>
-    <AssemblyTitle>HR Management desktop application preview</AssemblyTitle>
-    <Description>HR Management desktop application preview</Description>
-
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-
-    <Version>0.1.0-preview.1</Version>
-    <AssemblyVersion>0.1.0.0</AssemblyVersion>
-    <FileVersion>0.1.0.0</FileVersion>
+    <AssemblyTitle>HR Management</AssemblyTitle>
+    <Description>HR Management desktop application</Description>
   </PropertyGroup>
 
   <ItemGroup>
