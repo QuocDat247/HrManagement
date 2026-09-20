@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Services.Authentication;
 using HrManagement.Desktop.ViewModels;
 using System.Windows;
 
@@ -7,20 +8,58 @@ public partial class LoginWindow : Window
 {
     private readonly LoginViewModel _viewModel;
 
+    private readonly IOwnerPasswordRecoveryDialogService
+    _recoveryDialogService;
+
     public bool MustChangePassword =>
         _viewModel.MustChangePassword;
 
-    public LoginWindow(LoginViewModel viewModel)
+    public LoginWindow(
+    LoginViewModel viewModel,
+    IOwnerPasswordRecoveryDialogService recoveryDialogService)
     {
         InitializeComponent();
 
-        _viewModel = viewModel;
-        DataContext = _viewModel;
+        _viewModel =
+            viewModel;
 
-        _viewModel.LoginSucceeded += OnLoginSucceeded;
-        Closed += OnWindowClosed;
+        _recoveryDialogService =
+            recoveryDialogService;
 
-        Loaded += OnWindowLoaded;
+        DataContext =
+            _viewModel;
+
+        _viewModel.LoginSucceeded +=
+            OnLoginSucceeded;
+
+        Closed +=
+            OnWindowClosed;
+
+        Loaded +=
+            OnWindowLoaded;
+    }
+
+    private void ForgotOwnerPasswordButton_Click(
+    object sender,
+    RoutedEventArgs e)
+    {
+        PasswordBox.Clear();
+
+        bool recovered =
+            _recoveryDialogService
+                .ShowDialog(
+                    this);
+
+        PasswordBox.Clear();
+
+        if (recovered)
+        {
+            PasswordBox.Focus();
+        }
+        else
+        {
+            UsernameTextBox.Focus();
+        }
     }
 
     private void OnWindowLoaded(
@@ -52,6 +91,9 @@ public partial class LoginWindow : Window
         EventArgs e)
     {
         _viewModel.LoginSucceeded -= OnLoginSucceeded;
+
+        PasswordBox.Clear();
+
         Closed -= OnWindowClosed;
 
         Loaded -= OnWindowLoaded;

@@ -17,6 +17,7 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.Services.Authentication;
 using HrManagement.Desktop.Diagnostics;
 using HrManagement.Desktop.Navigation;
 using HrManagement.Desktop.Services;
@@ -555,6 +556,16 @@ public partial class App : System.Windows.Application
 
         services.AddTransient<
             ChangePasswordWindow>();
+
+        services.AddTransient<
+            OwnerPasswordRecoveryViewModel>();
+
+        services.AddTransient<
+            OwnerPasswordRecoveryWindow>();
+
+        services.AddSingleton<
+            IOwnerPasswordRecoveryDialogService,
+            OwnerPasswordRecoveryDialogService>();
 
         services.AddTransient<
             EditAccountProfileViewModel>();

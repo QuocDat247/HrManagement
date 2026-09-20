@@ -293,6 +293,14 @@ public static class ServiceCollectionExtensions
             IRecoveryCodeHasher,
             RecoveryCodeHasher>();
 
+        services.AddScoped<
+            IOwnerPasswordRecoveryPersistence,
+            EfOwnerPasswordRecoveryPersistence>();
+
+        services.AddScoped<
+            IOwnerPasswordRecoveryService,
+            OwnerPasswordRecoveryService>();
+
         services.AddScoped<IEmployeeRepository, EfEmployeeRepository>();
 
         services.AddScoped<
