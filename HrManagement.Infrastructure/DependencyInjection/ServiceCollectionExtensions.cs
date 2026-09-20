@@ -1,3 +1,5 @@
+using HrManagement.Application.Persistence.Backups;
+using HrManagement.Infrastructure.Persistence.Backups;
 using HrManagement.Infrastructure.Persistence.Demo;
 using HrManagement.Application.Authentication.Recovery;
 using HrManagement.Infrastructure.Authentication.Recovery;
@@ -327,6 +329,22 @@ public static class ServiceCollectionExtensions
                             IAuthorizationGuard>()));
 
         services.AddSingleton<DatabaseInitializer>();
+
+        services.AddSingleton<
+            IDatabaseBackupService,
+            SqliteDatabaseBackupService>();
+
+        services.AddSingleton<
+            IDatabaseBackupValidationService,
+            SqliteDatabaseBackupValidationService>();
+
+        services.AddSingleton<
+            IDatabaseRestoreFinalizer,
+            SqliteDatabaseRestoreFinalizer>();
+
+        services.AddSingleton<
+            IDatabaseRestoreService,
+            SqliteDatabaseRestoreService>();
 
         services.AddSingleton<
             DemoEmployeeSeedService>();

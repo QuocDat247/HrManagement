@@ -263,6 +263,16 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+# Source folders named Backups are part of the application.
+# Source folders named Backups are part of the application.
+!HrManagement.Application/Persistence/Backups/
+!HrManagement.Application/Persistence/Backups/**
+
+!HrManagement.Infrastructure/Persistence/Backups/
+!HrManagement.Infrastructure/Persistence/Backups/**
+
+!HrManagement.Tests/Infrastructure/Persistence/Backups/
+!HrManagement.Tests/Infrastructure/Persistence/Backups/**
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
