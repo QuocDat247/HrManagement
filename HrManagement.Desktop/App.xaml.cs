@@ -17,6 +17,7 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Services.Authentication;
@@ -389,6 +390,13 @@ public partial class App : System.Windows.Application
         ApplicationBuildIdentity buildIdentity =
             ApplicationBuildIdentityResolver
                 .ResolveCurrent();
+
+        ApplicationFeatureSet featureSet =
+            ApplicationFeatureSetResolver
+                .ResolveCurrent();
+
+        services.AddSingleton(
+            featureSet);
 
         services.AddSingleton(
             buildIdentity);

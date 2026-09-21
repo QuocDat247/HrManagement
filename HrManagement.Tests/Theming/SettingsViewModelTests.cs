@@ -1,5 +1,6 @@
 using System;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
@@ -80,6 +81,10 @@ public sealed class SettingsViewModelTests
         Assert.Equal(
             "Testing",
             viewModel.BuildReleaseChannel);
+
+        Assert.Equal(
+            "Nhân viên • Cơ cấu tổ chức • Quản lý thời gian • Bảng lương",
+            viewModel.BuildFeatures);
     }
 
     [Fact]
@@ -260,7 +265,12 @@ public sealed class SettingsViewModelTests
                 CustomerCode:
                     "TestCustomer",
                 ReleaseChannel:
-                    "Testing"));
+                    "Testing"),
+            new ApplicationFeatureSet(
+                Employees: true,
+                Organization: true,
+                TimeManagement: true,
+                Payroll: true));
     }
 
     private sealed class StubDiagnosticConsentService

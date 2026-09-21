@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Features;
 using HrManagement.Application.Authorization;
 using HrManagement.Domain.Authorization.Permissions;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,6 +10,9 @@ namespace HrManagement.Desktop.ViewModels;
 
 public sealed partial class MainViewModel : ObservableObject
 {
+    private readonly ApplicationFeatureSet
+        _featureSet;
+
     private readonly INavigationService _navigationService;
 
     private readonly IAuthorizationService
@@ -24,10 +28,11 @@ public sealed partial class MainViewModel : ObservableObject
 
     // Constructor>
     public MainViewModel(
-    INavigationService navigationService,
-    ICurrentUserContext currentUserContext,
-    IAuthorizationService authorizationService,
-    IUserSession userSession)
+        INavigationService navigationService,
+        ICurrentUserContext currentUserContext,
+        IAuthorizationService authorizationService,
+        IUserSession userSession,
+        ApplicationFeatureSet featureSet)
     {
         _navigationService =
             navigationService;
@@ -42,6 +47,11 @@ public sealed partial class MainViewModel : ObservableObject
             currentUserContext.CurrentUser?.DisplayName
             ?? currentUserContext.CurrentUser?.Username
             ?? "Người dùng";
+
+        _featureSet =
+            featureSet
+            ?? throw new ArgumentNullException(
+                nameof(featureSet));
 
         _navigationService.CurrentViewModelChanged +=
             OnCurrentViewModelChanged;
@@ -100,7 +110,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(DashboardViewModel))
             };
 
-        if (await _authorizationService
+        if (_featureSet.Employees
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.EmployeeView,
                     cancellationToken))
@@ -111,7 +122,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(EmployeesViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.Organization
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.DepartmentView,
                     cancellationToken))
@@ -122,7 +134,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(DepartmentsViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.Organization
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.PositionView,
                     cancellationToken))
@@ -133,7 +146,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(PositionsViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.TimeManagement
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.WorkScheduleView,
                     cancellationToken))
@@ -144,7 +158,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(WorkScheduleWorkspaceViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.TimeManagement
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.HolidayExceptionView,
                     cancellationToken))
@@ -155,7 +170,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(HolidayExceptionWorkspaceViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.TimeManagement
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.TimesheetView,
                     cancellationToken))
@@ -166,7 +182,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(MonthlyTimesheetWorkspaceViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.TimeManagement
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.OvertimeView,
                     cancellationToken))
@@ -177,7 +194,8 @@ public sealed partial class MainViewModel : ObservableObject
                     typeof(OvertimeWorkspaceViewModel)));
         }
 
-        if (await _authorizationService
+        if (_featureSet.Payroll
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.PayrollView,
                     cancellationToken))
@@ -189,7 +207,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         bool canViewAttendance =
-            await _authorizationService
+            _featureSet.TimeManagement
+            && await _authorizationService
                 .HasPermissionAsync(
                     PermissionCodes.AttendanceView,
                     cancellationToken);

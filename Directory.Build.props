@@ -19,6 +19,18 @@
     <HrReleaseChannel
       Condition="'$(HrReleaseChannel)' == ''">Development</HrReleaseChannel>
 
+    <HrFeatureEmployees
+      Condition="'$(HrFeatureEmployees)' == ''">true</HrFeatureEmployees>
+
+    <HrFeatureOrganization
+      Condition="'$(HrFeatureOrganization)' == ''">true</HrFeatureOrganization>
+
+    <HrFeatureTimeManagement
+      Condition="'$(HrFeatureTimeManagement)' == ''">true</HrFeatureTimeManagement>
+
+    <HrFeaturePayroll
+      Condition="'$(HrFeaturePayroll)' == ''">true</HrFeaturePayroll>
+
   <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 </PropertyGroup>

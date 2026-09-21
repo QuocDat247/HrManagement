@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
@@ -16,6 +17,9 @@ namespace HrManagement.Desktop.ViewModels;
 public sealed partial class SettingsViewModel
     : ObservableObject
 {
+    private readonly ApplicationFeatureSet
+        _featureSet;
+
     private readonly ApplicationBuildIdentity
         _buildIdentity;
 
@@ -78,8 +82,14 @@ public sealed partial class SettingsViewModel
         IDatabaseBackupFileDialogService databaseBackupFileDialogService,
         IConfirmationDialogService confirmationDialogService,
         IApplicationExitService applicationExitService,
-        ApplicationBuildIdentity buildIdentity)
+        ApplicationBuildIdentity buildIdentity,
+        ApplicationFeatureSet featureSet)
     {
+        _featureSet =
+            featureSet
+            ?? throw new ArgumentNullException(
+                nameof(featureSet));
+
         _buildIdentity =
             buildIdentity
             ?? throw new ArgumentNullException(
@@ -233,6 +243,35 @@ public sealed partial class SettingsViewModel
             _diagnosticConsentService
                 .CurrentPreference
                 .AllowDiagnosticUpload;
+
+    public string BuildFeatures =>
+        string.Join(
+            " • ",
+            GetEnabledFeatureNames());
+
+    private IEnumerable<string>
+        GetEnabledFeatureNames()
+    {
+        if (_featureSet.Employees)
+        {
+            yield return "Nhân viên";
+        }
+
+        if (_featureSet.Organization)
+        {
+            yield return "Cơ cấu tổ chức";
+        }
+
+        if (_featureSet.TimeManagement)
+        {
+            yield return "Quản lý thời gian";
+        }
+
+        if (_featureSet.Payroll)
+        {
+            yield return "Bảng lương";
+        }
+    }
 
     public bool CanApplyChanges =>
         CanApply();

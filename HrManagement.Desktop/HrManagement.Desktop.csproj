@@ -33,5 +33,12 @@
     <AssemblyMetadata Include="HrProductEdition" Value="$(HrProductEdition)" />
     <AssemblyMetadata Include="HrCustomerCode" Value="$(HrCustomerCode)" />
     <AssemblyMetadata Include="HrReleaseChannel" Value="$(HrReleaseChannel)" />
-</ItemGroup>
+    <AssemblyMetadata Include="HrFeatureEmployees" Value="$(HrFeatureEmployees)" />
+
+    <AssemblyMetadata Include="HrFeatureOrganization" Value="$(HrFeatureOrganization)" />
+
+    <AssemblyMetadata Include="HrFeatureTimeManagement" Value="$(HrFeatureTimeManagement)" />
+
+    <AssemblyMetadata Include="HrFeaturePayroll" Value="$(HrFeaturePayroll)" />
+  </ItemGroup>
 </Project>

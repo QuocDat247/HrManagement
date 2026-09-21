@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Features;
 using HrManagement.Infrastructure.Authentication;
 using HrManagement.Application.Authentication;
 using HrManagement.Application.Authorization;
@@ -296,7 +297,8 @@ public sealed class MainViewModelAuthorizationTests
                 navigationService,
                 CreateCurrentUserContext(),
                 authorizationService,
-                new CurrentUserSession());
+                new CurrentUserSession(),
+                ApplicationFeatureSet.AllEnabled);
 
         await Assert.ThrowsAsync<
             InvalidOperationException>(
@@ -354,6 +356,93 @@ public sealed class MainViewModelAuthorizationTests
                 typeof(AttendanceLeaveWorkspaceViewModel));
     }
 
+    [Fact]
+    public async Task
+    InitializeAsync_WhenTimeManagementDisabled_HidesTimeManagementItems()
+    {
+        var navigationService =
+            new TestNavigationService();
+
+        var viewModel =
+            new MainViewModel(
+                navigationService,
+                CreateCurrentUserContext(),
+                new TestAuthorizationService(
+                    PermissionCodes.WorkScheduleView,
+                    PermissionCodes.HolidayExceptionView,
+                    PermissionCodes.TimesheetView,
+                    PermissionCodes.OvertimeView,
+                    PermissionCodes.AttendanceView,
+                    PermissionCodes.LeaveView),
+                new CurrentUserSession(),
+                new ApplicationFeatureSet(
+                    Employees: true,
+                    Organization: true,
+                    TimeManagement: false,
+                    Payroll: true));
+
+        await viewModel.InitializeAsync();
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(WorkScheduleWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(HolidayExceptionWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(MonthlyTimesheetWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(OvertimeWorkspaceViewModel));
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(AttendanceLeaveWorkspaceViewModel));
+    }
+
+    [Fact]
+    public async Task
+        InitializeAsync_WhenPayrollDisabled_HidesPayrollDespitePermission()
+    {
+        var navigationService =
+            new TestNavigationService();
+
+        var viewModel =
+            new MainViewModel(
+                navigationService,
+                CreateCurrentUserContext(),
+                new TestAuthorizationService(
+                    PermissionCodes.PayrollView),
+                new CurrentUserSession(),
+                new ApplicationFeatureSet(
+                    Employees: true,
+                    Organization: true,
+                    TimeManagement: true,
+                    Payroll: false));
+
+        await viewModel.InitializeAsync();
+
+        Assert.DoesNotContain(
+            viewModel.NavigationItems,
+            item =>
+                item.ViewModelType ==
+                typeof(PayrollWorkspaceViewModel));
+    }
+
     private static MainViewModel CreateViewModel(
         TestNavigationService navigationService,
         params string[] allowedPermissions)
@@ -363,7 +452,8 @@ public sealed class MainViewModelAuthorizationTests
             CreateCurrentUserContext(),
             new TestAuthorizationService(
                 allowedPermissions),
-            new CurrentUserSession());
+            new CurrentUserSession(),
+            ApplicationFeatureSet.AllEnabled);
     }
 
     private static ICurrentUserContext

@@ -246,7 +246,7 @@
 
             <!-- ACCOUNT SECURITY -->
             <Border Style="{DynamicResource CardBorderStyle}"
-        Margin="0,0,0,16">
+                    Margin="0,0,0,16">
 
                 <Grid>
 
@@ -256,33 +256,33 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0"
-                    Margin="0,0,30,0">
+                                Margin="0,0,30,0">
 
                         <TextBlock Text="Bảo mật tài khoản"
-                       FontSize="17"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   FontSize="17"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Margin="0,7,0,0"
-                       TextWrapping="Wrap"
-                       Text="Quản lý mật khẩu của tài khoản đang đăng nhập."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   TextWrapping="Wrap"
+                                   Text="Quản lý mật khẩu của tài khoản đang đăng nhập."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                     </StackPanel>
 
                     <StackPanel Grid.Column="1">
 
                         <TextBlock Text="Bạn nên sử dụng mật khẩu riêng, dài và không dùng lại ở dịch vụ khác."
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <Button Margin="0,14,0,0"
-                    Width="140"
-                    MinHeight="38"
-                    Padding="14,8"
-                    HorizontalAlignment="Left"
-                    Content="Đổi mật khẩu"
-                    Command="{Binding ChangePasswordCommand}" />
+                                Width="140"
+                                MinHeight="38"
+                                Padding="14,8"
+                                HorizontalAlignment="Left"
+                                Content="Đổi mật khẩu"
+                                Command="{Binding ChangePasswordCommand}" />
 
                     </StackPanel>
 
@@ -295,18 +295,18 @@
                 <Border.Style>
 
                     <Style TargetType="Border"
-               BasedOn="{StaticResource CardBorderStyle}">
+                           BasedOn="{StaticResource CardBorderStyle}">
 
                         <Setter Property="Visibility"
-                    Value="Collapsed" />
+                                Value="Collapsed" />
 
                         <Style.Triggers>
 
                             <DataTrigger Binding="{Binding HasDatabaseMaintenanceAccess}"
-                             Value="True">
+                                         Value="True">
 
                                 <Setter Property="Visibility"
-                            Value="Visible" />
+                                        Value="Visible" />
 
                             </DataTrigger>
 
@@ -324,59 +324,59 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0"
-                    Margin="0,0,30,0">
+                                Margin="0,0,30,0">
 
                         <TextBlock Text="Sao lưu &amp; khôi phục"
-                       FontSize="17"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   FontSize="17"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Margin="0,7,0,0"
-                       TextWrapping="Wrap"
-                       Text="Chức năng quản trị dữ liệu chỉ dành cho tài khoản Owner."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   TextWrapping="Wrap"
+                                   Text="Chức năng quản trị dữ liệu chỉ dành cho tài khoản Owner."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                     </StackPanel>
 
                     <StackPanel Grid.Column="1">
 
                         <TextBlock TextWrapping="Wrap"
-                       Text="Tạo bản sao lưu đầy đủ của database hiện tại hoặc khôi phục từ file .hrbackup."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Text="Tạo bản sao lưu đầy đủ của database hiện tại hoặc khôi phục từ file .hrbackup."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Margin="0,8,0,0"
-                       TextWrapping="Wrap"
-                       FontWeight="SemiBold"
-                       Text="File backup chứa dữ liệu nhân sự nhạy cảm và hiện chưa được mã hóa. Chỉ lưu file ở vị trí được bảo vệ."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   TextWrapping="Wrap"
+                                   FontWeight="SemiBold"
+                                   Text="File backup chứa dữ liệu nhân sự nhạy cảm và hiện chưa được mã hóa. Chỉ lưu file ở vị trí được bảo vệ."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <StackPanel Margin="0,16,0,0"
-                        Orientation="Horizontal">
+                                    Orientation="Horizontal">
 
                             <Button Width="150"
-                        MinHeight="38"
-                        Padding="14,8"
-                        Content="Tạo bản sao lưu"
-                        Command="{Binding CreateDatabaseBackupCommand}" />
+                                    MinHeight="38"
+                                    Padding="14,8"
+                                    Content="Tạo bản sao lưu"
+                                    Command="{Binding CreateDatabaseBackupCommand}" />
 
                             <Button Margin="12,0,0,0"
-                        Width="150"
-                        MinHeight="38"
-                        Padding="14,8"
-                        Content="Khôi phục dữ liệu"
-                        Command="{Binding RestoreDatabaseCommand}" />
+                                    Width="150"
+                                    MinHeight="38"
+                                    Padding="14,8"
+                                    Content="Khôi phục dữ liệu"
+                                    Command="{Binding RestoreDatabaseCommand}" />
 
                         </StackPanel>
 
                         <TextBlock Margin="0,14,0,0"
-                       Text="{Binding DatabaseMaintenanceError}"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource SeparationBrush}" />
+                                   Text="{Binding DatabaseMaintenanceError}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource SeparationBrush}" />
 
                         <TextBlock Margin="0,8,0,0"
-                       Text="{Binding DatabaseMaintenanceMessage}"
-                       TextWrapping="Wrap"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   Text="{Binding DatabaseMaintenanceMessage}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                     </StackPanel>
 
@@ -385,7 +385,7 @@
             </Border>
             <!-- BUILD IDENTITY -->
             <Border Style="{DynamicResource CardBorderStyle}"
-        Margin="0,0,0,16">
+                    Margin="0,0,0,16">
 
                 <Grid>
 
@@ -395,17 +395,17 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0"
-                    Margin="0,0,30,0">
+                                Margin="0,0,30,0">
 
                         <TextBlock Text="Thông tin phiên bản"
-                       FontSize="17"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   FontSize="17"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Margin="0,7,0,0"
-                       TextWrapping="Wrap"
-                       Text="Thông tin nhận diện build dùng cho cập nhật và hỗ trợ kỹ thuật."
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   TextWrapping="Wrap"
+                                   Text="Thông tin nhận diện build dùng cho cập nhật và hỗ trợ kỹ thuật."
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                     </StackPanel>
 
@@ -421,57 +421,72 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
-                       Grid.Column="0"
-                       Margin="0,0,0,8"
-                       Text="Core version"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Grid.Column="0"
+                                   Margin="0,0,0,8"
+                                   Text="Core version"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Grid.Row="0"
-                       Grid.Column="1"
-                       Margin="0,0,0,8"
-                       Text="{Binding BuildCoreVersion}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   Grid.Column="1"
+                                   Margin="0,0,0,8"
+                                   Text="{Binding BuildCoreVersion}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Grid.Row="1"
-                       Grid.Column="0"
-                       Margin="0,0,0,8"
-                       Text="Edition"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Grid.Column="0"
+                                   Margin="0,0,0,8"
+                                   Text="Edition"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Grid.Row="1"
-                       Grid.Column="1"
-                       Margin="0,0,0,8"
-                       Text="{Binding BuildEdition}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   Grid.Column="1"
+                                   Margin="0,0,0,8"
+                                   Text="{Binding BuildEdition}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Grid.Row="2"
-                       Grid.Column="0"
-                       Margin="0,0,0,8"
-                       Text="Customer"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Grid.Column="0"
+                                   Margin="0,0,0,8"
+                                   Text="Customer"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Grid.Row="2"
-                       Grid.Column="1"
-                       Margin="0,0,0,8"
-                       Text="{Binding BuildCustomer}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   Grid.Column="1"
+                                   Margin="0,0,0,8"
+                                   Text="{Binding BuildCustomer}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                         <TextBlock Grid.Row="3"
-                       Grid.Column="0"
-                       Text="Release channel"
-                       Foreground="{DynamicResource SecondaryTextBrush}" />
+                                   Grid.Column="0"
+                                   Text="Release channel"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Grid.Row="3"
-                       Grid.Column="1"
-                       Text="{Binding BuildReleaseChannel}"
-                       FontWeight="SemiBold"
-                       Foreground="{DynamicResource PrimaryTextBrush}" />
+                                   Grid.Column="1"
+                                   Text="{Binding BuildReleaseChannel}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="4"
+                                   Grid.Column="0"
+                                   Margin="0,8,0,0"
+                                   Text="Features"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="4"
+                                   Grid.Column="1"
+                                   Margin="0,8,0,0"
+                                   Text="{Binding BuildFeatures}"
+                                   TextWrapping="Wrap"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
 
                     </Grid>
 
