@@ -36,6 +36,29 @@ function Get-RequiredXmlValue
     return $value.Trim()
 }
 
+function ConvertTo-RequiredBoolean
+{
+    param(
+        [string]$Value,
+        [string]$Description
+    )
+
+    $parsedValue =
+        $false
+
+    $parsed =
+        [bool]::TryParse(
+            $Value,
+            [ref]$parsedValue)
+
+    if (-not $parsed)
+    {
+        throw "$Description phải là true hoặc false."
+    }
+
+    return $parsedValue
+}
+
 $repoRoot =
     Split-Path `
         -Parent `
@@ -98,6 +121,50 @@ $releaseChannel =
         $profileProps `
         "/Project/PropertyGroup/HrReleaseChannel" `
         "HrReleaseChannel từ customer profile"
+
+$featureEmployeesText =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrFeatureEmployees" `
+        "HrFeatureEmployees từ customer profile"
+
+$featureOrganizationText =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrFeatureOrganization" `
+        "HrFeatureOrganization từ customer profile"
+
+$featureTimeManagementText =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrFeatureTimeManagement" `
+        "HrFeatureTimeManagement từ customer profile"
+
+$featurePayrollText =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrFeaturePayroll" `
+        "HrFeaturePayroll từ customer profile"
+
+$featureEmployees =
+    ConvertTo-RequiredBoolean `
+        $featureEmployeesText `
+        "HrFeatureEmployees"
+
+$featureOrganization =
+    ConvertTo-RequiredBoolean `
+        $featureOrganizationText `
+        "HrFeatureOrganization"
+
+$featureTimeManagement =
+    ConvertTo-RequiredBoolean `
+        $featureTimeManagementText `
+        "HrFeatureTimeManagement"
+
+$featurePayroll =
+    ConvertTo-RequiredBoolean `
+        $featurePayrollText `
+        "HrFeaturePayroll"
 
 if ($customerCode -notmatch
     "^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -277,6 +344,119 @@ Set-Content `
     -Value $checksumLine `
     -Encoding ascii
 
+$manifestPath =
+    Join-Path `
+        $installerDir `
+        "release-manifest.json"
+
+$sourceCommit =
+    (
+        git `
+            -C $repoRoot `
+            rev-parse HEAD
+    ).Trim()
+
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Không đọc được Git source commit."
+}
+
+if ([string]::IsNullOrWhiteSpace(
+        $sourceCommit))
+{
+    throw "Không đọc được Git source commit."
+}
+
+$sourceStatus =
+    git `
+        -C $repoRoot `
+        status `
+        --porcelain `
+        --untracked-files=no
+
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Không kiểm tra được trạng thái Git source tree."
+}
+
+$sourceTreeClean =
+    [string]::IsNullOrWhiteSpace(
+        ($sourceStatus -join "`n"))
+
+$manifest =
+    [ordered]@{
+        formatVersion =
+            1
+
+        product =
+            "HR Management"
+
+        version =
+            $appVersion
+
+        fileVersion =
+            $fileVersion
+
+        customerProfile =
+            $Profile
+
+        customerCode =
+            $customerCode
+
+        edition =
+            $productEdition
+
+        releaseChannel =
+            $releaseChannel
+
+        enabledFeatures =
+            [ordered]@{
+                employees =
+                    $featureEmployees
+
+                organization =
+                    $featureOrganization
+
+                timeManagement =
+                    $featureTimeManagement
+
+                payroll =
+                    $featurePayroll
+            }
+
+        installer =
+            [ordered]@{
+                fileName =
+                    $installerFileName
+
+                sha256 =
+                    $installerHash.Hash.ToLowerInvariant()
+            }
+
+        source =
+            [ordered]@{
+                commit =
+                    $sourceCommit
+
+                treeClean =
+                    $sourceTreeClean
+            }
+
+        generatedAtUtc =
+            [DateTime]::UtcNow.ToString(
+                "yyyy-MM-ddTHH:mm:ssZ")
+    }
+
+$manifestJson =
+    $manifest |
+    ConvertTo-Json `
+        -Depth 6
+
+Set-Content `
+    -Path $manifestPath `
+    -Value $manifestJson `
+    -Encoding UTF8
+
 Write-Host ""
 Write-Host "Installer created:"
 Write-Host $installerPath
@@ -288,3 +468,7 @@ Write-Host $installerHash.Hash
 Write-Host ""
 Write-Host "Checksum file:"
 Write-Host $checksumPath
+
+Write-Host ""
+Write-Host "Release manifest:"
+Write-Host $manifestPath
