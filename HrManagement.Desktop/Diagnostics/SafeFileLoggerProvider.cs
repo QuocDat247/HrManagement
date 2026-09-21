@@ -1,5 +1,4 @@
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -57,11 +56,8 @@ public sealed class SafeFileLoggerProvider :
             options;
 
         _applicationVersion =
-            Assembly.GetEntryAssembly()
-                ?.GetName()
-                .Version
-                ?.ToString()
-            ?? "unknown";
+            ApplicationVersionResolver
+                .GetCurrentVersion();
 
         _operatingSystem =
             RuntimeInformation.OSDescription;
@@ -207,7 +203,9 @@ public sealed class SafeFileLoggerProvider :
             HResult:
                 exception.HResult,
             StackTrace:
-                exception.StackTrace,
+                DiagnosticPrivacySanitizer
+                    .SanitizeStackTrace(
+                        exception.StackTrace),
             InnerExceptionTypes:
                 innerTypes);
     }

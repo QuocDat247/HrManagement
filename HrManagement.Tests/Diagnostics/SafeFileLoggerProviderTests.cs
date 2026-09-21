@@ -194,6 +194,79 @@ public sealed class SafeFileLoggerProviderTests
         }
     }
 
+    [Fact]
+    public void Log_SanitizesExceptionStackTracePaths()
+    {
+        string directory =
+            CreateTemporaryDirectory();
+
+        try
+        {
+            var options =
+                new DiagnosticLogOptions(
+                    directory,
+                    RetentionDays:
+                        14,
+                    MaxFileBytes:
+                        1024 * 1024);
+
+            using var provider =
+                new SafeFileLoggerProvider(
+                    options);
+
+            ILogger logger =
+                provider.CreateLogger(
+                    "PrivacyTest");
+
+            Exception exception =
+                CreateExceptionWithStackTrace();
+
+            logger.LogError(
+                new EventId(
+                    4322,
+                    "PrivacyFailure"),
+                exception,
+                "Failure");
+
+            string filePath =
+                Assert.Single(
+                    Directory.GetFiles(
+                        directory,
+                        "*.jsonl"));
+
+            string content =
+                File.ReadAllText(
+                    filePath);
+
+            string userProfile =
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.UserProfile);
+
+            Assert.DoesNotContain(
+                userProfile,
+                content,
+                StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            DeleteDirectory(
+                directory);
+        }
+    }
+
+    private static Exception CreateExceptionWithStackTrace()
+    {
+        try
+        {
+            throw new InvalidOperationException(
+                "Sensitive message");
+        }
+        catch (Exception exception)
+        {
+            return exception;
+        }
+    }
+
     private static string CreateTemporaryDirectory()
     {
         string directory =

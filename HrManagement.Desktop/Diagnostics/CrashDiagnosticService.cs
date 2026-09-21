@@ -1,5 +1,4 @@
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -52,11 +51,8 @@ public sealed class CrashDiagnosticService :
             timeProvider;
 
         _applicationVersion =
-            Assembly.GetEntryAssembly()
-                ?.GetName()
-                .Version
-                ?.ToString()
-            ?? "unknown";
+            ApplicationVersionResolver
+                .GetCurrentVersion();
 
         _operatingSystem =
             RuntimeInformation.OSDescription;
@@ -182,65 +178,11 @@ public sealed class CrashDiagnosticService :
             HResult:
                 exception.HResult,
             StackTrace:
-                SanitizeStackTrace(
-                    exception.StackTrace),
+                DiagnosticPrivacySanitizer
+                    .SanitizeStackTrace(
+                        exception.StackTrace),
             InnerExceptionTypes:
                 innerTypes);
-    }
-
-    private static string? SanitizeStackTrace(
-        string? stackTrace)
-    {
-        if (string.IsNullOrWhiteSpace(
-                stackTrace))
-        {
-            return stackTrace;
-        }
-
-        string sanitized =
-            stackTrace;
-
-        sanitized =
-            ReplacePath(
-                sanitized,
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData),
-                "%LOCALAPPDATA%");
-
-        sanitized =
-            ReplacePath(
-                sanitized,
-                Path.GetTempPath()
-                    .TrimEnd(
-                        Path.DirectorySeparatorChar,
-                        Path.AltDirectorySeparatorChar),
-                "%TEMP%");
-
-        sanitized =
-            ReplacePath(
-                sanitized,
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.UserProfile),
-                "%USERPROFILE%");
-
-        return sanitized;
-    }
-
-    private static string ReplacePath(
-        string value,
-        string path,
-        string replacement)
-    {
-        if (string.IsNullOrWhiteSpace(
-                path))
-        {
-            return value;
-        }
-
-        return value.Replace(
-            path,
-            replacement,
-            StringComparison.OrdinalIgnoreCase);
     }
 
     private void TryDeleteExpiredReports()
