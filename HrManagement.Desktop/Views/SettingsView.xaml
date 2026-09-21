@@ -422,6 +422,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
@@ -468,23 +469,36 @@
                                    Text="Release channel"
                                    Foreground="{DynamicResource SecondaryTextBrush}" />
 
-                        <TextBlock Grid.Row="3"
-                                   Grid.Column="1"
-                                   Text="{Binding BuildReleaseChannel}"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource PrimaryTextBrush}" />
-
                         <TextBlock Grid.Row="4"
                                    Grid.Column="0"
                                    Margin="0,8,0,0"
-                                   Text="Features"
+                                   Text="Build profile"
                                    Foreground="{DynamicResource SecondaryTextBrush}" />
 
                         <TextBlock Grid.Row="4"
                                    Grid.Column="1"
                                    Margin="0,8,0,0"
+                                   Text="{Binding BuildCustomerProfile}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="5"
+                                   Grid.Column="0"
+                                   Margin="0,8,0,0"
+                                   Text="Features"
+                                   Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="5"
+                                   Grid.Column="1"
+                                   Margin="0,8,0,0"
                                    Text="{Binding BuildFeatures}"
                                    TextWrapping="Wrap"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="3"
+                                   Grid.Column="1"
+                                   Text="{Binding BuildReleaseChannel}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource PrimaryTextBrush}" />
 

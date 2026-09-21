@@ -83,8 +83,16 @@ public sealed class SettingsViewModelTests
             viewModel.BuildReleaseChannel);
 
         Assert.Equal(
+            "TestProfile",
+            viewModel.BuildCustomerProfile);
+
+        Assert.Equal(
             "Nhân viên • Cơ cấu tổ chức • Quản lý thời gian • Bảng lương",
             viewModel.BuildFeatures);
+
+        Assert.Equal(
+            "TestProfile",
+            viewModel.BuildCustomerProfile);
     }
 
     [Fact]
@@ -246,8 +254,8 @@ public sealed class SettingsViewModelTests
     }
 
     private static SettingsViewModel CreateViewModel(
-    IApplicationThemeService themeService,
-    IDiagnosticConsentService diagnosticConsentService)
+        IApplicationThemeService themeService,
+        IDiagnosticConsentService diagnosticConsentService)
     {
         return new SettingsViewModel(
             themeService,
@@ -265,7 +273,9 @@ public sealed class SettingsViewModelTests
                 CustomerCode:
                     "TestCustomer",
                 ReleaseChannel:
-                    "Testing"),
+                    "Testing",
+                CustomerProfile:
+                    "TestProfile"),
             new ApplicationFeatureSet(
                 Employees: true,
                 Organization: true,

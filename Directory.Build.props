@@ -2,6 +2,20 @@
 
   <PropertyGroup>
 
+    <HrCustomerProfile
+      Condition="'$(HrCustomerProfile)' == ''">Generic</HrCustomerProfile>
+
+    <HrCustomerProfilePath>
+      $(MSBuildThisFileDirectory)build\customer-profiles\$(HrCustomerProfile).props
+    </HrCustomerProfilePath>
+
+  </PropertyGroup>
+
+  <Import Project="$(HrCustomerProfilePath)"
+          Condition="Exists('$(HrCustomerProfilePath)')" />
+
+  <PropertyGroup>
+
     <Version>1.0.0-dev.1</Version>
     <VersionPrefix>1.0.0</VersionPrefix>
     <VersionSuffix>dev.1</VersionSuffix>
@@ -34,5 +48,13 @@
   <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 </PropertyGroup>
+
+  <Target Name="ValidateHrCustomerProfile"
+        BeforeTargets="PrepareForBuild">
+
+    <Error Condition="!Exists('$(HrCustomerProfilePath)')"
+           Text="HR customer profile '$(HrCustomerProfile)' was not found at '$(HrCustomerProfilePath)'." />
+
+  </Target>
 
 </Project>

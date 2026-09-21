@@ -4,6 +4,9 @@ namespace HrManagement.Desktop.BuildIdentity;
 
 public static class ApplicationBuildIdentityResolver
 {
+    private const string CustomerProfileMetadataKey =
+        "HrCustomerProfile";
+
     private const string EditionMetadataKey =
         "HrProductEdition";
 
@@ -84,6 +87,11 @@ public static class ApplicationBuildIdentityResolver
                 GetMetadata(
                     metadata,
                     ReleaseChannelMetadataKey,
+                    "Unknown"),
+            CustomerProfile:
+                GetMetadata(
+                    metadata,
+                    CustomerProfileMetadataKey,
                     "Unknown"));
     }
 
@@ -112,6 +120,8 @@ public static class ApplicationBuildIdentityResolver
             CustomerCode:
                 "Unknown",
             ReleaseChannel:
+                "Unknown",
+            CustomerProfile:
                 "Unknown");
     }
 }

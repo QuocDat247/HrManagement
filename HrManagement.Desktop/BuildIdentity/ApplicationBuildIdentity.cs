@@ -4,4 +4,5 @@ public sealed record ApplicationBuildIdentity(
     string CoreVersion,
     string Edition,
     string CustomerCode,
-    string ReleaseChannel);
+    string ReleaseChannel,
+    string CustomerProfile);

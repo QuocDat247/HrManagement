@@ -222,8 +222,11 @@ public sealed partial class SettingsViewModel
         get;
     }
 
+    public string BuildCustomerProfile =>
+        _buildIdentity.CustomerProfile;
+
     public string BuildCoreVersion =>
-    _buildIdentity.CoreVersion;
+        _buildIdentity.CoreVersion;
 
     public string BuildEdition =>
         _buildIdentity.Edition;

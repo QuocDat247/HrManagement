@@ -41,5 +41,9 @@ public sealed class ApplicationBuildIdentityResolverTests
         Assert.Equal(
             "Development",
             identity.ReleaseChannel);
+
+        Assert.Equal(
+            "Generic",
+            identity.CustomerProfile);
     }
 }

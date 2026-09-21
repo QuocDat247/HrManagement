@@ -40,5 +40,9 @@
     <AssemblyMetadata Include="HrFeatureTimeManagement" Value="$(HrFeatureTimeManagement)" />
 
     <AssemblyMetadata Include="HrFeaturePayroll" Value="$(HrFeaturePayroll)" />
+
+    <AssemblyMetadata
+      Include="HrCustomerProfile"
+      Value="$(HrCustomerProfile)" />
   </ItemGroup>
 </Project>
