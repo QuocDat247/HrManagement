@@ -10,6 +10,15 @@
     <FileVersion>1.0.0.0</FileVersion>
     <InformationalVersion>1.0.0-dev.1</InformationalVersion>
 
+    <HrProductEdition
+      Condition="'$(HrProductEdition)' == ''">Standard</HrProductEdition>
+
+    <HrCustomerCode
+      Condition="'$(HrCustomerCode)' == ''">Generic</HrCustomerCode>
+
+    <HrReleaseChannel
+      Condition="'$(HrReleaseChannel)' == ''">Development</HrReleaseChannel>
+
   <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 </PropertyGroup>

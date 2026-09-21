@@ -29,4 +29,9 @@
     <ProjectReference Include="..\HrManagement.Infrastructure\HrManagement.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyMetadata Include="HrProductEdition" Value="$(HrProductEdition)" />
+    <AssemblyMetadata Include="HrCustomerCode" Value="$(HrCustomerCode)" />
+    <AssemblyMetadata Include="HrReleaseChannel" Value="$(HrReleaseChannel)" />
+</ItemGroup>
 </Project>

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Views;
@@ -15,6 +16,9 @@ namespace HrManagement.Desktop.ViewModels;
 public sealed partial class SettingsViewModel
     : ObservableObject
 {
+    private readonly ApplicationBuildIdentity
+        _buildIdentity;
+
     private readonly IApplicationThemeService
         _themeService;
 
@@ -73,8 +77,14 @@ public sealed partial class SettingsViewModel
         IOwnerDatabaseMaintenanceService databaseMaintenanceService,
         IDatabaseBackupFileDialogService databaseBackupFileDialogService,
         IConfirmationDialogService confirmationDialogService,
-        IApplicationExitService applicationExitService)
+        IApplicationExitService applicationExitService,
+        ApplicationBuildIdentity buildIdentity)
     {
+        _buildIdentity =
+            buildIdentity
+            ?? throw new ArgumentNullException(
+                nameof(buildIdentity));
+
         _themeService =
             themeService;
 
@@ -201,6 +211,18 @@ public sealed partial class SettingsViewModel
     {
         get;
     }
+
+    public string BuildCoreVersion =>
+    _buildIdentity.CoreVersion;
+
+    public string BuildEdition =>
+        _buildIdentity.Edition;
+
+    public string BuildCustomer =>
+        _buildIdentity.CustomerCode;
+
+    public string BuildReleaseChannel =>
+        _buildIdentity.ReleaseChannel;
 
     public bool HasChanges =>
         SelectedAppearance !=

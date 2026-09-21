@@ -17,6 +17,7 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Services.Authentication;
 using HrManagement.Desktop.Diagnostics;
@@ -385,6 +386,13 @@ public partial class App : System.Windows.Application
         IServiceCollection services,
         ApplicationDataMode dataMode)
     {
+        ApplicationBuildIdentity buildIdentity =
+            ApplicationBuildIdentityResolver
+                .ResolveCurrent();
+
+        services.AddSingleton(
+            buildIdentity);
+
         DiagnosticLogOptions diagnosticLogOptions =
             DiagnosticLogOptions.CreateDefault();
 

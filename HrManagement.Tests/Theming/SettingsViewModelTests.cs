@@ -1,5 +1,6 @@
 using System;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
 using HrManagement.Desktop.Diagnostics;
@@ -54,6 +55,31 @@ public sealed class SettingsViewModelTests
 
         Assert.False(
             viewModel.CanApplyChanges);
+    }
+
+    [Fact]
+    public void Constructor_ExposesBuildIdentity()
+    {
+        var viewModel =
+            CreateViewModel(
+                new StubApplicationThemeService(),
+                new StubDiagnosticConsentService());
+
+        Assert.Equal(
+            "1.0.0-test",
+            viewModel.BuildCoreVersion);
+
+        Assert.Equal(
+            "Standard",
+            viewModel.BuildEdition);
+
+        Assert.Equal(
+            "TestCustomer",
+            viewModel.BuildCustomer);
+
+        Assert.Equal(
+            "Testing",
+            viewModel.BuildReleaseChannel);
     }
 
     [Fact]
@@ -225,7 +251,16 @@ public sealed class SettingsViewModelTests
             new StubOwnerDatabaseMaintenanceService(),
             new StubDatabaseBackupFileDialogService(),
             new StubConfirmationDialogService(),
-            new StubApplicationExitService());
+            new StubApplicationExitService(),
+            new ApplicationBuildIdentity(
+                CoreVersion:
+                    "1.0.0-test",
+                Edition:
+                    "Standard",
+                CustomerCode:
+                    "TestCustomer",
+                ReleaseChannel:
+                    "Testing"));
     }
 
     private sealed class StubDiagnosticConsentService

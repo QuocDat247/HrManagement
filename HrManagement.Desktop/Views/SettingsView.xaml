@@ -383,6 +383,101 @@
                 </Grid>
 
             </Border>
+            <!-- BUILD IDENTITY -->
+            <Border Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,16">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0"
+                    Margin="0,0,30,0">
+
+                        <TextBlock Text="Thông tin phiên bản"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,7,0,0"
+                       TextWrapping="Wrap"
+                       Text="Thông tin nhận diện build dùng cho cập nhật và hỗ trợ kỹ thuật."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <Grid Grid.Column="1">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Core version"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BuildCoreVersion}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="1"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Edition"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="1"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BuildEdition}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="2"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Customer"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="2"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BuildCustomer}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="3"
+                       Grid.Column="0"
+                       Text="Release channel"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="3"
+                       Grid.Column="1"
+                       Text="{Binding BuildReleaseChannel}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    </Grid>
+
+                </Grid>
+
+            </Border>
             <!-- APPLY -->
             <Border Style="{DynamicResource CardBorderStyle}">
 
