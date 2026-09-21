@@ -1,4 +1,40 @@
+param(
+    [Parameter()]
+    [ValidatePattern(
+        "^[A-Za-z0-9][A-Za-z0-9._-]*$")]
+    [string]$Profile = "Generic"
+)
+
 $ErrorActionPreference = "Stop"
+
+function Get-RequiredXmlValue
+{
+    param(
+        [xml]$Document,
+        [string]$XPath,
+        [string]$Description
+    )
+
+    $node =
+        $Document.SelectSingleNode(
+            $XPath)
+
+    if ($null -eq $node)
+    {
+        throw "Không đọc được $Description."
+    }
+
+    $value =
+        $node.InnerText
+
+    if ([string]::IsNullOrWhiteSpace(
+            $value))
+    {
+        throw "Không đọc được $Description."
+    }
+
+    return $value.Trim()
+}
 
 $repoRoot =
     Split-Path `
@@ -15,26 +51,58 @@ if (-not (Test-Path $propsPath))
     throw "Không tìm thấy Directory.Build.props."
 }
 
+$profilePath =
+    Join-Path `
+        $repoRoot `
+        "build\customer-profiles\$Profile.props"
+
+if (-not (Test-Path $profilePath))
+{
+    throw "Không tìm thấy customer profile '$Profile': $profilePath"
+}
+
 [xml]$props =
     Get-Content `
         $propsPath
 
+[xml]$profileProps =
+    Get-Content `
+        $profilePath
+
 $appVersion =
-    [string]$props.Project.PropertyGroup.Version
+    Get-RequiredXmlValue `
+        $props `
+        "/Project/PropertyGroup/Version" `
+        "Version từ Directory.Build.props"
 
 $fileVersion =
-    [string]$props.Project.PropertyGroup.FileVersion
+    Get-RequiredXmlValue `
+        $props `
+        "/Project/PropertyGroup/FileVersion" `
+        "FileVersion từ Directory.Build.props"
 
-if ([string]::IsNullOrWhiteSpace(
-        $appVersion))
-{
-    throw "Không đọc được Version từ Directory.Build.props."
-}
+$customerCode =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrCustomerCode" `
+        "HrCustomerCode từ customer profile"
 
-if ([string]::IsNullOrWhiteSpace(
-        $fileVersion))
+$productEdition =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrProductEdition" `
+        "HrProductEdition từ customer profile"
+
+$releaseChannel =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrReleaseChannel" `
+        "HrReleaseChannel từ customer profile"
+
+if ($customerCode -notmatch
+    "^[A-Za-z0-9][A-Za-z0-9._-]*$")
 {
-    throw "Không đọc được FileVersion từ Directory.Build.props."
+    throw "HrCustomerCode '$customerCode' không hợp lệ cho tên artifact."
 }
 
 $desktopProject =
@@ -45,12 +113,12 @@ $desktopProject =
 $publishDir =
     Join-Path `
         $repoRoot `
-        "artifacts\publish\win-x64"
+        "artifacts\publish\profiles\$Profile"
 
 $installerDir =
     Join-Path `
         $repoRoot `
-        "artifacts\installer"
+        "artifacts\installer\profiles\$Profile"
 
 $installerScript =
     Join-Path `
@@ -95,9 +163,15 @@ if ([string]::IsNullOrWhiteSpace(
 }
 
 Write-Host ""
-Write-Host "Version      : $appVersion"
-Write-Host "File version : $fileVersion"
-Write-Host "Compiler     : $iscc"
+Write-Host "Profile       : $Profile"
+Write-Host "Customer      : $customerCode"
+Write-Host "Edition       : $productEdition"
+Write-Host "Channel       : $releaseChannel"
+Write-Host "Version       : $appVersion"
+Write-Host "File version  : $fileVersion"
+Write-Host "Compiler      : $iscc"
+Write-Host "Publish dir   : $publishDir"
+Write-Host "Installer dir : $installerDir"
 
 Remove-Item `
     $publishDir `
@@ -127,6 +201,7 @@ Write-Host "Publishing HR Management..."
 dotnet publish `
     $desktopProject `
     -p:PublishProfile=WindowsX64 `
+    "-p:HrCustomerProfile=$Profile" `
     -o $publishDir
 
 if ($LASTEXITCODE -ne 0)
@@ -149,17 +224,41 @@ if ($LASTEXITCODE -ne 0)
     throw "Inno Setup compilation failed."
 }
 
-$installerFileName =
+$rawInstallerFileName =
     "HR-Management-Setup-$appVersion.exe"
+
+$rawInstallerPath =
+    Join-Path `
+        $installerDir `
+        $rawInstallerFileName
+
+if (-not (Test-Path $rawInstallerPath))
+{
+    throw "Không tìm thấy installer sau khi build: $rawInstallerPath"
+}
+
+if ($Profile -eq "Generic")
+{
+    $installerFileName =
+        $rawInstallerFileName
+}
+else
+{
+    $installerFileName =
+        "HR-Management-$customerCode-$appVersion-Setup.exe"
+}
 
 $installerPath =
     Join-Path `
         $installerDir `
         $installerFileName
 
-if (-not (Test-Path $installerPath))
+if ($rawInstallerPath -ne
+    $installerPath)
 {
-    throw "Không tìm thấy installer sau khi build: $installerPath"
+    Move-Item `
+        -LiteralPath $rawInstallerPath `
+        -Destination $installerPath
 }
 
 $installerHash =
