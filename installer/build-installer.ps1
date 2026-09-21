@@ -149,6 +149,43 @@ if ($LASTEXITCODE -ne 0)
     throw "Inno Setup compilation failed."
 }
 
+$installerFileName =
+    "HR-Management-Setup-$appVersion.exe"
+
+$installerPath =
+    Join-Path `
+        $installerDir `
+        $installerFileName
+
+if (-not (Test-Path $installerPath))
+{
+    throw "Không tìm thấy installer sau khi build: $installerPath"
+}
+
+$installerHash =
+    Get-FileHash `
+        $installerPath `
+        -Algorithm SHA256
+
+$checksumPath =
+    "$installerPath.sha256"
+
+$checksumLine =
+    "$($installerHash.Hash.ToLowerInvariant())  $installerFileName"
+
+Set-Content `
+    -Path $checksumPath `
+    -Value $checksumLine `
+    -Encoding ascii
+
 Write-Host ""
 Write-Host "Installer created:"
-Write-Host $installerDir
+Write-Host $installerPath
+
+Write-Host ""
+Write-Host "SHA256:"
+Write-Host $installerHash.Hash
+
+Write-Host ""
+Write-Host "Checksum file:"
+Write-Host $checksumPath
