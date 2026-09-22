@@ -74,6 +74,16 @@ if (-not (Test-Path $profileValidator))
     throw "Không tìm thấy customer profile validator: $profileValidator"
 }
 
+$releaseVerifier =
+    Join-Path `
+        $repoRoot `
+        "build\verify-customer-release.ps1"
+
+if (-not (Test-Path $releaseVerifier))
+{
+    throw "Không tìm thấy customer release verifier: $releaseVerifier"
+}
+
 Write-Host ""
 Write-Host "Validating customer profiles..."
 
@@ -109,11 +119,15 @@ if (-not (Test-Path $profilePath))
 
 [xml]$props =
     Get-Content `
-        $propsPath
+        -LiteralPath $propsPath `
+        -Raw `
+        -Encoding UTF8
 
 [xml]$profileProps =
     Get-Content `
-        $profilePath
+        -LiteralPath $profilePath `
+        -Raw `
+        -Encoding UTF8
 
 $appVersion =
     Get-RequiredXmlValue `
@@ -534,3 +548,20 @@ Write-Host $checksumPath
 Write-Host ""
 Write-Host "Release manifest:"
 Write-Host $manifestPath
+
+Write-Host ""
+Write-Host "Verifying customer release..."
+
+& powershell.exe `
+    -NoProfile `
+    -ExecutionPolicy Bypass `
+    -File $releaseVerifier `
+    -Profile $Profile
+
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Customer release verification failed."
+}
+
+Write-Host ""
+Write-Host "Release verification PASS."
