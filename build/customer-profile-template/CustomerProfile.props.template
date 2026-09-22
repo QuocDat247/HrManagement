@@ -1,0 +1,21 @@
+<Project>
+
+  <PropertyGroup>
+
+    <HrProductEdition>__REPLACE_EDITION__</HrProductEdition>
+    <HrCustomerCode>__REPLACE_CUSTOMER_CODE__</HrCustomerCode>
+    <HrReleaseChannel>__REPLACE_RELEASE_CHANNEL__</HrReleaseChannel>
+
+    <HrBrandProductDisplayName>__REPLACE_PRODUCT_DISPLAY_NAME__</HrBrandProductDisplayName>
+    <HrBrandCustomerDisplayName>__REPLACE_CUSTOMER_DISPLAY_NAME__</HrBrandCustomerDisplayName>
+    <HrBrandSupportLabel>__REPLACE_SUPPORT_LABEL__</HrBrandSupportLabel>
+    <HrBrandSupportContact>__REPLACE_SUPPORT_CONTACT__</HrBrandSupportContact>
+
+    <HrFeatureEmployees>__REPLACE_FEATURE_EMPLOYEES__</HrFeatureEmployees>
+    <HrFeatureOrganization>__REPLACE_FEATURE_ORGANIZATION__</HrFeatureOrganization>
+    <HrFeatureTimeManagement>__REPLACE_FEATURE_TIME_MANAGEMENT__</HrFeatureTimeManagement>
+    <HrFeaturePayroll>__REPLACE_FEATURE_PAYROLL__</HrFeaturePayroll>
+
+  </PropertyGroup>
+
+</Project>
