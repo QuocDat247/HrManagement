@@ -64,6 +64,29 @@ $repoRoot =
         -Parent `
         $PSScriptRoot
 
+$profileValidator =
+    Join-Path `
+        $repoRoot `
+        "build\validate-customer-profiles.ps1"
+
+if (-not (Test-Path $profileValidator))
+{
+    throw "Không tìm thấy customer profile validator: $profileValidator"
+}
+
+Write-Host ""
+Write-Host "Validating customer profiles..."
+
+& powershell.exe `
+    -NoProfile `
+    -ExecutionPolicy Bypass `
+    -File $profileValidator
+
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Customer profile validation failed."
+}
+
 $propsPath =
     Join-Path `
         $repoRoot `
