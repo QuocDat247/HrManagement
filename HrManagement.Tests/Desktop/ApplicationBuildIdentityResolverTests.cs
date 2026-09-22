@@ -39,7 +39,7 @@ public sealed class ApplicationBuildIdentityResolverTests
             identity.CustomerCode);
 
         Assert.Equal(
-            "Development",
+            "Production",
             identity.ReleaseChannel);
 
         Assert.Equal(
