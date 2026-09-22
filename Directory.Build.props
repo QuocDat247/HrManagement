@@ -52,6 +52,18 @@
   <Target Name="ValidateHrCustomerProfile"
         BeforeTargets="PrepareForBuild">
 
+    <Error Condition="'$(HrBrandProductDisplayName)' == ''"
+           Text="Customer profile '$(HrCustomerProfile)' thiếu HrBrandProductDisplayName." />
+
+    <Error Condition="'$(HrBrandCustomerDisplayName)' == ''"
+           Text="Customer profile '$(HrCustomerProfile)' thiếu HrBrandCustomerDisplayName." />
+
+    <Error Condition="'$(HrBrandSupportLabel)' == ''"
+           Text="Customer profile '$(HrCustomerProfile)' thiếu HrBrandSupportLabel." />
+
+    <Error Condition="'$(HrBrandSupportContact)' == ''"
+           Text="Customer profile '$(HrCustomerProfile)' thiếu HrBrandSupportContact." />
+
     <Error Condition="!Exists('$(HrCustomerProfilePath)')"
            Text="HR customer profile '$(HrCustomerProfile)' was not found at '$(HrCustomerProfilePath)'." />
 

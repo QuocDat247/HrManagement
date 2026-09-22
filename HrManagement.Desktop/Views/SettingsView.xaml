@@ -383,6 +383,102 @@
                 </Grid>
 
             </Border>
+            <!-- CUSTOMER BRANDING -->
+            <Border Style="{DynamicResource CardBorderStyle}"
+        Margin="0,0,0,16">
+
+                <Grid>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0"
+                    Margin="0,0,30,0">
+
+                        <TextBlock Text="Thông tin triển khai"
+                       FontSize="17"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Margin="0,7,0,0"
+                       TextWrapping="Wrap"
+                       Text="Thông tin nhận diện và hỗ trợ của bản triển khai hiện tại."
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                    </StackPanel>
+
+                    <Grid Grid.Column="1">
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Product"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="0"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BrandProductDisplayName}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="1"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Customer"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="1"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BrandCustomerDisplayName}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="2"
+                       Grid.Column="0"
+                       Margin="0,0,0,8"
+                       Text="Support"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="2"
+                       Grid.Column="1"
+                       Margin="0,0,0,8"
+                       Text="{Binding BrandSupportLabel}"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                        <TextBlock Grid.Row="3"
+                       Grid.Column="0"
+                       Text="Contact"
+                       Foreground="{DynamicResource SecondaryTextBrush}" />
+
+                        <TextBlock Grid.Row="3"
+                       Grid.Column="1"
+                       Text="{Binding BrandSupportContact}"
+                       TextWrapping="Wrap"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource PrimaryTextBrush}" />
+
+                    </Grid>
+
+                </Grid>
+
+            </Border>
             <!-- BUILD IDENTITY -->
             <Border Style="{DynamicResource CardBorderStyle}"
                     Margin="0,0,0,16">

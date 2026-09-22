@@ -44,5 +44,21 @@
     <AssemblyMetadata
       Include="HrCustomerProfile"
       Value="$(HrCustomerProfile)" />
+
+    <AssemblyMetadata
+      Include="HrBrandProductDisplayName"
+      Value="$(HrBrandProductDisplayName)" />
+
+    <AssemblyMetadata
+      Include="HrBrandCustomerDisplayName"
+      Value="$(HrBrandCustomerDisplayName)" />
+
+    <AssemblyMetadata
+      Include="HrBrandSupportLabel"
+      Value="$(HrBrandSupportLabel)" />
+
+    <AssemblyMetadata
+      Include="HrBrandSupportContact"
+      Value="$(HrBrandSupportContact)" />
   </ItemGroup>
 </Project>

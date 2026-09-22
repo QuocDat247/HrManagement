@@ -236,7 +236,8 @@
 
         </ScrollViewer>
 
-        <TextBlock Grid.Row="1"
+        <TextBlock x:Name="BrandingFooterTextBlock"
+                   Grid.Row="1"
                    Margin="0,0,0,18"
                    Text="HR Management • Initial Setup"
                    HorizontalAlignment="Center"

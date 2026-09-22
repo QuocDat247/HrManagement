@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Branding;
 using HrManagement.Desktop.Services.Authentication;
 using HrManagement.Desktop.ViewModels;
 using System.Windows;
@@ -15,10 +16,27 @@ public partial class LoginWindow : Window
         _viewModel.MustChangePassword;
 
     public LoginWindow(
-    LoginViewModel viewModel,
-    IOwnerPasswordRecoveryDialogService recoveryDialogService)
+        LoginViewModel viewModel,
+        IOwnerPasswordRecoveryDialogService recoveryDialogService,
+        ApplicationBranding branding)
     {
         InitializeComponent();
+
+        ArgumentNullException.ThrowIfNull(
+            branding);
+
+        Title =
+            $"Đăng nhập - {branding.ProductDisplayName}";
+
+        ProductDisplayNameTextBlock.Text =
+            branding.ProductDisplayName;
+
+        CustomerDisplayNameTextBlock.Text =
+            branding.CustomerDisplayName;
+
+        SupportTextBlock.Text =
+            $"{branding.SupportLabel}: "
+            + branding.SupportContact;
 
         _viewModel =
             viewModel;

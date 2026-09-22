@@ -122,6 +122,30 @@ $releaseChannel =
         "/Project/PropertyGroup/HrReleaseChannel" `
         "HrReleaseChannel từ customer profile"
 
+$brandProductDisplayName =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrBrandProductDisplayName" `
+        "HrBrandProductDisplayName từ customer profile"
+
+$brandCustomerDisplayName =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrBrandCustomerDisplayName" `
+        "HrBrandCustomerDisplayName từ customer profile"
+
+$brandSupportLabel =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrBrandSupportLabel" `
+        "HrBrandSupportLabel từ customer profile"
+
+$brandSupportContact =
+    Get-RequiredXmlValue `
+        $profileProps `
+        "/Project/PropertyGroup/HrBrandSupportContact" `
+        "HrBrandSupportContact từ customer profile"
+
 $featureEmployeesText =
     Get-RequiredXmlValue `
         $profileProps `
@@ -408,6 +432,21 @@ $manifest =
 
         releaseChannel =
             $releaseChannel
+
+	branding =
+    [ordered]@{
+                productDisplayName =
+			$brandProductDisplayName
+
+        customerDisplayName =
+            $brandCustomerDisplayName
+
+        supportLabel =
+            $brandSupportLabel
+
+        supportContact =
+            $brandSupportContact
+    }
 
         enabledFeatures =
             [ordered]@{

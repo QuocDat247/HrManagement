@@ -1,5 +1,6 @@
 using System;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Branding;
 using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
@@ -93,6 +94,22 @@ public sealed class SettingsViewModelTests
         Assert.Equal(
             "TestProfile",
             viewModel.BuildCustomerProfile);
+
+        Assert.Equal(
+            "HR Test",
+            viewModel.BrandProductDisplayName);
+
+        Assert.Equal(
+            "Test Company",
+            viewModel.BrandCustomerDisplayName);
+
+        Assert.Equal(
+            "Test Support",
+            viewModel.BrandSupportLabel);
+
+        Assert.Equal(
+            "support@test.invalid",
+            viewModel.BrandSupportContact);
     }
 
     [Fact]
@@ -280,7 +297,16 @@ public sealed class SettingsViewModelTests
                 Employees: true,
                 Organization: true,
                 TimeManagement: true,
-                Payroll: true));
+                Payroll: true),
+            new ApplicationBranding(
+                ProductDisplayName:
+                    "HR Test",
+                CustomerDisplayName:
+                    "Test Company",
+                SupportLabel:
+                    "Test Support",
+                SupportContact:
+                    "support@test.invalid"));
     }
 
     private sealed class StubDiagnosticConsentService

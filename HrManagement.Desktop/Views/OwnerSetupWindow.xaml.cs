@@ -1,3 +1,4 @@
+using HrManagement.Desktop.Branding;
 using HrManagement.Desktop.ViewModels;
 using System.Windows;
 
@@ -10,9 +11,21 @@ public partial class OwnerSetupWindow
         _viewModel;
 
     public OwnerSetupWindow(
-        OwnerSetupViewModel viewModel)
+        OwnerSetupViewModel viewModel,
+        ApplicationBranding branding)
     {
         InitializeComponent();
+
+        ArgumentNullException.ThrowIfNull(
+            branding);
+
+        Title =
+            $"Thiết lập Chủ doanh nghiệp - "
+            + branding.ProductDisplayName;
+
+        BrandingFooterTextBlock.Text =
+            $"{branding.ProductDisplayName} • "
+            + branding.CustomerDisplayName;
 
         _viewModel =
             viewModel;

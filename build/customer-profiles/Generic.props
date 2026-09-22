@@ -6,6 +6,11 @@
     <HrCustomerCode>Generic</HrCustomerCode>
     <HrReleaseChannel>Development</HrReleaseChannel>
 
+    <HrBrandProductDisplayName>HR Management</HrBrandProductDisplayName>
+    <HrBrandCustomerDisplayName>Bản tiêu chuẩn</HrBrandCustomerDisplayName>
+    <HrBrandSupportLabel>Hỗ trợ kỹ thuật</HrBrandSupportLabel>
+    <HrBrandSupportContact>Liên hệ nhà cung cấp triển khai</HrBrandSupportContact>
+
     <HrFeatureEmployees>true</HrFeatureEmployees>
     <HrFeatureOrganization>true</HrFeatureOrganization>
     <HrFeatureTimeManagement>true</HrFeatureTimeManagement>

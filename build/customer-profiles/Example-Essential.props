@@ -6,6 +6,11 @@
     <HrCustomerCode>EXAMPLE-ESSENTIAL</HrCustomerCode>
     <HrReleaseChannel>CustomerPreview</HrReleaseChannel>
 
+    <HrBrandProductDisplayName>HR Management</HrBrandProductDisplayName>
+    <HrBrandCustomerDisplayName>Example Company</HrBrandCustomerDisplayName>
+    <HrBrandSupportLabel>Hỗ trợ triển khai</HrBrandSupportLabel>
+    <HrBrandSupportContact>support@example.invalid</HrBrandSupportContact>
+
     <HrFeatureEmployees>true</HrFeatureEmployees>
     <HrFeatureOrganization>true</HrFeatureOrganization>
     <HrFeatureTimeManagement>false</HrFeatureTimeManagement>

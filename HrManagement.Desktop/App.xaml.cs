@@ -17,6 +17,7 @@ using HrManagement.Application.Employees.Profiles.Completion;
 using HrManagement.Application.Organization.Assignments;
 using HrManagement.Application.Organization.Departments;
 using HrManagement.Application.Organization.Positions;
+using HrManagement.Desktop.Branding;
 using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services.DatabaseMaintenance;
@@ -333,9 +334,14 @@ public partial class App : System.Windows.Application
                 return;
             }
 
+            ApplicationBranding branding =
+                _serviceProvider.GetRequiredService<
+                    ApplicationBranding>();
+
             var mainWindow =
                 new MainWindow(
-                    mainViewModel);
+                    mainViewModel,
+                    branding);
 
             MainWindow =
                 mainWindow;
@@ -394,6 +400,13 @@ public partial class App : System.Windows.Application
         ApplicationFeatureSet featureSet =
             ApplicationFeatureSetResolver
                 .ResolveCurrent();
+
+        ApplicationBranding branding =
+            ApplicationBrandingResolver
+                .ResolveCurrent();
+
+        services.AddSingleton(
+            branding);
 
         services.AddSingleton(
             featureSet);

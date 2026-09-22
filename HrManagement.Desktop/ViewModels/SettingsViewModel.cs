@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using HrManagement.Application.Persistence.Backups;
+using HrManagement.Desktop.Branding;
 using HrManagement.Desktop.Features;
 using HrManagement.Desktop.BuildIdentity;
 using HrManagement.Desktop.Services;
@@ -17,6 +18,9 @@ namespace HrManagement.Desktop.ViewModels;
 public sealed partial class SettingsViewModel
     : ObservableObject
 {
+    private readonly ApplicationBranding
+        _branding;
+
     private readonly ApplicationFeatureSet
         _featureSet;
 
@@ -83,8 +87,14 @@ public sealed partial class SettingsViewModel
         IConfirmationDialogService confirmationDialogService,
         IApplicationExitService applicationExitService,
         ApplicationBuildIdentity buildIdentity,
-        ApplicationFeatureSet featureSet)
+        ApplicationFeatureSet featureSet,
+        ApplicationBranding branding)
     {
+        _branding =
+            branding
+            ?? throw new ArgumentNullException(
+                nameof(branding));
+
         _featureSet =
             featureSet
             ?? throw new ArgumentNullException(
@@ -236,6 +246,18 @@ public sealed partial class SettingsViewModel
 
     public string BuildReleaseChannel =>
         _buildIdentity.ReleaseChannel;
+
+    public string BrandProductDisplayName =>
+        _branding.ProductDisplayName;
+
+    public string BrandCustomerDisplayName =>
+        _branding.CustomerDisplayName;
+
+    public string BrandSupportLabel =>
+        _branding.SupportLabel;
+
+    public string BrandSupportContact =>
+        _branding.SupportContact;
 
     public bool HasChanges =>
         SelectedAppearance !=
