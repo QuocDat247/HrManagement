@@ -433,7 +433,7 @@ $sourceStatus =
         -C $repoRoot `
         status `
         --porcelain `
-        --untracked-files=no
+        --untracked-files=all
 
 if ($LASTEXITCODE -ne 0)
 {
