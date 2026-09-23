@@ -9,7 +9,7 @@
     <HrBrandProductDisplayName>HR Management</HrBrandProductDisplayName>
     <HrBrandCustomerDisplayName>Bản tiêu chuẩn</HrBrandCustomerDisplayName>
     <HrBrandSupportLabel>Hỗ trợ kỹ thuật</HrBrandSupportLabel>
-    <HrBrandSupportContact>Liên hệ nhà cung cấp triển khai</HrBrandSupportContact>
+    <HrBrandSupportContact>Liên hệ nhà cung cấp triển khai&#x0A;quocdat7654@gmail.com</HrBrandSupportContact>
 
     <HrFeatureEmployees>true</HrFeatureEmployees>
     <HrFeatureOrganization>true</HrFeatureOrganization>
